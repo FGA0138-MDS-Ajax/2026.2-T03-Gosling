@@ -1,0 +1,2061 @@
+
+<!doctype html>
+<html lang="pt" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentação do produto e do projeto VolunJá, desenvolvido na disciplina MDS em 2026.2.">
+      
+      
+      
+        <link rel="canonical" href="https://fga0138-mds-ajax.github.io/2026.2-T03-Gosling/vis%C3%A3o/">
+      
+      
+        <link rel="prev" href="../atas-reuniao/ata-reuniao-1/">
+      
+      
+        <link rel="next" href="../arquitetura/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Documento de visão - VolunJá — Grupo Gosling</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#visao-do-produto-e-do-projeto" class="md-skip">
+          Ir para o conteúdo
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
+    <a href=".." title="VolunJá — Grupo Gosling" class="md-header__button md-logo" aria-label="VolunJá — Grupo Gosling" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            VolunJá — Grupo Gosling
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Documento de visão
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Buscar" placeholder="Buscar" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Pesquisar">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Limpar" aria-label="Limpar" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicializando a pesquisa
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/FGA0138-MDS-Ajax/2026.2-T03-Gosling" title="Ir ao repositório" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FGA0138-MDS-Ajax/2026.2-T03-Gosling
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navegação" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="VolunJá — Grupo Gosling" class="md-nav__button md-logo" aria-label="VolunJá — Grupo Gosling" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    VolunJá — Grupo Gosling
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/FGA0138-MDS-Ajax/2026.2-T03-Gosling" title="Ir ao repositório" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FGA0138-MDS-Ajax/2026.2-T03-Gosling
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Início
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Atas de Reunião
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Atas de Reunião
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atas-reuniao/ata-reuniao-1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ata 1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentos
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Documentos
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documento de visão
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documento de visão
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tabela-1-integrantes-do-grupo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tabela 1 – Integrantes do Grupo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tabela-2-historico-de-revisoes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tabela 2 – Histórico de Revisões
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-visao-geral-do-produto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1 VISÃO GERAL DO PRODUTO
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-visao-geral-do-projeto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2 VISÃO GERAL DO PROJETO
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-processo-de-desenvolvimento-de-software" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3 PROCESSO DE DESENVOLVIMENTO DE SOFTWARE
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-declaracao-de-escopo-do-projeto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4 DECLARAÇÃO DE ESCOPO DO PROJETO
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-metricas-e-medicoes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5 MÉTRICAS E MEDIÇÕES
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-testes-de-software" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6 TESTES DE SOFTWARE
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#referencias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        REFERÊNCIAS
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../arquitetura/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documento de Arquitetura
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<p><strong>Gosling - VolunJá</strong></p>
+<h1 id="visao-do-produto-e-do-projeto">Visão do Produto e do Projeto<a class="headerlink" href="#visao-do-produto-e-do-projeto" title="Permanent link">&para;</a></h1>
+<p><strong>Versão 0.2</strong></p>
+<p>Arquivos originais: <a href="../documento%20de%20visao.pdf">PDF</a></p>
+<h2 id="tabela-1-integrantes-do-grupo">Tabela 1 – Integrantes do Grupo<a class="headerlink" href="#tabela-1-integrantes-do-grupo" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th><strong>Mat.</strong></th>
+<th><strong>Nome</strong></th>
+<th><strong>Função (responsabilidade)</strong></th>
+<th><strong>Pontos de participação na elaboração</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>231026661</td>
+<td>Cauã Henrique Moura Rodrigues</td>
+<td>Dev Frontend/Backend</td>
+<td>25</td>
+</tr>
+<tr>
+<td>232027529</td>
+<td>Juan Yuri Gabriel Brito Silva</td>
+<td>Scrum Master</td>
+<td>25</td>
+</tr>
+<tr>
+<td>232005432</td>
+<td>Miguel Tobias de Lima Galvão</td>
+<td>Dev Frontend/Backend</td>
+<td>25</td>
+</tr>
+<tr>
+<td>222026528</td>
+<td>Rafael Rodrigues Alencar</td>
+<td>Dev Frontend/Backend</td>
+<td>25</td>
+</tr>
+<tr>
+<td><strong>Total de pontos</strong></td>
+<td></td>
+<td></td>
+<td><strong>100</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="tabela-2-historico-de-revisoes">Tabela 2 – Histórico de Revisões<a class="headerlink" href="#tabela-2-historico-de-revisoes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th><strong>Data</strong></th>
+<th><strong>Versão</strong></th>
+<th><strong>Descrição</strong></th>
+<th><strong>Autor</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>17/09/2026</td>
+<td>0.0</td>
+<td>Criação da estrutura inicial dos documentos de visão e arquitetura</td>
+<td>Cauã Henrique Moura Rodrigues</td>
+</tr>
+<tr>
+<td>17/09/2026</td>
+<td>0.1</td>
+<td>Estruturação do documento conforme template da disciplina; registro do problema, da declaração de posição do produto, dos objetivos, do escopo inicial e do backlog preliminar</td>
+<td>Equipe Gosling</td>
+</tr>
+<tr>
+<td>21/09/2026</td>
+<td>0.2</td>
+<td>Preenchimento completo do documento no template da disciplina (seções 1 a 7), com espaços reservados para as informações pendentes</td>
+<td>Equipe Gosling</td>
+</tr>
+<tr>
+<td>30/09/2026</td>
+<td>0.3</td>
+<td>Preenchimento dos campos de pesquisa bem como alinhamento de sprints definidas conforme o andamento do projeto</td>
+<td>Equipe Gosling</td>
+</tr>
+</tbody>
+</table>
+<h2 id="1-visao-geral-do-produto">1 VISÃO GERAL DO PRODUTO<a class="headerlink" href="#1-visao-geral-do-produto" title="Permanent link">&para;</a></h2>
+<h3 id="11-problema">1.1 Problema<a class="headerlink" href="#11-problema" title="Permanent link">&para;</a></h3>
+<h4 id="111-contexto-de-negocio">1.1.1 Contexto de negócio<a class="headerlink" href="#111-contexto-de-negocio" title="Permanent link">&para;</a></h4>
+<p>O trabalho voluntário é um dos principais insumos do terceiro setor brasileiro. Organizações Não Governamentais (ONGs), associações e projetos sociais atrelados a essas organizações dependem de pessoas dispostas a doar tempo e competências para executar suas atividades-fim - acolhimento, educação, saúde, assistência, cultura, meio ambiente e defesa de direitos. Do outro lado, existe um contingente de pessoas interessadas em atuar como voluntárias, mas que não sabe onde procurar oportunidades.</p>
+<p>Hoje, a divulgação de vagas de voluntariado é <strong>descentralizada e informal</strong>: acontece em perfis de redes sociais, grupos de mensagens, cartazes, sites próprios de cada organização e pelo boca a boca. Assim, a oferta (vagas das ONGs) e a demanda (pessoas dispostas a se voluntariar) não se encontram de forma sistemática e, quando se encontram, frequentemente há incompatibilidade de <strong>interesse, disponibilidade de horário, localização e tipo de atividade</strong>. O Quadro 1 sintetiza o tema, o problema e a questão-problema que orientam este documento.</p>
+<p><strong>Quadro 1 –</strong> Síntese do tema, problema e questão-problema</p>
+<table>
+<thead>
+<tr>
+<th><strong>Item</strong></th>
+<th><strong>Descrição</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Tema</strong></td>
+<td>Desenvolvimento de uma plataforma de voluntariado para conectar voluntários e ONGs, com foco em UX.</td>
+</tr>
+<tr>
+<td><strong>Problema</strong></td>
+<td>Pessoas interessadas em realizar trabalho voluntário e organizações que necessitam de voluntários têm dificuldade para se encontrar e identificar oportunidades compatíveis quanto a interesse, disponibilidade, localização e necessidades das atividades.</td>
+</tr>
+<tr>
+<td><strong>Questão-problema</strong></td>
+<td>Como facilitar o encontro entre pessoas interessadas em trabalho voluntário e organizações que necessitam de voluntários, considerando suas necessidades e disponibilidades?</td>
+</tr>
+</tbody>
+</table>
+<h4 id="112-problema-encontrado">1.1.2 Problema encontrado<a class="headerlink" href="#112-problema-encontrado" title="Permanent link">&para;</a></h4>
+<p>Atualmente as ONGs e os trabalhadores voluntários têm dificuldade de centralizar suas publicações de vagas, bem como dificuldade de saber onde buscar todas as vagas de trabalho voluntário disponíveis. O problema tem duas perspectivas:</p>
+<ul>
+<li>
+<p><strong>ONG:</strong> pouca visibilidade das vagas fora da própria rede de contatos, triagem manual de candidatos e ausência de registro organizado das candidaturas (IBGE, 2018).</p>
+</li>
+<li>
+<p><strong>Voluntário:</strong> Dificuldade de descobrir e utilizar canais de busca (IBGE, 2018).</p>
+</li>
+</ul>
+<p><strong>Figura 1 –</strong> Diagrama de Ishikawa do problema</p>
+<p><a href="../assets/visao/figura1-ishikawa.png"><img alt="Diagrama de Ishikawa: causas da dificuldade de conectar voluntários e ONGs." src="../assets/visao/figura1-ishikawa.png" /></a></p>
+<p>A Figura 1 tem como efeito o fato de que <strong>voluntários e ONGs não se encontram de forma eficiente</strong>, com causas agrupadas em cinco categorias interligadas. A dispersão da <strong>informação</strong> torna o <strong>processo</strong> de triagem manual e caro para a ONG; esse custo faz com que organizações com equipes pequenas (<strong>pessoas</strong>) invistam pouco em captação, o que realimenta a baixa visibilidade. Já a ausência de um canal digital adequado (<strong>tecnologia</strong>) impede que critérios de <strong>compatibilidade</strong> (turno, carga horária, modalidade e localização) sejam aplicados antes do contato humano.</p>
+<h4 id="113-solucao-de-software-proposta">1.1.3 Solução de software proposta<a class="headerlink" href="#113-solucao-de-software-proposta" title="Permanent link">&para;</a></h4>
+<p>Propõe-se uma <strong>aplicação web</strong> que centraliza a publicação e a busca de vagas de voluntariado, atuando como ponte entre ONGs e voluntários. A solução ataca as causas da Figura 1 em quatro frentes: reúne as vagas em um catálogo único com campos padronizados (<em>informação</em>); transforma esses campos em filtros de busca (<em>compatibilidade</em>); estrutura a candidatura, do envio de documentos ao comprovante e ao contato com o responsável (<em>processo</em>); e oferece às ONGs um canal de divulgação sem exigir infraestrutura própria (<em>tecnologia</em>).</p>
+<p>O <strong>foco em UX</strong> faz parte da solução: como o público é heterogêneo em idade e familiaridade digital, uma interface confusa reproduziria dentro do sistema a mesma barreira que existe fora dele. Por isso, usabilidade e acessibilidade são requisitos do backlog (seção 4.4) e são medidas conforme a seção 5.1.</p>
+<h3 id="12-declaracao-de-posicao-do-produto">1.2 Declaração de Posição do Produto<a class="headerlink" href="#12-declaracao-de-posicao-do-produto" title="Permanent link">&para;</a></h3>
+<p>O Quadro 2 apresenta a declaração de posição do produto no formato proposto pela disciplina.</p>
+<p><strong>Quadro 2 –</strong> Declaração de posição do produto</p>
+<table>
+<thead>
+<tr>
+<th><strong>Para:</strong></th>
+<th>Pessoas interessadas em realizar trabalho voluntário e organizações do terceiro setor (ONGs e associações) que necessitam de voluntários.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Necessidade:</strong></td>
+<td>Encontrar, de forma centralizada e confiável, oportunidades de voluntariado e voluntários compatíveis quanto a interesse, disponibilidade, localização e necessidades da atividade.</td>
+</tr>
+<tr>
+<td><strong>O VolunJá</strong></td>
+<td>É uma aplicação web de conexão entre voluntários e organizações do terceiro setor.</td>
+</tr>
+<tr>
+<td><strong>Que:</strong></td>
+<td>Reúne em um só lugar as vagas de voluntariado, permite buscá-las por filtros que refletem a disponibilidade real do voluntário e conduz a candidatura até o contato com o responsável pela vaga, com emissão de comprovante.</td>
+</tr>
+<tr>
+<td><strong>Ao contrário:</strong></td>
+<td>Da divulgação dispersa em redes sociais, grupos de mensagens e sites de cada organização. Sem o produto, a conexão continua dependendo do acaso: a ONG não preenche suas vagas e o voluntário desiste por não encontrar uma oportunidade compatível.</td>
+</tr>
+<tr>
+<td><strong>Nosso produto:</strong></td>
+<td>Estrutura a busca sobre os mesmos campos que a ONG preenche ao publicar a vaga e tem a interface projetada e avaliada com foco em UX, para ser utilizável por pessoas com diferentes níveis de familiaridade digital.</td>
+</tr>
+</tbody>
+</table>
+<p>O diferencial declarado no Quadro 2 se apoia em dois pontos: a padronização dos campos da vaga, que viabiliza a busca por compatibilidade, e o cuidado com a experiência de uso.</p>
+<h4 id="121-usuarios-alvo-e-clientes">1.2.1 Usuários-alvo e clientes<a class="headerlink" href="#121-usuarios-alvo-e-clientes" title="Permanent link">&para;</a></h4>
+<p><strong>Quadro 3 –</strong> Usuários-alvo e clientes do produto</p>
+<table>
+<thead>
+<tr>
+<th><strong>Usuário-alvo</strong></th>
+<th><strong>Características</strong></th>
+<th><strong>Por que o produto é importante para ele</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Voluntário</strong></td>
+<td>Pessoa física interessada em doar tempo a causas sociais; possui disponibilidade limitada e específica (turnos, dias, carga horária); perfil heterogêneo em idade, formação e familiaridade digital - de estudantes a aposentados.</td>
+<td>Passa a ter um ponto único de busca, com filtros que respeitam sua agenda e sua localização, além de um registro formal da candidatura e um comprovante da atividade.</td>
+</tr>
+<tr>
+<td><strong>ONG / Organização</strong></td>
+<td>Organização do terceiro setor, frequentemente com equipe reduzida e sem área dedicada à captação de voluntários; possui demandas recorrentes e sazonais por mão de obra voluntária.</td>
+<td>Ganha visibilidade para suas vagas além da própria rede de contatos e recebe candidaturas já organizadas segundo os critérios que ela mesma definiu, reduzindo o esforço de triagem.</td>
+</tr>
+<tr>
+<td><strong>Cliente / P.O.</strong></td>
+<td>Professor da disciplina, que acompanha o histórico de commits e o desenvolvimento do projeto; tem como ponto de contato com a equipe o monitor responsável pelo grupo Gosling.</td>
+<td>Avalia se o produto atende aos seus usuários-alvo e se cumpre os requisitos previamente delimitados pelo escopo do problema, sendo quem valida e homologa as entregas da equipe.</td>
+</tr>
+</tbody>
+</table>
+<p>Como mostra o Quadro 3, voluntários e ONGs são os usuários diretos e representam as duas pontas da conexão; o cliente valida se a solução atende ao escopo.</p>
+<h4 id="122-alternativas-competitivas">1.2.2 Alternativas competitivas<a class="headerlink" href="#122-alternativas-competitivas" title="Permanent link">&para;</a></h4>
+<p>O Quadro 4 compara o produto às plataformas já existentes que conectam pessoas a oportunidades de trabalho, voluntário ou não.</p>
+<p><strong>Quadro 4 –</strong> Análise de alternativas competitivas</p>
+<table>
+<thead>
+<tr>
+<th><strong>Plataforma</strong></th>
+<th><strong>O que oferece</strong></th>
+<th><strong>Limitações para o problema</strong></th>
+<th><strong>Diferencial do nosso produto</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LinkedIn</strong></td>
+<td>Oferta de trabalhos remunerados e posts como mídias sociais</td>
+<td>Dificuldade de ONGs se cadastrarem e manterem trabalhos não remunerados pois não são destacados na plataforma</td>
+<td>Nosso produto será destinado especificamente para trabalhos voluntários sem fins lucrativos, mantendo um pé de igualdade na visibilidade das vagas</td>
+</tr>
+<tr>
+<td><strong>InfoJobs</strong></td>
+<td>Oferta de trabalhos remunerados</td>
+<td>Dificuldade de ONGs se cadastrarem e manterem trabalhos não remunerados pois não são destacados na plataforma pois não possuem valores significativos de bonificação</td>
+<td>Nosso produto será destinado especificamente para trabalhos voluntários sem fins lucrativos, mantendo um pé de igualdade na visibilidade das vagas</td>
+</tr>
+<tr>
+<td><strong>Atados</strong></td>
+<td>Oferta de trabalhos voluntários</td>
+<td>Não há uma credibilidade por perfil de voluntários ou FAQ das ONGs</td>
+<td>Nosso produto terá a possibilidade de dar credibilidade aos voluntários, aumentando o engajamento por procura de vagas para aumentar o ranking pessoal. Além de possibilitar os comentários de determinadas ONGs em seus perfis.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="13-objetivos-do-produto">1.3 Objetivos do Produto<a class="headerlink" href="#13-objetivos-do-produto" title="Permanent link">&para;</a></h3>
+<p><strong>Objetivo geral:</strong> desenvolver uma aplicação web que facilite o encontro entre pessoas interessadas em trabalho voluntário e organizações que necessitam de voluntários, considerando as necessidades e as disponibilidades de ambas as partes.</p>
+<p><strong>Objetivos específicos:</strong></p>
+<ol>
+<li>Permitir que organizações se cadastrem e publiquem vagas com informações padronizadas.</li>
+</ol>
+<!-- -->
+
+<ol>
+<li>
+<p>Permitir que voluntários se cadastrem e mantenham um perfil com seus interesses e sua disponibilidade.</p>
+</li>
+<li>
+<p>Oferecer busca de vagas por filtros de causa, modalidade, local, carga horária e período.</p>
+</li>
+<li>
+<p>Estruturar a candidatura, com envio de documentação e emissão de comprovante.</p>
+</li>
+<li>
+<p>Conectar o responsável pela vaga na ONG ao voluntário candidato.</p>
+</li>
+<li>
+<p>Entregar uma interface acessível e fácil de usar para pessoas com diferentes níveis de familiaridade digital.</p>
+</li>
+</ol>
+<p>Os objetivos 1 a 3 respondem às causas de informação e compatibilidade; os objetivos 4 e 5, ao processo manual de candidatura; e o objetivo 6, ao foco em UX do tema.</p>
+<h3 id="14-tecnologias-a-serem-utilizadas">1.4 Tecnologias a Serem Utilizadas<a class="headerlink" href="#14-tecnologias-a-serem-utilizadas" title="Permanent link">&para;</a></h3>
+<p><strong>Quadro 5 –</strong> Tecnologias, ferramentas e métodos adotados</p>
+<table>
+<thead>
+<tr>
+<th><strong>Categoria</strong></th>
+<th><strong>Tecnologia / Ferramenta</strong></th>
+<th><strong>Situação</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Versionamento</td>
+<td>Git e GitHub</td>
+<td>Definido</td>
+</tr>
+<tr>
+<td>Documentação</td>
+<td>MkDocs (tema Material), publicado no GitHub Pages via GitHub Actions</td>
+<td>Definido</td>
+</tr>
+<tr>
+<td>Política de branches</td>
+<td>main (produção) e developer (desenvolvimento)</td>
+<td>A definir</td>
+</tr>
+<tr>
+<td><em>Front-end</em></td>
+<td>Javascript, utilizando React</td>
+<td>A definir</td>
+</tr>
+<tr>
+<td><em>Back-end</em></td>
+<td>Python</td>
+<td>A definir</td>
+</tr>
+<tr>
+<td>Banco de dados</td>
+<td>MySQL</td>
+<td>A definir</td>
+</tr>
+<tr>
+<td>Prototipação de interface</td>
+<td>Figma</td>
+<td>A definir</td>
+</tr>
+<tr>
+<td>Gestão do backlog e comunicação</td>
+<td>Discord e Teams. Backlog registrados via md Branch developer</td>
+<td>A definir</td>
+</tr>
+<tr>
+<td>Testes</td>
+<td>Partes de automação no actions e partes de UX.</td>
+<td>A definir</td>
+</tr>
+<tr>
+<td>Métodos e técnicas</td>
+<td>Scrum e XP (seção 3); MoSCoW (seção 4.1); GQM (seção 5.1); Ishikawa (seção 1.1)</td>
+<td>Definido</td>
+</tr>
+</tbody>
+</table>
+<p>O Quadro 5 registra quais tecnologias serão adotadas; o detalhamento de como elas se articulam é objeto do Documento de Arquitetura.</p>
+<h2 id="2-visao-geral-do-projeto">2 VISÃO GERAL DO PROJETO<a class="headerlink" href="#2-visao-geral-do-projeto" title="Permanent link">&para;</a></h2>
+<h3 id="21-ciclo-de-vida-do-projeto-de-desenvolvimento-de-software">2.1 Ciclo de vida do projeto de desenvolvimento de software<a class="headerlink" href="#21-ciclo-de-vida-do-projeto-de-desenvolvimento-de-software" title="Permanent link">&para;</a></h3>
+<p>O projeto adota um <strong>ciclo de vida iterativo e incremental</strong>, em sprints de 7 dias, de quarta a terça-feira. A Figura 2 instancia esse ciclo conforme o modelo apresentado na disciplina.</p>
+<p><strong>Figura 2 –</strong> Ciclo de vida adotado no projeto</p>
+<p><a href="../assets/visao/figura2-ciclo-de-vida.png"><img alt="Ciclo de vida do projeto: metodologia ágil, Scrum, XP, métodos e ferramentas." src="../assets/visao/figura2-ciclo-de-vida.png" /></a></p>
+<ul>
+<li>
+<p><strong>Metodologia:</strong> ágil, baseada em Scrum e XP.</p>
+</li>
+<li>
+<p><strong>Processo:</strong> sprints com planejamento, desenvolvimento, revisão e retrospectiva (seção 3).</p>
+</li>
+<li>
+<p><strong>Procedimentos:</strong> cerimônias do Scrum, conceito de preparado (DoR) e conceito de pronto (DoD).</p>
+</li>
+<li>
+<p><strong>Métodos:</strong> MoSCoW, GQM, diagrama de Ishikawa e testes de usabilidade.</p>
+</li>
+<li>
+<p><strong>Ferramentas:</strong> as listadas no Quadro 5.</p>
+</li>
+</ul>
+<p>A escolha se justifica pelo contexto: um projeto acadêmico de um semestre, com equipe de quatro pessoas, prazo fixo e requisitos que ainda dependem de pesquisa com usuários. Iterações curtas permitem validar a interface com usuários a cada incremento, o que é indispensável para o foco em UX, e antecipam a detecção de problemas de escopo e de inexperiência com as tecnologias (riscos R2 e R3 do Quadro 8).</p>
+<h3 id="22-organizacao-do-projeto">2.2 Organização do Projeto<a class="headerlink" href="#22-organizacao-do-projeto" title="Permanent link">&para;</a></h3>
+<p>O Quadro 6 distribui os papéis do projeto, sem relação de hierarquia entre eles; um mesmo integrante pode acumular papéis.</p>
+<p><strong>Quadro 6 –</strong> Papéis e responsabilidades</p>
+<table>
+<thead>
+<tr>
+<th><strong>Papel</strong></th>
+<th><strong>Atribuições</strong></th>
+<th><strong>Responsável</strong></th>
+<th><strong>Participantes</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Desenvolvedor</strong></td>
+<td>Codificar o produto e os testes unitários, refatorar e revisar código.</td>
+<td>Grupo</td>
+<td>Cauã, Juan, Miguel, Rafael</td>
+</tr>
+<tr>
+<td><strong>Dono do Produto (P.O.)</strong></td>
+<td>Manter e priorizar o backlog, organizar o escopo das sprints e validar as entregas.</td>
+<td>Professor e Monitores</td>
+<td>Ajax, Sophia</td>
+</tr>
+<tr>
+<td><strong>Scrum Master</strong></td>
+<td>Facilitar as cerimônias e remover impedimentos.</td>
+<td>Líder do Grupo</td>
+<td>Juan</td>
+</tr>
+<tr>
+<td><strong>Analista de Qualidade</strong></td>
+<td>Garantir o conceito de pronto, inspecionar o código e revisar os testes.</td>
+<td>Grupo</td>
+<td>Cauã, Juan, Miguel, Rafael</td>
+</tr>
+<tr>
+<td><strong>Designer / UX</strong></td>
+<td>Elaborar protótipos e conduzir os testes de usabilidade.</td>
+<td>Grupo</td>
+<td>Cauã, Juan, Miguel, Rafael</td>
+</tr>
+<tr>
+<td><strong>Cliente</strong></td>
+<td>Validar requisitos, participar das revisões e homologar as entregas.</td>
+<td>Professor da disciplina</td>
+<td>Monitor responsável pelo grupo Gosling</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-planejamento-das-fases-eou-iteracoes-do-projeto">2.3 Planejamento das Fases e/ou Iterações do Projeto<a class="headerlink" href="#23-planejamento-das-fases-eou-iteracoes-do-projeto" title="Permanent link">&para;</a></h3>
+<p>O projeto é organizado em 11 sprints de 7 dias, de quarta a terça-feira, alinhadas ao cronograma da disciplina. As Sprints 1 a 5 cobrem a documentação: entrega do Documento de Visão em 30/09 e do Documento de Arquitetura em 07/10, com apresentações em 14/10 e 19/10. As Sprints 6 a 11 cobrem o desenvolvimento, do kick-off em 26/10 à apresentação do software em funcionamento. A Tabela 3 é atualizada ao final de cada sprint, com o percentual de conclusão em intervalos mínimos de 10%.</p>
+<p><strong>Tabela 3 –</strong> Planejamento das sprints</p>
+<table>
+<thead>
+<tr>
+<th><strong>Sprint</strong></th>
+<th><strong>Produto (Entrega)</strong></th>
+<th><strong>Data início</strong></th>
+<th><strong>Data fim</strong></th>
+<th><strong>Entregável(eis)</strong></th>
+<th><strong>Responsáveis</strong></th>
+<th><strong>% conclusão</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sprint 1</td>
+<td>Definição do produto</td>
+<td>16/09/2026</td>
+<td>22/09/2026</td>
+<td>DV (versão inicial) e Ishikawa</td>
+<td>Grupo</td>
+<td></td>
+</tr>
+<tr>
+<td>Sprint 2</td>
+<td>Conclusão do Documento de Visão</td>
+<td>23/09/2026</td>
+<td>29/09/2026</td>
+<td>DV (entrega em 30/09) e BLP</td>
+<td>Grupo</td>
+<td></td>
+</tr>
+<tr>
+<td>Sprint 3</td>
+<td>Documento de Arquitetura</td>
+<td>30/09/2026</td>
+<td>06/10/2026</td>
+<td>DA (entrega em 07/10)</td>
+<td>Grupo</td>
+<td></td>
+</tr>
+<tr>
+<td>Sprint 4</td>
+<td>Protótipo e apresentação do DV</td>
+<td>07/10/2026</td>
+<td>13/10/2026</td>
+<td>PROTO; apresentação do DV (14/10)</td>
+<td>Grupo</td>
+<td></td>
+</tr>
+<tr>
+<td>Sprint 5</td>
+<td>Apresentação do DA e preparação do ambiente</td>
+<td>14/10/2026</td>
+<td>20/10/2026</td>
+<td>Apresentação do DA (19/10); ambiente configurado</td>
+<td>Grupo</td>
+<td></td>
+</tr>
+<tr>
+<td>Sprint 6</td>
+<td>Kick-off do desenvolvimento: cadastro e autenticação (CN01)</td>
+<td>21/10/2026</td>
+<td>27/10/2026</td>
+<td>Incremento e RT</td>
+<td>Grupo</td>
+<td></td>
+</tr>
+<tr>
+<td>Sprint 7</td>
+<td>Perfis de voluntário e de organização (CN02 e CN03)</td>
+<td>28/10/2026</td>
+<td>03/11/2026</td>
+<td>Incremento e RT</td>
+<td>Grupo</td>
+<td></td>
+</tr>
+<tr>
+<td>Sprint 8</td>
+<td>Publicação e gestão de vagas (CN04)</td>
+<td>04/11/2026</td>
+<td>10/11/2026</td>
+<td>Incremento e RT; ponto de controle (09/11 ou 11/11)</td>
+<td>Grupo</td>
+<td></td>
+</tr>
+<tr>
+<td>Sprint 9</td>
+<td>Busca e candidatura (CN05 e CN06)</td>
+<td>11/11/2026</td>
+<td>17/11/2026</td>
+<td>Incremento e RT; inspeção (16/11)</td>
+<td>Grupo</td>
+<td></td>
+</tr>
+<tr>
+<td>Sprint 10</td>
+<td>Triagem, conexão e comprovante (CN07 e CN08); correção dos defeitos da inspeção</td>
+<td>18/11/2026</td>
+<td>24/11/2026</td>
+<td>Incremento e RT</td>
+<td>Grupo</td>
+<td></td>
+</tr>
+<tr>
+<td>Sprint 11</td>
+<td>Ajustes de UX e entrega final</td>
+<td>25/11/2026</td>
+<td>01/12/2026</td>
+<td>Incremento e RU; apresentação do software (30/11 ou 02/12)</td>
+<td>Grupo</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Legenda: DV = Documento de Visão; DA = Documento de Arquitetura; BLP = backlog do produto; PROTO = protótipo de interface; RT = relatório de testes; RU = relatório de usabilidade; CN = cenário (Tabela 5).</p>
+<h3 id="24-matriz-de-comunicacao">2.4 Matriz de Comunicação<a class="headerlink" href="#24-matriz-de-comunicacao" title="Permanent link">&para;</a></h3>
+<p>O Quadro 7 apresenta a estratégia de comunicação usada para acompanhar o progresso do projeto.</p>
+<p><strong>Quadro 7 –</strong> Matriz de comunicação</p>
+<table>
+<thead>
+<tr>
+<th><strong>Descrição</strong></th>
+<th><strong>Área / Envolvidos</strong></th>
+<th><strong>Periodicidade</strong></th>
+<th><strong>Produtos gerados</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Acompanhamento das atividades, dos riscos e das pendências</td>
+<td>Equipe do projeto</td>
+<td>Semanal</td>
+<td>Ata de reunião; relatório de situação</td>
+</tr>
+<tr>
+<td>Planejamento da sprint</td>
+<td>Equipe e P.O.</td>
+<td>Início de cada sprint</td>
+<td>Backlog da sprint</td>
+</tr>
+<tr>
+<td>Revisão e retrospectiva da sprint</td>
+<td>Equipe, P.O. e cliente</td>
+<td>Fim de cada sprint</td>
+<td>Incremento validado; ações de melhoria</td>
+</tr>
+<tr>
+<td>Comunicação da situação do projeto</td>
+<td>Equipe, professor e monitor</td>
+<td>Semanal</td>
+<td>Ata de reunião; relatório de situação</td>
+</tr>
+</tbody>
+</table>
+<p>Canais utilizados: Discord.</p>
+<h3 id="25-gerenciamento-de-riscos">2.5 Gerenciamento de Riscos<a class="headerlink" href="#25-gerenciamento-de-riscos" title="Permanent link">&para;</a></h3>
+<p>Os riscos são identificados, classificados pelo grau de exposição (probabilidade × impacto) e revisados a cada sprint, na retrospectiva. Para cada risco há um plano de mitigação, que busca evitá-lo, e um de contingência, aplicado caso ele ocorra, conforme o Quadro 8.</p>
+<p><strong>Quadro 8 –</strong> Riscos do projeto</p>
+<table>
+<thead>
+<tr>
+<th><strong>Risco</strong></th>
+<th><strong>Exposição</strong></th>
+<th><strong>Mitigação</strong></th>
+<th><strong>Contingência</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>R1</strong> - Afastamento ou desistência de um integrante</td>
+<td>Alta</td>
+<td>Código coletivo, documentação atualizada e programação em par.</td>
+<td>Redistribuir tarefas e renegociar o escopo da sprint.</td>
+</tr>
+<tr>
+<td><strong>R2</strong> - Inexperiência com as tecnologias escolhidas</td>
+<td>Alta</td>
+<td>Escolher tecnologias conhecidas pela equipe e reservar tempo de estudo na Sprint 5.</td>
+<td>Simplificar a solução técnica e adiar requisitos Could.</td>
+</tr>
+<tr>
+<td><strong>R3</strong> - Escopo grande demais para o semestre</td>
+<td>Alta</td>
+<td>Priorizar com MoSCoW e fechar o MVP apenas com requisitos Must.</td>
+<td>Acionar o replanejamento (seção 2.6) e cortar requisitos Should e Could.</td>
+</tr>
+<tr>
+<td><strong>R4</strong> - Conflito de agenda entre os integrantes</td>
+<td>Média</td>
+<td>Fixar horários de reunião e registrar a comunicação assíncrona.</td>
+<td>Ajustar a carga da sprint à disponibilidade real.</td>
+</tr>
+<tr>
+<td><strong>R5</strong> - Indisponibilidade do cliente para validar entregas</td>
+<td>Média</td>
+<td>Agendar validações com antecedência e registrar requisitos por escrito.</td>
+<td>P.O. valida provisoriamente, com homologação posterior em ata.</td>
+</tr>
+<tr>
+<td><strong>R6</strong> - Interface não atender ao foco em UX</td>
+<td>Alta</td>
+<td>Prototipar antes de codificar e testar a usabilidade a cada incremento.</td>
+<td>Usar a Sprint 11 para corrigir os problemas encontrados.</td>
+</tr>
+<tr>
+<td><strong>R7</strong> - Requisitos baseados em hipóteses, sem contato direto com ONGs e voluntários</td>
+<td>Alta</td>
+<td>Basear os requisitos em dados públicos e em vagas reais; testar o protótipo com potenciais voluntários a cada incremento.</td>
+<td>Revisar o backlog e reprogramar as funcionalidades cujas hipóteses não se confirmarem.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="26-criterios-de-replanejamento">2.6 Critérios de Replanejamento<a class="headerlink" href="#26-criterios-de-replanejamento" title="Permanent link">&para;</a></h3>
+<p>O projeto é replanejado quando:</p>
+<ul>
+<li>
+<p>menos de 70% dos itens comprometidos na sprint são concluídos;</p>
+</li>
+<li>
+<p>um risco de exposição alta do Quadro 8 se concretiza;</p>
+</li>
+<li>
+<p>a capacidade da equipe diminui, por afastamento ou indisponibilidade de integrantes;</p>
+</li>
+<li>
+<p>um requisito Must é incluído, alterado ou removido pelo cliente;</p>
+</li>
+<li>
+<p>uma entrega é rejeitada na revisão da sprint ou reprovada em teste de usabilidade.</p>
+</li>
+</ul>
+<p>Todo replanejamento gera uma nova versão deste documento, registrada na Tabela 2.</p>
+<h2 id="3-processo-de-desenvolvimento-de-software">3 PROCESSO DE DESENVOLVIMENTO DE SOFTWARE<a class="headerlink" href="#3-processo-de-desenvolvimento-de-software" title="Permanent link">&para;</a></h2>
+<p>O processo segue o <strong>Scrum</strong>, com os papéis do Quadro 6, e incorpora práticas do <strong>XP</strong>. Ele é um guia para a equipe, não uma regra rígida, e instancia o ciclo de vida da seção 2.1. A Figura 3 ilustra o fluxo de trabalho.</p>
+<p><strong>Figura 3 –</strong> Fluxo de trabalho do processo de desenvolvimento</p>
+<p><a href="../assets/visao/figura3-processo-de-desenvolvimento.png"><img alt="Fluxo de desenvolvimento: refinamento, planejamento, design, desenvolvimento, verificação, revisão e retrospectiva." src="../assets/visao/figura3-processo-de-desenvolvimento.png" /></a></p>
+<h3 id="31-scrum-adaptado">3.1 Scrum adaptado<a class="headerlink" href="#31-scrum-adaptado" title="Permanent link">&para;</a></h3>
+<p>Cada sprint percorre as atividades abaixo, cada uma com um responsável:</p>
+<ol>
+<li><strong>Refinamento do backlog</strong> (P.O., contínuo): detalhar e priorizar os itens.</li>
+</ol>
+<!-- -->
+
+<ol>
+<li><strong>Planejamento da sprint</strong> (equipe e P.O.): selecionar os itens e dividi-los em tarefas.</li>
+</ol>
+<!-- -->
+
+<ol>
+<li><strong>Design de interface</strong> (Designer/UX): prototipar os itens antes de codificar.</li>
+</ol>
+<!-- -->
+
+<ol>
+<li><strong>Desenvolvimento</strong> (Desenvolvedores): codificar e testar, com integração contínua.</li>
+</ol>
+<!-- -->
+
+<ol>
+<li><strong>Verificação</strong> (Analista de Qualidade): executar o roteiro de testes e revisar o código.</li>
+</ol>
+<!-- -->
+
+<ol>
+<li><strong>Revisão da sprint</strong> (equipe, P.O. e cliente): apresentar e validar o incremento.</li>
+</ol>
+<!-- -->
+
+<ol>
+<li><strong>Retrospectiva</strong> (Scrum Master): avaliar o processo e atualizar riscos e métricas.</li>
+</ol>
+<h3 id="32-praticas-do-xp-adotadas">3.2 Práticas do XP adotadas<a class="headerlink" href="#32-praticas-do-xp-adotadas" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>Programação em par</strong> nas tarefas mais complexas, disseminando conhecimento (riscos R1 e R2).</p>
+</li>
+<li>
+<p><strong>Código coletivo</strong>: qualquer integrante pode alterar qualquer parte do código, mediante revisão.</p>
+</li>
+<li>
+<p><strong>Integração contínua</strong> na branch developer, com <em>pull requests</em> revisados antes do <em>merge</em>.</p>
+</li>
+<li>
+<p><strong>Refatoração</strong> contínua, sem alterar o comportamento do sistema.</p>
+</li>
+<li>
+<p><strong>Testes automatizados</strong> escritos junto com cada funcionalidade.</p>
+</li>
+<li>
+<p><strong>Ritmo sustentável</strong>: a carga de cada sprint é dimensionada pela velocidade medida.</p>
+</li>
+</ul>
+<h3 id="33-conceito-de-preparado-e-conceito-de-pronto">3.3 Conceito de preparado e conceito de pronto<a class="headerlink" href="#33-conceito-de-preparado-e-conceito-de-pronto" title="Permanent link">&para;</a></h3>
+<p><strong>Preparado (DoR):</strong> o item só entra na sprint se tiver critérios de aceitação claros, prioridade MoSCoW definida e cenário associado (Tabela 5).</p>
+<p><strong>Pronto (DoD):</strong> o item só é concluído quando está integrado à branch developer por <em>pull request</em> revisado, tem testes automatizados passando, atende aos critérios de aceitação e passou pelo roteiro de testes da seção 6.2.</p>
+<h2 id="4-declaracao-de-escopo-do-projeto">4 DECLARAÇÃO DE ESCOPO DO PROJETO<a class="headerlink" href="#4-declaracao-de-escopo-do-projeto" title="Permanent link">&para;</a></h2>
+<p>O escopo do produto corresponde a uma <strong>aplicação web</strong> na qual será possível:</p>
+<ul>
+<li>
+<p>realizar o <strong>cadastro de uma ONG</strong>, que poderá cadastrar vagas de trabalho voluntário com as informações: vaga, descrição da vaga, descrição das atividades, área de atuação/causa, modalidade (presencial, remoto ou híbrido), local, carga horária, período (manhã, tarde, noite ou madrugada) e número de vagas;</p>
+</li>
+<li>
+<p>realizar o <strong>cadastro de voluntários</strong>, que poderão buscar vagas dentro de seus interesses, a partir de filtros sobre as informações básicas de uma vaga;</p>
+</li>
+<li>
+<p>realizar a <strong>candidatura à vaga</strong>, encaminhando a documentação necessária e recebendo um comprovante;</p>
+</li>
+<li>
+<p>realizar a <strong>ponte de conexão</strong> entre o responsável pela vaga na ONG e o voluntário, para as demais tratativas.</p>
+</li>
+</ul>
+<h3 id="41-backlog-do-produto">4.1 Backlog do produto<a class="headerlink" href="#41-backlog-do-produto" title="Permanent link">&para;</a></h3>
+<p>O backlog é organizado por perfis (seção 4.2) e cenários (seção 4.3) e detalhado na Tabela 6 (seção 4.4). A priorização usa a técnica MoSCoW, com o seguinte significado para este produto, a ser validado pelo P.O.:</p>
+<ul>
+<li>
+<p><strong>Must:</strong> sem o requisito, o produto não responde à questão-problema do Quadro 1; compõe o MVP.</p>
+</li>
+<li>
+<p><strong>Should:</strong> aumenta o valor entregue, mas sua ausência não impede o fluxo principal.</p>
+</li>
+<li>
+<p><strong>Could:</strong> agrega conveniência; só é feito se sobrar capacidade e é o primeiro a sair no replanejamento.</p>
+</li>
+</ul>
+<p>Como a equipe não tem acesso direto a ONGs e voluntários para aplicar questionários ou entrevistas, os requisitos foram elicitados a partir de fontes indiretas, conforme o Quadro 9, e são tratados como hipóteses, validadas de forma incremental nos testes de usabilidade com o protótipo e nas revisões com o P.O.</p>
+<p><strong>Quadro 9 –</strong> Técnicas de elicitação utilizadas</p>
+<table>
+<thead>
+<tr>
+<th><strong>Fonte</strong></th>
+<th><strong>Técnica de elicitação</strong></th>
+<th><strong>Justificativa</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Voluntário</strong></td>
+<td>Análise documental (dados públicos) e personas</td>
+<td>Caracteriza o perfil e a disponibilidade do voluntário sem contato direto; as personas representam esse público nas decisões de interface.</td>
+</tr>
+<tr>
+<td><strong>ONG / Organização</strong></td>
+<td>Análise de conteúdo de vagas publicadas</td>
+<td>As vagas já divulgadas mostram quais informações as organizações usam e o que costuma faltar, base dos campos padronizados (RF07).</td>
+</tr>
+<tr>
+<td><strong>Equipe</strong></td>
+<td><em>Brainstorming</em> e análise de concorrentes</td>
+<td>Base do diagrama de Ishikawa (Figura 1) e do Quadro 4.</td>
+</tr>
+<tr>
+<td><strong>Usuários representativos</strong></td>
+<td>Prototipação e teste de usabilidade</td>
+<td>Valida as hipóteses de interface com potenciais voluntários (colegas e pessoas próximas), conforme a métrica M6.</td>
+</tr>
+<tr>
+<td><strong>Cliente / P.O.</strong></td>
+<td>Reuniões de validação</td>
+<td>Confirmam as prioridades e o escopo de cada sprint.</td>
+</tr>
+</tbody>
+</table>
+<p>Foram analisadas 5 vagas de voluntariado publicadas nas plataformas <a href="https://www.linkedin.com">https://www.linkedin.com</a>; <a href="https://voluntariadoemacao.sejus.df.gov.br/">https://voluntariadoemacao.sejus.df.gov.br/</a>, entre 17/09/2026 e 30/09/2026.</p>
+<h3 id="42-perfis">4.2 Perfis<a class="headerlink" href="#42-perfis" title="Permanent link">&para;</a></h3>
+<p>A Tabela 4 apresenta os perfis de acesso do sistema e suas permissões.</p>
+<p><strong>Tabela 4 –</strong> Perfis de acesso</p>
+<table>
+<thead>
+<tr>
+<th><strong>#</strong></th>
+<th><strong>Nome do perfil</strong></th>
+<th><strong>Características do perfil</strong></th>
+<th><strong>Permissões de acesso</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Visitante</strong></td>
+<td>Usuário não autenticado.</td>
+<td>Ver e buscar vagas; cadastrar-se como voluntário ou organização.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Voluntário</strong></td>
+<td>Pessoa física autenticada.</td>
+<td>Permissões do Visitante; manter o próprio perfil; candidatar-se e enviar documentos; acompanhar candidaturas; emitir comprovante; ver o contato do responsável após o aceite.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>ONG / Organização / Responsável por Projetos Sociais</strong></td>
+<td>Organização autenticada que publica vagas.</td>
+<td>Manter o perfil da organização; criar, editar e encerrar vagas; triar, aceitar ou recusar candidaturas; ver o contato dos voluntários aceitos.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Administrador</strong></td>
+<td>Mantém os perfis de acesso da aplicação.</td>
+<td>Manter usuários; homologar organizações; moderar vagas irregulares.</td>
+</tr>
+</tbody>
+</table>
+<p>Os perfis 2 e 3 são exclusivos em uma mesma conta, pois têm fluxos e telas distintos.</p>
+<h3 id="43-cenarios">4.3 Cenários<a class="headerlink" href="#43-cenarios" title="Permanent link">&para;</a></h3>
+<p>A Tabela 5 agrupa as funcionalidades em cenários e indica a sprint prevista para cada um.</p>
+<p><strong>Tabela 5 –</strong> Cenários funcionais</p>
+<p><strong>Sistema: VolunJá - Cenários funcionais</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>Numeração do cenário</strong></th>
+<th><strong>Nome do cenário</strong></th>
+<th><strong>Sprints</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CN01</td>
+<td>Cadastro e autenticação de usuários</td>
+<td>Sprint 6</td>
+</tr>
+<tr>
+<td>CN02</td>
+<td>Gestão do perfil do voluntário</td>
+<td>Sprint 7</td>
+</tr>
+<tr>
+<td>CN03</td>
+<td>Gestão do perfil da organização</td>
+<td>Sprint 7</td>
+</tr>
+<tr>
+<td>CN04</td>
+<td>Publicação e gestão de vagas pela ONG</td>
+<td>Sprint 8</td>
+</tr>
+<tr>
+<td>CN05</td>
+<td>Busca e visualização de vagas</td>
+<td>Sprint 9</td>
+</tr>
+<tr>
+<td>CN06</td>
+<td>Candidatura do voluntário à vaga</td>
+<td>Sprint 9</td>
+</tr>
+<tr>
+<td>CN07</td>
+<td>Triagem de candidaturas e conexão entre ONG e voluntário</td>
+<td>Sprint 10</td>
+</tr>
+<tr>
+<td>CN08</td>
+<td>Comprovação da atividade voluntária</td>
+<td>Sprint 10</td>
+</tr>
+<tr>
+<td>CN09</td>
+<td>Administração e moderação da plataforma</td>
+<td>Sprints 9 a 11</td>
+</tr>
+</tbody>
+</table>
+<h3 id="44-tabela-de-backlog-do-produto">4.4 Tabela de Backlog do produto<a class="headerlink" href="#44-tabela-de-backlog-do-produto" title="Permanent link">&para;</a></h3>
+<p>Os requisitos <strong>Must</strong> formam o MVP e cobrem o caminho completo da questão-problema: a ONG publica a vaga (RF07), o voluntário a encontra por filtros (RF12), candidata-se com documentos (RF15 e RF16), é triado (RF18), recebe o comprovante (RF21) e é conectado ao responsável (RF20). As <em>user stories</em> seguem o formato "Eu, como &lt;perfil&gt;, quero &lt;ação&gt;, para &lt;benefício&gt;" e ficam registradas no backlog em markdown.</p>
+<p><strong>Tabela 6 –</strong> Backlog do produto</p>
+<p><strong>Sistema: VolunJá - Backlog do produto</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>Numeração (cenário / requisito)</strong></th>
+<th><strong>Sprint</strong></th>
+<th><strong>Nome do requisito</strong></th>
+<th><strong>Tipo de requisito (funcional / não funcional)</strong></th>
+<th><strong>Priorização (Must, Should, Could)</strong></th>
+<th><strong>Descrição sucinta do requisito</strong></th>
+<th><strong><em>User stories</em> (U.S.) associadas</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CN01-RF01</td>
+<td>6</td>
+<td>Cadastro de voluntário</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Criar conta de pessoa física com nome, e-mail, senha, CPF, localização e contato.</td>
+<td>US01</td>
+</tr>
+<tr>
+<td>CN01-RF02</td>
+<td>6</td>
+<td>Cadastro de organização</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Criar conta de ONG com razão social, CNPJ, área de atuação, endereço e responsável.</td>
+<td>US02</td>
+</tr>
+<tr>
+<td>CN01-RF03</td>
+<td>6</td>
+<td>Cadastro de Projeto Social</td>
+<td>Funcional</td>
+<td>Could</td>
+<td>Criar conta de um responsável por um projeto social. Com campos de nome, CPF, e-mail, localização, área de atuação, causa e endereço responsável</td>
+<td>US03</td>
+</tr>
+<tr>
+<td>CN01-RF04</td>
+<td>6</td>
+<td>Autenticação de usuários</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Entrar e sair com e-mail e senha, direcionando o usuário conforme seu perfil.</td>
+<td>US04</td>
+</tr>
+<tr>
+<td>CN01-RF05</td>
+<td>A definir</td>
+<td>Recuperação de senha</td>
+<td>Funcional</td>
+<td>Should</td>
+<td>Redefinir a senha por link enviado ao e-mail cadastrado.</td>
+<td>US05</td>
+</tr>
+<tr>
+<td>CN02-RF06</td>
+<td>7</td>
+<td>Manter perfil do voluntário</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Editar dados pessoais, áreas de interesse e disponibilidade (dias, período e carga horária).</td>
+<td>US06</td>
+</tr>
+<tr>
+<td>CN03-RF07</td>
+<td>7</td>
+<td>Manter perfil da organização</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Editar os dados institucionais, a descrição da ONG e os canais de contato.</td>
+<td>US07</td>
+</tr>
+<tr>
+<td>CN04-RF08</td>
+<td>8</td>
+<td>Cadastrar vaga de voluntariado</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Publicar vaga com os campos padronizados: descrição, atividades, causa, modalidade, local, carga horária, período e nº de vagas.</td>
+<td>US08</td>
+</tr>
+<tr>
+<td>CN04-RF09</td>
+<td>8</td>
+<td>Editar e encerrar vaga</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Alterar os dados de uma vaga publicada e encerrá-la quando preenchida ou cancelada.</td>
+<td>US09</td>
+</tr>
+<tr>
+<td>CN04-RF10</td>
+<td>8</td>
+<td>Listar vagas da organização</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Painel da ONG com suas vagas, a situação de cada uma e o número de candidaturas.</td>
+<td>US10</td>
+</tr>
+<tr>
+<td>CN04-RF11</td>
+<td>A definir</td>
+<td>Definir documentação exigida</td>
+<td>Funcional</td>
+<td>Should</td>
+<td>Indicar os documentos que o voluntário deve enviar ao se candidatar.</td>
+<td>US11</td>
+</tr>
+<tr>
+<td>CN05-RF12</td>
+<td>A definir</td>
+<td>Listar vagas disponíveis</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Listar publicamente as vagas abertas, com suas informações essenciais.</td>
+<td>US12</td>
+</tr>
+<tr>
+<td>CN05-RF13</td>
+<td>A definir</td>
+<td>Buscar vagas por filtros</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Filtrar vagas por área de atuação/causa, modalidade, local, carga horária e período.</td>
+<td>US13</td>
+</tr>
+<tr>
+<td>CN05-RF14</td>
+<td>A definir</td>
+<td>Visualizar detalhes da vaga</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Exibir a página completa da vaga e os dados públicos da organização.</td>
+<td>US14</td>
+</tr>
+<tr>
+<td>CN05-RF15</td>
+<td>A definir</td>
+<td>Recomendar vagas compatíveis</td>
+<td>Funcional</td>
+<td>Could</td>
+<td>Sugerir vagas compatíveis com os interesses e a disponibilidade do voluntário.</td>
+<td>US15</td>
+</tr>
+<tr>
+<td>CN06-RF16</td>
+<td>A definir</td>
+<td>Candidatar-se a uma vaga</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Registrar o interesse do voluntário em uma vaga específica.</td>
+<td>US16</td>
+</tr>
+<tr>
+<td>CN06-RF17</td>
+<td>A definir</td>
+<td>Enviar documentação da candidatura</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Enviar os documentos exigidos pela organização no ato da candidatura.</td>
+<td>US17</td>
+</tr>
+<tr>
+<td>CN06-RF18</td>
+<td>A definir</td>
+<td>Acompanhar candidaturas</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Consultar a situação das próprias candidaturas e cancelá-las.</td>
+<td>US18</td>
+</tr>
+<tr>
+<td>CN07-RF19</td>
+<td>A definir</td>
+<td>Triar candidaturas recebidas</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Ver os candidatos de uma vaga, com perfil e documentos, e aceitar ou recusar cada um.</td>
+<td>US19</td>
+</tr>
+<tr>
+<td>CN07-RF20</td>
+<td>A definir</td>
+<td>Notificar resultado da candidatura</td>
+<td>Funcional</td>
+<td>Should</td>
+<td>Avisar o voluntário do aceite ou da recusa de sua candidatura.</td>
+<td>US20</td>
+</tr>
+<tr>
+<td>CN07-RF21</td>
+<td>A definir</td>
+<td>Disponibilizar contato do responsável</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Após o aceite, liberar ao voluntário o contato do responsável pela vaga, e vice-versa.</td>
+<td>US21</td>
+</tr>
+<tr>
+<td>CN08-RF22</td>
+<td>A definir</td>
+<td>Emitir comprovante de candidatura</td>
+<td>Funcional</td>
+<td>Must</td>
+<td>Gerar comprovante do registro da candidatura do voluntário na vaga.</td>
+<td>US22</td>
+</tr>
+<tr>
+<td>CN08-RF23</td>
+<td>A definir</td>
+<td>Registrar histórico de voluntariado</td>
+<td>Funcional</td>
+<td>Could</td>
+<td>Manter no perfil o histórico de atividades e de horas de voluntariado.</td>
+<td>US23</td>
+</tr>
+<tr>
+<td>CN09-RF24</td>
+<td>A definir</td>
+<td>Homologar cadastro de organizações</td>
+<td>Funcional</td>
+<td>Should</td>
+<td>Validar o cadastro de uma ONG antes de suas vagas serem publicadas.</td>
+<td>US24</td>
+</tr>
+<tr>
+<td>CN09-RF25</td>
+<td>A definir</td>
+<td>Moderar vagas e usuários</td>
+<td>Funcional</td>
+<td>Could</td>
+<td>Remover vagas irregulares e suspender contas a partir de denúncias, com um botão de denúncia que alerta o painel do administrador do sistema.</td>
+<td>US25</td>
+</tr>
+<tr>
+<td>RNF01</td>
+<td>A definir</td>
+<td>Usabilidade</td>
+<td>Não funcional</td>
+<td>Must</td>
+<td>Usuário sem treinamento conclui busca e candidatura, conforme a meta da métrica M6.</td>
+<td>-</td>
+</tr>
+<tr>
+<td>RNF02</td>
+<td>A definir</td>
+<td>Responsividade</td>
+<td>Não funcional</td>
+<td>Must</td>
+<td>Adaptar-se a telas de celular, <em>tablet</em> e <em>desktop</em>.</td>
+<td>-</td>
+</tr>
+<tr>
+<td>RNF03</td>
+<td>A definir</td>
+<td>Acessibilidade</td>
+<td>Não funcional</td>
+<td>Should</td>
+<td>Seguir boas práticas de acessibilidade web (contraste, textos alternativos, teclado).</td>
+<td>-</td>
+</tr>
+<tr>
+<td>RNF04</td>
+<td>A definir</td>
+<td>Segurança dos dados</td>
+<td>Não funcional</td>
+<td>Must</td>
+<td>Senhas cifradas; documentos visíveis apenas à ONG da vaga e ao próprio voluntário.</td>
+<td>-</td>
+</tr>
+<tr>
+<td>RNF05</td>
+<td>A definir</td>
+<td>Controle de acesso por perfil</td>
+<td>Não funcional</td>
+<td>Must</td>
+<td>Cada perfil da Tabela 4 acessa apenas as funcionalidades permitidas.</td>
+<td>-</td>
+</tr>
+<tr>
+<td>RNF06</td>
+<td>A definir</td>
+<td>Desempenho da busca</td>
+<td>Não funcional</td>
+<td>Should</td>
+<td>Apresentar o resultado da busca com filtros em tempo adequado à interação.</td>
+<td>-</td>
+</tr>
+<tr>
+<td>RNF07</td>
+<td>A definir</td>
+<td>Manutenibilidade</td>
+<td>Não funcional</td>
+<td>Should</td>
+<td>Seguir os padrões de código definidos no Documento de Arquitetura.</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<p>Nota: os requisitos com sprint "A definir" serão alocados no planejamento de cada sprint, dentro do prazo do projeto (até a Sprint 11).</p>
+<h2 id="5-metricas-e-medicoes">5 MÉTRICAS E MEDIÇÕES<a class="headerlink" href="#5-metricas-e-medicoes" title="Permanent link">&para;</a></h2>
+<h3 id="51-gqm-de-medicoes">5.1 GQM de medições<a class="headerlink" href="#51-gqm-de-medicoes" title="Permanent link">&para;</a></h3>
+<p>As medições seguem a abordagem <strong>GQM</strong> (<em>Goal Question Metric</em>): cada objetivo do Quadro 10 gera questões, respondidas pelas métricas do Quadro 11.</p>
+<p><strong>Quadro 10 –</strong> Objetivos de medição</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Objetivo 1: acompanhamento do projeto</strong></th>
+<th><strong>Objetivo 2: qualidade do produto</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Analisar</strong></td>
+<td>O andamento das sprints</td>
+<td>O produto em construção</td>
+</tr>
+<tr>
+<td><strong>Com o propósito de</strong></td>
+<td>Monitorar e controlar</td>
+<td>Avaliar</td>
+</tr>
+<tr>
+<td><strong>Com respeito a</strong></td>
+<td>Capacidade de entrega e aderência ao planejamento</td>
+<td>Testes, defeitos e usabilidade</td>
+</tr>
+<tr>
+<td><strong>Do ponto de vista de</strong></td>
+<td>Equipe e Dono do Produto</td>
+<td>Analista de Qualidade e usuários finais</td>
+</tr>
+<tr>
+<td><strong>No contexto de</strong></td>
+<td>Disciplina MDS, semestre 2026.2, grupo Gosling</td>
+<td>Incrementos entregues a cada sprint</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Quadro 11 –</strong> Questões, métricas e formas de análise</p>
+<table>
+<thead>
+<tr>
+<th><strong>Questão</strong></th>
+<th><strong>Métrica</strong></th>
+<th><strong>Cálculo e unidade</strong></th>
+<th><strong>Valor esperado</strong></th>
+<th><strong>Forma de análise</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A equipe entrega o que se comprometeu a entregar? (obj. 1)</td>
+<td>M1 - Aderência ao planejado</td>
+<td>(Itens concluídos ÷ itens comprometidos) × 100, em %</td>
+<td>Maior ou igual a 70%</td>
+<td>Abaixo da meta, aciona o replanejamento (seção 2.6).</td>
+</tr>
+<tr>
+<td>A equipe mantém um ritmo estável? (obj. 1)</td>
+<td>M2 - Velocidade</td>
+<td>Pontos concluídos por sprint</td>
+<td>Variação máxima de 20% a partir da Sprint 7</td>
+<td>Base para dimensionar a sprint seguinte.</td>
+</tr>
+<tr>
+<td>A participação está equilibrada? (obj. 1)</td>
+<td>M3 - Contribuições por integrante</td>
+<td><em>Commits</em> e <em>pull requests</em> revisados, em contagem</td>
+<td>Ninguém abaixo da metade da média</td>
+<td>Subsidia a Tabela 1 e o risco R1.</td>
+</tr>
+<tr>
+<td>O código está coberto por testes? (obj. 2)</td>
+<td>M4 - Cobertura de testes</td>
+<td>(Linhas cobertas ÷ linhas totais) × 100, em %</td>
+<td>Maior ou igual a 80%</td>
+<td>Verificada a cada <em>pull request</em>.</td>
+</tr>
+<tr>
+<td>O produto é entregue com defeitos? (obj. 2)</td>
+<td>M5 - Densidade de defeitos</td>
+<td>Defeitos encontrados ÷ pontos entregues</td>
+<td>Decrescente ao longo do projeto</td>
+<td>Alta densidade prioriza a correção na sprint seguinte.</td>
+</tr>
+<tr>
+<td>Os usuários concluem as tarefas principais? (obj. 2)</td>
+<td>M6 - Taxa de sucesso em tarefa</td>
+<td>(Participantes que concluíram ÷ total) × 100, em %</td>
+<td>Maior ou igual a 80% em busca e candidatura</td>
+<td>Abaixo da meta, gera ajustes de UX no backlog.</td>
+</tr>
+</tbody>
+</table>
+<p>A métrica M6 verifica se o foco em UX do tema foi de fato alcançado. O Scrum Master coleta M1 a M3 e o Analista de Qualidade coleta M4 a M6, ao final de cada sprint, com registro no relatório de situação (Quadro 7).</p>
+<h2 id="6-testes-de-software">6 TESTES DE SOFTWARE<a class="headerlink" href="#6-testes-de-software" title="Permanent link">&para;</a></h2>
+<h3 id="61-estrategia-de-testes">6.1 Estratégia de testes<a class="headerlink" href="#61-estrategia-de-testes" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>Níveis:</strong> unitário (funções e componentes, escrito junto com o código), integração (comunicação entre interface, serviços e banco) e sistema (fluxos completos dos cenários da Tabela 5).</p>
+</li>
+<li>
+<p><strong>Tipos:</strong> funcionais, para os requisitos da Tabela 6, e não funcionais, com destaque para usabilidade (métrica M6), responsividade e controle de acesso por perfil.</p>
+</li>
+<li>
+<p><strong>Ambientes:</strong> testes unitários no ambiente local; integração validada na branch developer a cada <em>pull request</em>; a branch main recebe apenas o que cumpriu o conceito de pronto. Execução automatizada com Ruff e ESLint para a qualidade de software; pytest pytest-cov para o backend; React Testing Librar para as frameworks e Playwright e axe-core para UX.</p>
+</li>
+</ul>
+<p><strong>Análise (previsto × realizado):</strong> se o resultado realizado difere do previsto, o teste falha e o defeito é corrigido e retestado até coincidirem. Os defeitos alimentam a métrica M5.</p>
+<h3 id="62-roteiro-de-teste">6.2 Roteiro de teste<a class="headerlink" href="#62-roteiro-de-teste" title="Permanent link">&para;</a></h3>
+<p>A Tabela 7 lista os casos de teste de sistema e de integração previstos para o MVP; as colunas de resultado são preenchidas a cada ciclo de execução. Os testes unitários ficam no repositório de código e são acompanhados pela métrica M4.</p>
+<p><strong>Tabela 7 –</strong> Roteiro de testes</p>
+<table>
+<thead>
+<tr>
+<th><strong>Código</strong></th>
+<th><strong>Nome do teste</strong></th>
+<th><strong>Objetivo</strong></th>
+<th><strong>Nível</strong></th>
+<th><strong>Tipo</strong></th>
+<th><strong>Precondições</strong></th>
+<th><strong>Critério de aceite (resultado esperado)</strong></th>
+<th><strong>Resultado obtido (evidência)</strong></th>
+<th><strong>Reparos executados</strong></th>
+<th><strong>Ciclos executados</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CT01</td>
+<td>Cadastro de voluntário</td>
+<td>Verificar o cadastro de pessoa física (CN01-RF01)</td>
+<td>Sistema</td>
+<td>Funcional</td>
+<td>Aplicação disponível; e-mail não cadastrado</td>
+<td>Conta criada e usuário autenticado com perfil Voluntário</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>CT02</td>
+<td>Publicação de vaga</td>
+<td>Verificar o cadastro de vaga com todos os campos padronizados (CN04-RF07)</td>
+<td>Sistema</td>
+<td>Funcional</td>
+<td>Organização autenticada</td>
+<td>Vaga publicada e visível na listagem pública</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>CT03</td>
+<td>Busca com filtros</td>
+<td>Verificar se os filtros retornam apenas vagas compatíveis (CN05-RF12)</td>
+<td>Sistema</td>
+<td>Funcional</td>
+<td>Base com vagas de causas, modalidades e períodos distintos</td>
+<td>Resultado contém somente as vagas que satisfazem todos os filtros</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>CT04</td>
+<td>Candidatura com documentação</td>
+<td>Verificar o registro da candidatura e o envio dos documentos (CN06-RF15 e RF16)</td>
+<td>Sistema</td>
+<td>Funcional</td>
+<td>Voluntário autenticado; vaga aberta</td>
+<td>Candidatura registrada, documentos anexados e comprovante emitido</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>CT05</td>
+<td>Triagem e conexão</td>
+<td>Verificar o aceite da candidatura e a liberação do contato (CN07-RF18 e RF20)</td>
+<td>Sistema</td>
+<td>Funcional</td>
+<td>Vaga com ao menos uma candidatura</td>
+<td>Candidatura aceita e contato do responsável disponibilizado</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>CT06</td>
+<td>Controle de acesso por perfil</td>
+<td>Verificar se cada perfil acessa apenas o que lhe é permitido (RNF05)</td>
+<td>Integração</td>
+<td>Não funcional (segurança)</td>
+<td>Contas dos perfis Visitante, Voluntário e Organização</td>
+<td>Acesso negado a toda funcionalidade fora das permissões da Tabela 4</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>CT07</td>
+<td>Usabilidade da busca e da candidatura</td>
+<td>Verificar se o usuário conclui os fluxos principais sem treinamento (RNF01)</td>
+<td>Sistema</td>
+<td>Não funcional (usabilidade)</td>
+<td>Protótipo ou incremento disponível; participantes recrutados</td>
+<td>Taxa de sucesso maior ou igual a 80% (M6)</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="referencias">REFERÊNCIAS<a class="headerlink" href="#referencias" title="Permanent link">&para;</a></h2>
+<p>ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. <strong>NBR 6023</strong>: informação e documentação: referências: elaboração. Rio de Janeiro: ABNT, 2018.</p>
+<p>BASILI, Victor R.; CALDIERA, Gianluigi; ROMBACH, H. Dieter. The Goal Question Metric approach. <em>In</em>: MARCINIAK, John J. (ed.). <strong>Encyclopedia of Software Engineering</strong>. New York: John Wiley &amp; Sons, 1994.</p>
+<p>BECK, Kent. <strong>Extreme Programming Explained</strong>: embrace change. 2. ed. Boston: Addison-Wesley, 2004.</p>
+<p>IBGE. <strong>Cerca de 6,5 milhões de pessoas fazem trabalho voluntário no país</strong>. Agência de Notícias, 26 mar. 2018. Disponível em: <a href="https://agenciadenoticias.ibge.gov.br/agencia-noticias/2012-agencia-de-noticias/noticias/20618-cerca-de-6-5-milhoes-de-pessoas-fazem-trabalho-voluntario-no-pais">https://agenciadenoticias.ibge.gov.br/agencia-noticias/2012-agencia-de-noticias/noticias/20618-cerca-de-6-5-milhoes-de-pessoas-fazem-trabalho-voluntario-no-pais</a>. Acesso em: 30 set. 2026.</p>
+<p>ISHIKAWA, Kaoru. <strong>Guide to Quality Control</strong>. Tokyo: Asian Productivity Organization, 1976.</p>
+<p>NIELSEN, Jakob. <strong>Usability Engineering</strong>. San Francisco: Morgan Kaufmann, 1993.</p>
+<p><strong>PESQUISA Voluntariado no Brasil 2021</strong>. Coordenação: Silvia Louzã Naccache. Realização: IDIS e Datafolha, 2022. Disponível em: <a href="https://knowledge.unv.org/sites/default/files/2023-07/Pesquisa-Voluntariado-no-Brasil-2021--Pesquisa-completa_Portuguese.pdf">https://knowledge.unv.org/sites/default/files/2023-07/Pesquisa-Voluntariado-no-Brasil-2021--Pesquisa-completa_Portuguese.pdf</a>. Acesso em: 30 set. 2026.</p>
+<p><strong>PESQUISA Voluntariado no Brasil 2026</strong>. Coordenação: Silvia Naccache. Execução: Instituto Datafolha, 2026. Disponível em: <a href="https://pesquisavoluntariado.org.br/wp-content/uploads/2026/09/Pesquisa_Voluntariado_no_Brasil_2026_atualizado-SN_28.08-1.pdf">https://pesquisavoluntariado.org.br/wp-content/uploads/2026/09/Pesquisa_Voluntariado_no_Brasil_2026_atualizado-SN_28.08-1.pdf</a>. Acesso em: 30 set. 2026.</p>
+<p>PRESSMAN, Roger S.; MAXIM, Bruce R. <strong>Engenharia de software</strong>: uma abordagem profissional. 8. ed. Porto Alegre: AMGH, 2016.</p>
+<p>SCHWABER, Ken; SUTHERLAND, Jeff. <strong>O Guia do Scrum</strong>: o guia definitivo para o Scrum: as regras do jogo. 2020.</p>
+<p>SOMMERVILLE, Ian. <strong>Engenharia de software</strong>. 10. ed. São Paulo: Pearson, 2018.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Voltar ao topo
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.top", "toc.integrate", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado para \u00e1rea de transfer\u00eancia", "clipboard.copy": "Copiar para \u00e1rea de transfer\u00eancia", "search.result.more.one": "Mais 1 nesta p\u00e1gina", "search.result.more.other": "Mais # nesta p\u00e1gina", "search.result.none": "Nenhum resultado encontrado", "search.result.one": "1 resultado encontrado", "search.result.other": "# resultados encontrados", "search.result.placeholder": "Digite para iniciar a busca", "search.result.term.missing": "Ausente", "select.version": "Selecione a vers\u00e3o"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

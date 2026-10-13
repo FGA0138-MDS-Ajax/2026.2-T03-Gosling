@@ -1,0 +1,1551 @@
+
+<!doctype html>
+<html lang="pt" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentação do produto e do projeto VolunJá, desenvolvido na disciplina MDS em 2026.2.">
+      
+      
+      
+        <link rel="canonical" href="https://fga0138-mds-ajax.github.io/2026.2-T03-Gosling/arquitetura/">
+      
+      
+        <link rel="prev" href="../vis%C3%A3o/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Documento de Arquitetura - VolunJá — Grupo Gosling</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#documento-de-arquitetura" class="md-skip">
+          Ir para o conteúdo
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
+    <a href=".." title="VolunJá — Grupo Gosling" class="md-header__button md-logo" aria-label="VolunJá — Grupo Gosling" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            VolunJá — Grupo Gosling
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Documento de Arquitetura
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Buscar" placeholder="Buscar" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Pesquisar">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Limpar" aria-label="Limpar" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicializando a pesquisa
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/FGA0138-MDS-Ajax/2026.2-T03-Gosling" title="Ir ao repositório" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FGA0138-MDS-Ajax/2026.2-T03-Gosling
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navegação" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="VolunJá — Grupo Gosling" class="md-nav__button md-logo" aria-label="VolunJá — Grupo Gosling" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    VolunJá — Grupo Gosling
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/FGA0138-MDS-Ajax/2026.2-T03-Gosling" title="Ir ao repositório" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FGA0138-MDS-Ajax/2026.2-T03-Gosling
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Início
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Atas de Reunião
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Atas de Reunião
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atas-reuniao/ata-reuniao-1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ata 1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentos
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Documentos
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vis%C3%A3o/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documento de visão
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documento de Arquitetura
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documento de Arquitetura
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tabela-1-integrantes-do-grupo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tabela 1 – Integrantes do Grupo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tabela-2-historico-de-revisoes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tabela 2 – Histórico de Revisões
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-introducao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1 INTRODUÇÃO
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-representacao-arquitetural" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2 REPRESENTAÇÃO ARQUITETURAL
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#referencias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        REFERÊNCIAS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apendice-a-padroes-de-codificacao-e-de-versionamento" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        APÊNDICE A – PADRÕES DE CODIFICAÇÃO E DE VERSIONAMENTO
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<p><strong>Gosling - VolunJá</strong></p>
+<h1 id="documento-de-arquitetura">Documento de Arquitetura<a class="headerlink" href="#documento-de-arquitetura" title="Permanent link">&para;</a></h1>
+<p><strong>Versão 0.2</strong></p>
+<p>Arquivos originais: <a href="../documento%20de%20arquitetura.pdf">PDF</a></p>
+<h2 id="tabela-1-integrantes-do-grupo">Tabela 1 – Integrantes do Grupo<a class="headerlink" href="#tabela-1-integrantes-do-grupo" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th><strong>Mat.</strong></th>
+<th><strong>Nome</strong></th>
+<th><strong>Função (responsabilidade)</strong></th>
+<th><strong>Pontos de participação na elaboração</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>231026661</td>
+<td>Cauã Henrique Moura Rodrigues</td>
+<td>Dev Frontend/Backend</td>
+<td>25</td>
+</tr>
+<tr>
+<td>232027529</td>
+<td>Juan Yuri Gabriel Brito Silva</td>
+<td>Scrum Master</td>
+<td>25</td>
+</tr>
+<tr>
+<td>232005432</td>
+<td>Miguel Tobias de Lima Galvão</td>
+<td>Dev Frontend/Backend</td>
+<td>25</td>
+</tr>
+<tr>
+<td>222026528</td>
+<td>Rafael Rodrigues Alencar</td>
+<td>Dev Frontend/Backend</td>
+<td>25</td>
+</tr>
+<tr>
+<td><strong>Total de pontos</strong></td>
+<td></td>
+<td></td>
+<td><strong>100</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="tabela-2-historico-de-revisoes">Tabela 2 – Histórico de Revisões<a class="headerlink" href="#tabela-2-historico-de-revisoes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th><strong>Data</strong></th>
+<th><strong>Versão</strong></th>
+<th><strong>Descrição</strong></th>
+<th><strong>Autor(es)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>17/09/2026</td>
+<td>0.0</td>
+<td>Criação da estrutura inicial dos documentos de visão e arquitetura</td>
+<td>Cauã Henrique Moura Rodrigues</td>
+</tr>
+<tr>
+<td>05/10/2026</td>
+<td>0.1</td>
+<td>Elaboração do documento conforme o <em>template</em> da disciplina: representação arquitetural, metas e restrições, visões de uso, lógica, estrutural e de implantação, restrições adicionais, referências e padrões de codificação (Apêndice A)</td>
+<td>Equipe Gosling</td>
+</tr>
+<tr>
+<td>06/10/2026</td>
+<td>0.2</td>
+<td>Reestruturação conforme o <em>template</em> da disciplina: implantação simplificada em contêineres Docker, publicada por túnel da Cloudflare; síntese das tecnologias e dos recursos da API; remoção do glossário, das enumerações e do quadro de ambientes; figuras refeitas no Figma</td>
+<td>Equipe Gosling</td>
+</tr>
+</tbody>
+</table>
+<h2 id="1-introducao">1 INTRODUÇÃO<a class="headerlink" href="#1-introducao" title="Permanent link">&para;</a></h2>
+<h3 id="11-proposito">1.1 Propósito<a class="headerlink" href="#11-proposito" title="Permanent link">&para;</a></h3>
+<p>Este documento descreve a arquitetura do sistema <strong>VolunJá</strong>, desenvolvido pelo grupo Gosling na disciplina de Métodos de Desenvolvimento de Software (MDS), edição do segundo semestre de 2026, a fim de fornecer uma visão abrangente do sistema para desenvolvedores, testadores e demais interessados em aspectos relacionados às tecnologias a serem usadas no desenvolvimento.</p>
+<p>O documento registra as decisões arquiteturais da equipe e as justifica a partir do Documento de Visão do Produto e do Projeto. A arquitetura é apresentada por meio de visões complementares — de uso, de organização lógica, estrutural e de implantação —, inspiradas no modelo de visões arquiteturais proposto por Kruchten (1995) e representadas com a Linguagem de Modelagem Unificada — UML (Object Management Group, 2017).</p>
+<p>Trata-se de um artefato vivo: ele é atualizado sempre que uma decisão arquitetural for revista ao longo das sprints, e cada revisão é registrada no Histórico de Revisões (Tabela 2).</p>
+<h3 id="12-escopo">1.2 Escopo<a class="headerlink" href="#12-escopo" title="Permanent link">&para;</a></h3>
+<p>O detalhamento do escopo se encontra na Declaração de Escopo do Projeto (seção 4) do Documento de Visão do Produto e do Projeto (Grupo Gosling, 2026), doravante denominado <strong>DV</strong>, que contém os perfis de acesso (Tabela 4), os cenários funcionais (Tabela 5) e o backlog do produto (Tabela 6). Porém, em linhas gerais, o escopo do produto compreende uma aplicação web que conecta voluntários e organizações do terceiro setor, na qual:</p>
+<p>1)  organizações não governamentais (ONGs) e responsáveis por projetos sociais se cadastram e publicam vagas de voluntariado com campos padronizados: descrição, atividades, área de atuação/causa, modalidade, local, carga horária, período e número de vagas;</p>
+<p>2)  voluntários se cadastram, mantêm um perfil com interesses e disponibilidade e buscam vagas por filtros sobre esses mesmos campos;</p>
+<p>3)  o voluntário se candidata a uma vaga, envia a documentação exigida e recebe um comprovante;</p>
+<p>4)  a organização faz a triagem das candidaturas e, após o aceite, o sistema libera o contato entre o responsável pela vaga e o voluntário;</p>
+<p>5)  um administrador homologa as organizações e modera vagas e usuários.</p>
+<p>Ao longo deste documento, as partes do Documento de Visão usadas nas decisões arquiteturais são referenciadas de forma explícita (por exemplo, “DV, Quadro 5”), e os requisitos são identificados pelos códigos da Tabela 6 do Documento de Visão (RF01 a RF25 e RNF01 a RNF07).</p>
+<p>O documento está organizado em duas seções. Após esta introdução, a seção 2 apresenta a representação arquitetural: as definições, a justificativa da escolha, o detalhamento do estilo, as metas e restrições, as visões de uso, de organização lógica, estrutural e de implantação e as restrições adicionais. Ao final, encontram-se as referências e o Apêndice A, com os padrões de codificação e de versionamento.</p>
+<h2 id="2-representacao-arquitetural">2 REPRESENTAÇÃO ARQUITETURAL<a class="headerlink" href="#2-representacao-arquitetural" title="Permanent link">&para;</a></h2>
+<h3 id="21-definicoes">2.1 Definições<a class="headerlink" href="#21-definicoes" title="Permanent link">&para;</a></h3>
+<p>Um estilo arquitetural define os tipos de componentes e de conectores de um sistema e as restrições sobre como eles podem ser combinados (Bass; Clements; Kazman, 2021). O sistema seguirá uma <strong>arquitetura cliente-servidor em camadas</strong>, composta por um <em>front-end</em> do tipo SPA (<em>Single Page Application</em>), desenvolvido em JavaScript com a biblioteca React, e por um <em>back-end</em> que expõe uma API (<em>Application Programming Interface</em>) no estilo REST (Fielding, 2000), desenvolvido em Python com o <em>framework</em> FastAPI. Os dados são armazenados em um banco de dados relacional MySQL.</p>
+<p>Na organização em camadas, cada camada oferece serviços à camada superior e depende apenas da camada inferior, o que isola o impacto das mudanças e facilita os testes (Sommerville, 2018). O <em>back-end</em> é estruturado como um <strong>monólito modular</strong>: uma única aplicação implantável, dividida internamente em módulos de domínio — autenticação, usuários, vagas, candidaturas, documentos, comprovantes, notificações e moderação —, cada um organizado nas camadas de API, de negócio e de persistência.</p>
+<h3 id="22-justificativa-da-escolha">2.2 Justificativa da escolha<a class="headerlink" href="#22-justificativa-da-escolha" title="Permanent link">&para;</a></h3>
+<p>Como recomendam Pressman e Maxim (2016), a escolha do estilo arquitetural partiu da análise de alternativas à luz dos requisitos e das restrições do projeto. Os elementos do Documento de Visão listados a seguir funcionam como condicionantes da arquitetura:</p>
+<p>1)  <strong>natureza do produto</strong> (DV, seção 1.1.3 e Quadro 2): o VolunJá é uma aplicação web usada por perfis distintos — voluntários, organizações e administradores — que compartilham um catálogo único de vagas. Centralizar os dados e as regras em um servidor, acessado por clientes leves no navegador, é a forma natural de atender a esse cenário;</p>
+<p>2)  <strong>foco na experiência do usuário (UX)</strong> (DV, Quadro 1, objetivo específico 6 e requisitos RNF01 a RNF03): uma SPA em React oferece navegação fluida, retorno imediato nos filtros de busca e componentes de interface reutilizáveis, o que favorece a consistência e a acessibilidade. Como o <em>front-end</em> é desacoplado, ele pode ser ajustado após cada teste de usabilidade (métrica M6) sem alterar o <em>back-end</em>;</p>
+<p>3)  <strong>tecnologias definidas pela equipe</strong> (DV, Quadro 5): JavaScript com React no <em>front-end</em>, Python no <em>back-end</em> e MySQL como banco de dados. Entre os <em>frameworks</em> Python, o FastAPI foi escolhido por gerar automaticamente a documentação no padrão OpenAPI (OpenAPI Initiative, 2021), que serve de contrato entre <em>front-end</em> e <em>back-end</em>, por validar os dados de entrada com Pydantic, por oferecer injeção de dependências para autenticação e testes e por apresentar curva de aprendizado reduzida;</p>
+<p>4)  <strong>equipe, prazo e riscos</strong> (DV, seção 2.1, Tabela 3 e Quadro 8): quatro integrantes e seis sprints de desenvolvimento (Sprints 6 a 11). Um monólito evita a complexidade operacional de sistemas distribuídos, o que mitiga os riscos R2 (inexperiência com as tecnologias) e R3 (escopo grande demais), enquanto a divisão em módulos permite que os integrantes trabalhem em paralelo sobre cenários diferentes;</p>
+<p>5)  <strong>processo e qualidade</strong> (DV, seções 3.2 e 3.3 e Quadro 11): as práticas do XP (<em>Extreme Programming</em>) adotadas, como a integração contínua e os testes automatizados, e a meta de cobertura de testes da métrica M4 (no mínimo 80%) exigem código testável. A separação em camadas, com dependências injetadas, permite testar as regras de negócio isoladamente;</p>
+<p>6)  <strong>perfis e segurança</strong> (DV, Tabela 4, e requisitos RNF04 e RNF05): o controle de acesso por perfil precisa ser garantido em um único ponto confiável. Na arquitetura cliente-servidor, toda verificação de permissão ocorre no <em>back-end</em>, e o <em>front-end</em> apenas oculta as opções não permitidas.</p>
+<p>O Quadro 1 resume as alternativas de estilo arquitetural avaliadas pela equipe e o motivo da decisão.</p>
+<p><strong>Quadro 1 –</strong> Alternativas de estilo arquitetural avaliadas</p>
+<table>
+<thead>
+<tr>
+<th><strong>Alternativa</strong></th>
+<th><strong>Vantagens</strong></th>
+<th><strong>Desvantagens no contexto do VolunJá</strong></th>
+<th><strong>Decisão</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Monólito com renderização no servidor (padrão MVC, <em>Model-View-Controller</em>, com páginas geradas no <em>back-end</em>)</strong></td>
+<td>Um único projeto e implantação simples.</td>
+<td>Acopla interface e regras de negócio; limita a interatividade exigida pelo foco em UX; não aproveita o React definido no DV (Quadro 5).</td>
+<td>Descartada</td>
+</tr>
+<tr>
+<td><strong>Microsserviços</strong></td>
+<td>Escalabilidade e implantação independentes por serviço.</td>
+<td>Complexidade de rede, implantação e monitoramento desproporcional a quatro integrantes e seis sprints; agrava os riscos R2 e R3.</td>
+<td>Descartada</td>
+</tr>
+<tr>
+<td><strong><em>Back-end</em> como serviço (BaaS), por exemplo, Firebase</strong></td>
+<td>Infraestrutura gerenciada e autenticação pronta.</td>
+<td>Regras de negócio e de autorização dispersas no cliente; dependência de fornecedor; não utiliza o Python definido no DV.</td>
+<td>Descartada</td>
+</tr>
+<tr>
+<td><strong>Cliente-servidor em camadas: SPA em React e API REST em FastAPI (monólito modular)</strong></td>
+<td>Separação de responsabilidades; trabalho paralelo entre <em>front-end</em> e <em>back-end</em>; contrato OpenAPI; testabilidade; implantação única.</td>
+<td>Duas bases de código (<em>front-end</em> e <em>back-end</em>) e necessidade de configurar o <em>proxy</em> reverso.</td>
+<td><strong>Adotada</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-detalhamento">2.3 Detalhamento<a class="headerlink" href="#23-detalhamento" title="Permanent link">&para;</a></h3>
+<p>A Figura 1 representa o estilo arquitetural escolhido. Ela mostra as camadas da arquitetura, os seus componentes principais, as interfaces fornecidas e os conectores, com os respectivos protocolos de comunicação.</p>
+<p><strong>Figura 1 –</strong> Representação esquemática da arquitetura do VolunJá</p>
+<p><a href="../assets/arquitetura/figura1%20arquitetura.png"><img alt="Camadas de apresentação, aplicação e dados do VolunJá, com componentes, interfaces e conectores" src="../assets/arquitetura/figura1%20arquitetura.png" /></a></p>
+<p>A arquitetura é composta por cinco camadas — apresentação, API, negócio, persistência e dados —, agrupadas em três blocos na Figura 1. O cliente corresponde à <strong>camada de apresentação</strong>: a SPA, executada no navegador do usuário. O servidor reúne o Nginx, ponto único de entrada, e a API, que contém as camadas de <strong>API</strong>, de <strong>negócio</strong> e de <strong>persistência</strong>. A <strong>camada de dados</strong> é formada pelo MySQL e pelo armazenamento de arquivos, e o servidor SMTP é um serviço externo, usado para o envio de e-mails. Os módulos de domínio atravessam verticalmente as três camadas internas da API: cada módulo possui os seus próprios <em>routers</em>, <em>services</em> e <em>repositories</em>, e o pacote core oferece serviços transversais a todos eles. Os <em>services</em> e os <em>repositories</em> seguem, respectivamente, os padrões <em>Service Layer</em> e <em>Repository</em> descritos por Fowler (2002).</p>
+<p>Os elementos do estilo arquitetural são instanciados com as tecnologias do Quadro 2, selecionadas a partir das suas documentações oficiais (React, 2026; FastAPI, 2026; SQLAlchemy, 2026; MySQL, 2026; Docker, 2026).</p>
+<p><strong>Quadro 2 –</strong> Tecnologias adotadas por elemento da arquitetura</p>
+<table>
+<thead>
+<tr>
+<th><strong>Elemento</strong></th>
+<th><strong>Tecnologia</strong></th>
+<th><strong>Justificativa</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SPA (apresentação)</strong></td>
+<td>JavaScript (ES2022+), React 19, Vite e React Router</td>
+<td>React definido no DV (Quadro 5); o Vite gera um <em>build</em> otimizado e oferece recarga rápida no desenvolvimento; o React Router organiza as telas por rota e por perfil.</td>
+</tr>
+<tr>
+<td><strong>Servidor web e <em>proxy</em> reverso</strong></td>
+<td>Nginx</td>
+<td>Entrega os arquivos estáticos com compressão e <em>cache</em> e encaminha /api para a aplicação, o que mantém a SPA e a API na mesma origem e dispensa a configuração de compartilhamento de recursos entre origens (CORS).</td>
+</tr>
+<tr>
+<td><strong>Camada de API</strong></td>
+<td>FastAPI, Pydantic v2 e Uvicorn (ASGI)</td>
+<td>Validação declarativa da entrada, documentação OpenAPI automática e injeção de dependências para autenticação e autorização.</td>
+</tr>
+<tr>
+<td><strong>Camada de negócio</strong></td>
+<td>Classes de serviço em Python 3.12</td>
+<td>Regras de negócio independentes do HTTP e do banco de dados, testáveis isoladamente.</td>
+</tr>
+<tr>
+<td><strong>Camada de persistência</strong></td>
+<td>SQLAlchemy 2.0, Alembic e PyMySQL</td>
+<td>Mapeamento objeto-relacional (ORM) maduro, com suporte ao MySQL; migrações do banco versionadas junto com o código.</td>
+</tr>
+<tr>
+<td><strong>Banco de dados</strong></td>
+<td>MySQL 8.4 (LTS)</td>
+<td>Definido no DV (Quadro 5); relacional, adequado a entidades fortemente relacionadas que exigem integridade referencial e restrições de unicidade.</td>
+</tr>
+<tr>
+<td><strong>Armazenamento de arquivos</strong></td>
+<td>Volume persistente no servidor</td>
+<td>Solução simples para os documentos das candidaturas, acessada apenas pelo módulo de documentos e substituível por armazenamento de objetos sem impacto nas demais camadas.</td>
+</tr>
+<tr>
+<td><strong>Segurança</strong></td>
+<td>JWT (<em>JSON Web Token</em>), com PyJWT, e <em>hash</em> de senhas com Argon2 (pwdlib)</td>
+<td>Autenticação sem estado no servidor e armazenamento seguro das senhas (RNF04).</td>
+</tr>
+<tr>
+<td><strong>E-mail</strong></td>
+<td>SMTP e tarefas em segundo plano do FastAPI (BackgroundTasks)</td>
+<td>Envio de e-mails sem aumentar o tempo de resposta das requisições (RF05 e RF20).</td>
+</tr>
+<tr>
+<td><strong>Contêineres</strong></td>
+<td>Docker e Docker Compose</td>
+<td>Mesma composição de serviços em qualquer máquina da equipe.</td>
+</tr>
+<tr>
+<td><strong>Integração contínua</strong></td>
+<td>GitHub Actions</td>
+<td>Já utilizado na publicação da documentação (DV, Quadro 5); executa <em>lint</em> e testes a cada <em>pull request</em>.</td>
+</tr>
+</tbody>
+</table>
+<p>Completam a pilha as bibliotecas de apoio — Axios, no cliente HTTP; CSS Modules, na estilização; e ReportLab, na geração do comprovante em PDF (RF22) — e as ferramentas de qualidade e testes previstas no DV (seção 6.1).</p>
+<p>A Figura 2 mostra os elementos da Figura 1 em funcionamento, por meio do diagrama de sequência da candidatura a uma vaga (RF16 e RF17). A requisição percorre as camadas de cima para baixo, e a resposta retorna no sentido inverso; o e-mail de aviso à organização é enviado em segundo plano, depois que a resposta já foi devolvida ao voluntário.</p>
+<p><strong>Figura 2 –</strong> Interação entre as camadas na candidatura a uma vaga (diagrama de sequência)</p>
+<p><a href="../assets/arquitetura/figura2%20sequencia%20candidatura.png"><img alt="Diagrama de sequência da candidatura: SPA, router, services, repository e MySQL" src="../assets/arquitetura/figura2%20sequencia%20candidatura.png" /></a></p>
+<p>O Quadro 3 explica a responsabilidade de cada elemento da arquitetura e as suas regras de uso, isto é, as entradas esperadas, as saídas produzidas e as condições para que a interface funcione adequadamente.</p>
+<p><strong>Quadro 3 –</strong> Responsabilidades e regras de uso dos elementos da arquitetura</p>
+<table>
+<thead>
+<tr>
+<th><strong>Elemento</strong></th>
+<th><strong>Responsabilidade</strong></th>
+<th><strong>Entradas esperadas</strong></th>
+<th><strong>Saídas e regras de uso</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SPA (React)</strong></td>
+<td>Exibir a interface, coletar e validar previamente os dados e controlar a navegação por perfil.</td>
+<td>Ações do usuário; respostas JSON da API.</td>
+<td>Requisições HTTP com JSON ou arquivos (<em>multipart/form-data</em>) e <em>token</em> JWT. Não contém regras de negócio: a validação no cliente serve apenas para dar retorno imediato ao usuário.</td>
+</tr>
+<tr>
+<td><strong>Serviços de API (<em>front-end</em>)</strong></td>
+<td>Centralizar o acesso à API REST.</td>
+<td>Parâmetros vindos das telas.</td>
+<td>Chamadas HTTP com o cabeçalho Authorization; diante da resposta 401, encerram a sessão e direcionam ao <em>login</em>.</td>
+</tr>
+<tr>
+<td><strong>Nginx</strong></td>
+<td>Ser o ponto único de entrada da aplicação.</td>
+<td>Requisições HTTP na porta 80.</td>
+<td>Arquivos estáticos da SPA; encaminhamento de /api ao Uvicorn (porta 8000); cabeçalhos de segurança e limite de tentativas de <em>login</em>.</td>
+</tr>
+<tr>
+<td><strong><em>Routers</em></strong></td>
+<td>Expor os <em>endpoints</em> REST versionados (/api/v1) e traduzir o HTTP em chamadas de serviço.</td>
+<td>Requisições validadas pelos <em>schemas</em>.</td>
+<td>Respostas JSON com códigos HTTP padronizados (200, 201, 204, 400, 401, 403, 404, 409 e 422). Não acessam o banco de dados diretamente.</td>
+</tr>
+<tr>
+<td><strong><em>Schemas</em> (Pydantic)</strong></td>
+<td>Definir os contratos de entrada e de saída (DTOs, objetos de transferência de dados).</td>
+<td>Dados brutos da requisição.</td>
+<td>Objetos validados ou erro 422. Nunca expõem campos sensíveis, como o <em>hash</em> da senha.</td>
+</tr>
+<tr>
+<td><strong>Dependências</strong></td>
+<td>Autenticar o usuário, verificar o perfil e abrir a sessão de banco de dados por requisição.</td>
+<td><em>Token</em> JWT; perfis exigidos pelo <em>endpoint</em>.</td>
+<td>Usuário autenticado ou erro 401/403; sessão de banco de dados encerrada ao fim da requisição.</td>
+</tr>
+<tr>
+<td><strong><em>Services</em></strong></td>
+<td>Aplicar as regras de negócio, controlar as transações e orquestrar os módulos.</td>
+<td>Objetos validados e usuário atual.</td>
+<td>Entidades e resultados, ou exceções de negócio convertidas em respostas HTTP por um tratador central. Não dependem do HTTP.</td>
+</tr>
+<tr>
+<td><strong><em>Repositories</em></strong></td>
+<td>Encapsular as consultas e a persistência.</td>
+<td>Critérios de consulta e entidades.</td>
+<td>Entidades do ORM. São os únicos elementos que usam a sessão do SQLAlchemy.</td>
+</tr>
+<tr>
+<td><strong><em>Models</em> (ORM)</strong></td>
+<td>Mapear tabelas e relacionamentos e implementar regras de estado simples, como aceitar uma candidatura.</td>
+<td>Dados persistidos.</td>
+<td>Objetos de domínio usados pelos <em>services</em>.</td>
+</tr>
+<tr>
+<td><strong>Core</strong></td>
+<td>Fornecer configuração, segurança, sessão de banco de dados, tratamento de erros e logs.</td>
+<td>Variáveis de ambiente.</td>
+<td>Configurações tipadas e funções utilitárias usadas por todos os módulos.</td>
+</tr>
+<tr>
+<td><strong>MySQL</strong></td>
+<td>Persistir os dados estruturados com integridade referencial.</td>
+<td>Comandos SQL gerados pelo SQLAlchemy.</td>
+<td>Resultados das consultas; chaves estrangeiras e restrições de unicidade garantem a consistência, como uma única candidatura por voluntário e vaga.</td>
+</tr>
+<tr>
+<td><strong>Armazenamento de arquivos</strong></td>
+<td>Guardar os documentos das candidaturas.</td>
+<td>Arquivos já validados (PDF, JPG ou PNG, até 5 MB).</td>
+<td>Caminho interno do arquivo; acesso somente pela API, após a verificação de permissão (RNF04).</td>
+</tr>
+<tr>
+<td><strong>Servidor SMTP</strong></td>
+<td>Entregar os e-mails do sistema.</td>
+<td>Mensagens do módulo de notificações.</td>
+<td>E-mails de recuperação de senha (RF05) e de resultado da candidatura (RF20).</td>
+</tr>
+</tbody>
+</table>
+<p>.</p>
+<p>Além das responsabilidades, quatro regras de dependência garantem a integridade do estilo:</p>
+<p>1)  cada camada depende apenas da camada imediatamente inferior (<em>router</em>, <em>service</em>, <em>repository</em> e model), nunca no sentido inverso;</p>
+<p>2)  um módulo acessa outro somente por meio do <em>service</em> desse módulo, e nunca diretamente pelo <em>repository</em> ou pelos <em>models</em>;</p>
+<p>3)  o <em>front-end</em> comunica-se com o <em>back-end</em> exclusivamente pela API REST documentada em OpenAPI;</p>
+<p>4)  toda regra de negócio e toda verificação de permissão ficam no <em>back-end</em>.</p>
+<h3 id="24-metas-e-restricoes-arquiteturais">2.4 Metas e restrições arquiteturais<a class="headerlink" href="#24-metas-e-restricoes-arquiteturais" title="Permanent link">&para;</a></h3>
+<p>O Quadro 4 apresenta as metas e as restrições de funcionamento que orientam o projeto e a implementação. Cada item recebe um identificador (MR) para que possa ser rastreado nos critérios de aceitação e nos testes (DV, seção 6).</p>
+<p><strong>Quadro 4 –</strong> Metas e restrições arquiteturais</p>
+<table>
+<thead>
+<tr>
+<th><strong>ID</strong></th>
+<th><strong>Meta ou restrição</strong></th>
+<th><strong>Justificativa</strong></th>
+<th><strong>Verificação</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>MR01</strong></td>
+<td>O <em>back-end</em> deve ser desenvolvido em Python 3.12 ou superior com FastAPI; o <em>front-end</em>, em JavaScript com React; e o banco de dados deve ser o MySQL 8.4.</td>
+<td>Tecnologias definidas pela equipe (DV, Quadro 5) e conhecidas pelos integrantes, em coerência com a mitigação do risco R2 (DV, Quadro 8).</td>
+<td>Revisão de código; dependências declaradas nos arquivos do projeto.</td>
+</tr>
+<tr>
+<td><strong>MR02</strong></td>
+<td>A API deve seguir o estilo REST, com JSON, prefixo de versão /api/v1 e documentação OpenAPI gerada automaticamente.</td>
+<td>Contrato único entre <em>front-end</em> e <em>back-end</em>, que permite desenvolvê-los em paralelo.</td>
+<td>Documentação disponível em /docs; testes de integração.</td>
+</tr>
+<tr>
+<td><strong>MR03</strong></td>
+<td>95% das buscas de vagas com filtros (RF13) devem responder em até 2 segundos, com até 10.000 vagas cadastradas; as listagens são paginadas (20 itens por página).</td>
+<td>Desempenho da busca (RNF06): a busca é a principal tarefa do voluntário (métrica M6).</td>
+<td>Tempo de resposta registrado pela API em testes de sistema com massa de dados.</td>
+</tr>
+<tr>
+<td><strong>MR04</strong></td>
+<td>O código deve seguir os padrões de codificação do Apêndice A.</td>
+<td>Manutenibilidade (RNF07): o DV remete os padrões de código a este documento.</td>
+<td><em>Lint</em> automático na integração contínua; <em>pull request</em> bloqueado em caso de falha.</td>
+</tr>
+<tr>
+<td><strong>MR05</strong></td>
+<td>A cobertura de testes do <em>back-end</em> deve ser de, no mínimo, 80%.</td>
+<td>Métrica M4 (DV, Quadro 11) e conceito de pronto (DV, seção 3.3).</td>
+<td>Relatório do pytest-cov a cada <em>pull request</em>.</td>
+</tr>
+<tr>
+<td><strong>MR06</strong></td>
+<td>Toda operação que altera dados ou acessa dados pessoais de usuário logado deve exigir autenticação por JWT e autorização por perfil e por propriedade do recurso.</td>
+<td>Segurança dos dados e controle de acesso por perfil (RNF04 e RNF05; DV, Tabela 4).</td>
+<td>Caso de teste CT06 (DV, Tabela 7) e testes de integração por perfil.</td>
+</tr>
+<tr>
+<td><strong>MR07</strong></td>
+<td>A interface deve ser responsiva a partir de 360 px de largura e atender às diretrizes WCAG 2.1 no nível AA.</td>
+<td>Responsividade e acessibilidade (RNF02 e RNF03) e foco em UX (DV, Quadro 1).</td>
+<td>Testes com Playwright em telas de celular, tablet e desktop; verificação com axe-core sem violações graves.</td>
+</tr>
+<tr>
+<td><strong>MR08</strong></td>
+<td>A aplicação deve ser executável em contêineres Docker, com a mesma composição em qualquer máquina da equipe.</td>
+<td>Evita diferenças de configuração entre as máquinas dos integrantes e simplifica a preparação do ambiente na Sprint 5 (DV, Tabela 3).</td>
+<td>O comando docker compose up inicia o sistema completo.</td>
+</tr>
+<tr>
+<td><strong>MR09</strong></td>
+<td>Os documentos das candidaturas devem ser arquivos PDF, JPG ou PNG de até 5 MB cada.</td>
+<td>Segurança dos dados (RNF04): reduz o risco de arquivos maliciosos e o uso excessivo de disco.</td>
+<td>Testes de envio com tipos e tamanhos inválidos.</td>
+</tr>
+</tbody>
+</table>
+<p>.</p>
+<p>Também são de interesse dos desenvolvedores a política de <em>branches</em>, a convenção de mensagens de <em>commit</em> e as regras de revisão de código, descritas no Apêndice A, junto com os padrões de codificação.</p>
+<h3 id="25-visoes">2.5 Visões<a class="headerlink" href="#25-visoes" title="Permanent link">&para;</a></h3>
+<p>A arquitetura é comunicada por quatro visões complementares:</p>
+<p>1)  <strong>visão de uso</strong> (seção 2.5.1): o escopo do sistema, por meio dos casos de uso e da funcionalidade mais complexa;</p>
+<p>2)  <strong>visão de organização lógica</strong> (seção 2.5.2): os módulos, as camadas e as formas de comunicação entre eles;</p>
+<p>3)  <strong>visão estrutural</strong> (seção 2.5.3): a composição do sistema em classes e componentes e as relações entre as suas partes;</p>
+<p>4)  <strong>visão de implantação</strong> (seção 2.6): o ambiente em que o sistema será executado.</p>
+<h4 id="251-visao-de-uso">2.5.1 Visão de uso<a class="headerlink" href="#251-visao-de-uso" title="Permanent link">&para;</a></h4>
+<p>Em poucas palavras, o VolunJá permite que organizações publiquem vagas de voluntariado padronizadas e que voluntários as encontrem por compatibilidade, candidatem-se com a documentação exigida, recebam um comprovante e sejam conectados ao responsável pela vaga após o aceite. A Figura 3 apresenta o diagrama de casos de uso: os atores correspondem aos perfis da Tabela 4 do Documento de Visão, cada caso de uso indica os requisitos da Tabela 6 do Documento de Visão que realiza, e as cores indicam a prioridade MoSCoW.</p>
+<p><strong>Figura 3 –</strong> Diagrama de casos de uso do VolunJá</p>
+<p><a href="../assets/arquitetura/figura3%20casos%20de%20uso.png"><img alt="Diagrama de casos de uso com os atores Visitante, Voluntário, Organização e Administrador" src="../assets/arquitetura/figura3%20casos%20de%20uso.png" /></a></p>
+<p>O Voluntário herda os casos de uso do Visitante, pois a Tabela 4 do Documento de Visão atribui a ele todas as permissões desse perfil. Os casos de uso compartilhados por voluntários e organizações — manter perfil, visualizar contato, denunciar e autenticar-se — ficam no centro do diagrama. As relações «extend» representam comportamentos opcionais, como o envio de documentação, que ocorre apenas quando a vaga a exige, e as relações «include» representam comportamentos sempre executados, como a emissão do comprovante em toda candidatura.</p>
+<p>Alguns requisitos do Documento de Visão contribuíram diretamente para a escolha do estilo arquitetural e para a organização interna do sistema, conforme o Quadro 5.</p>
+<p><strong>Quadro 5 –</strong> Requisitos com impacto na arquitetura</p>
+<table>
+<thead>
+<tr>
+<th><strong>Requisitos (DV, Tabela 6)</strong></th>
+<th><strong>Impacto na arquitetura</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RNF04 e RNF05 (segurança dos dados e controle de acesso por perfil)</strong></td>
+<td>Autorização centralizada no <em>back-end</em>, por meio de dependências do FastAPI, e verificação de propriedade nos <em>services</em>; documentos entregues apenas pela API, nunca como arquivos públicos.</td>
+</tr>
+<tr>
+<td><strong>RNF01, RNF02 e RNF03 (usabilidade, responsividade e acessibilidade)</strong></td>
+<td><em>Front-end</em> desacoplado (SPA), com componentes reutilizáveis e acessíveis, que evolui a cada teste de usabilidade sem alterar o <em>back-end</em>.</td>
+</tr>
+<tr>
+<td><strong>RF13 e RNF06 (busca por filtros e desempenho)</strong></td>
+<td>Campos de filtro armazenados como colunas indexadas no MySQL; consultas paginadas montadas no <em>repository</em> de vagas.</td>
+</tr>
+<tr>
+<td><strong>RF17 e RF22 (documentação e comprovante)</strong></td>
+<td>Módulos próprios de documentos e de comprovantes; arquivos guardados fora do banco de dados, em volume persistente.</td>
+</tr>
+<tr>
+<td><strong>RF05 e RF20 (e-mails)</strong></td>
+<td>Envio assíncrono pelo módulo de notificações, para não aumentar o tempo de resposta das requisições.</td>
+</tr>
+<tr>
+<td><strong>RF24 e RF25 (homologação e moderação)</strong></td>
+<td>Módulo de moderação isolado, acessível apenas ao perfil Administrador.</td>
+</tr>
+<tr>
+<td><strong>RNF07 (manutenibilidade)</strong></td>
+<td>Monólito modular em camadas e padrões de codificação definidos no Apêndice A.</td>
+</tr>
+</tbody>
+</table>
+<p>.</p>
+<p>Além dos requisitos, pesaram na escolha a decisão da equipe de adotar tecnologias já conhecidas pelos integrantes — Python, JavaScript e React —, registrada como mitigação do risco R2 (DV, Quadro 8); a documentação extensa do FastAPI e do React, que reduz o tempo de aprendizado; e o prazo de seis sprints de desenvolvimento (DV, Tabela 3), que desaconselha estilos distribuídos.</p>
+<p>A funcionalidade mais complexa é a <strong>candidatura a uma vaga</strong> (cenário CN06), com o seu desdobramento na triagem e na conexão entre as partes (CN07 e CN08). Ela envolve três participantes, envio e validação de arquivos, regras de estado da candidatura, emissão de comprovante, notificações e liberação controlada de dados de contato. A Figura 4 apresenta o seu diagrama de atividades.</p>
+<p><strong>Figura 4 –</strong> Diagrama de atividades da candidatura a uma vaga</p>
+<p><a href="../assets/arquitetura/figura4%20atividades%20candidatura.png"><img alt="Diagrama de atividades com raias para Voluntário, Sistema VolunJá e Organização" src="../assets/arquitetura/figura4%20atividades%20candidatura.png" /></a></p>
+<p>O fluxo da Figura 4 evidencia as regras que a camada de negócio deve garantir: somente voluntários autenticados podem se candidatar; a vaga precisa estar aberta; cada voluntário pode ter apenas uma candidatura por vaga; os arquivos são validados antes do registro; e os contatos só são liberados após o aceite. Enquanto a candidatura estiver pendente, o voluntário pode cancelá-la (RF18).</p>
+<h4 id="252-visao-de-organizacao-logica">2.5.2 Visão de organização lógica<a class="headerlink" href="#252-visao-de-organizacao-logica" title="Permanent link">&para;</a></h4>
+<p>O sistema é subdividido em dois subsistemas — o <em>front-end</em> (SPA) e o <em>back-end</em> (API) — e cada um deles, em módulos com responsabilidades próprias. O Quadro 6 lista os módulos, a razão lógica de cada um, os requisitos que atendem e as suas dependências.</p>
+<p><strong>Quadro 6 –</strong> Módulos do sistema</p>
+<table>
+<thead>
+<tr>
+<th><strong>Módulo</strong></th>
+<th><strong>Razão lógica</strong></th>
+<th><strong>Requisitos (DV)</strong></th>
+<th><strong>Depende de</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><em>Front-end</em> (SPA em React)</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>app</strong></td>
+<td>Ponto de entrada: rotas, layout e provedores de contexto; restringe as rotas de acordo com o perfil.</td>
+<td>RF04, RNF05</td>
+<td>pages; contexts e <em>hooks</em></td>
+</tr>
+<tr>
+<td><strong>pages</strong></td>
+<td>Telas agrupadas por perfil: públicas, voluntário, organização e administrador.</td>
+<td>RF01 a RF25</td>
+<td>components; contexts e <em>hooks</em>; <em>services</em></td>
+</tr>
+<tr>
+<td><strong>components</strong></td>
+<td>Componentes de interface reutilizáveis e acessíveis, como formulários, cartões de vaga, filtros e janelas modais.</td>
+<td>RNF01 a RNF03</td>
+<td>utils e styles</td>
+</tr>
+<tr>
+<td><strong>contexts e <em>hooks</em></strong></td>
+<td>Estado compartilhado (sessão e perfil) e lógica reutilizável entre as telas.</td>
+<td>RF04</td>
+<td><em>services</em></td>
+</tr>
+<tr>
+<td><strong><em>services</em></strong></td>
+<td>Acesso à API REST, com um serviço por recurso e um cliente HTTP configurado.</td>
+<td>Todos</td>
+<td>API REST (<em>back-end</em>)</td>
+</tr>
+<tr>
+<td><strong>utils e styles</strong></td>
+<td>Validações (CPF e CNPJ), formatação de dados e tema visual.</td>
+<td>RNF02</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong><em>Back-end</em> (API em FastAPI)</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>core</strong></td>
+<td>Configuração, segurança (<em>hash</em> e JWT), sessão de banco de dados, erros e logs.</td>
+<td>RNF04</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>auth</strong></td>
+<td><em>Login</em>, emissão de <em>token</em> e recuperação de senha.</td>
+<td>RF04, RF05</td>
+<td>usuarios; notificacoes</td>
+</tr>
+<tr>
+<td><strong>usuarios</strong></td>
+<td>Contas, voluntários, organizações e perfis.</td>
+<td>RF01 a RF03, RF06, RF07</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>vagas</strong></td>
+<td>Publicação, edição, encerramento, busca, recomendação e documentos exigidos.</td>
+<td>RF08 a RF15</td>
+<td>usuarios</td>
+</tr>
+<tr>
+<td><strong>candidaturas</strong></td>
+<td>Candidatura, acompanhamento, cancelamento, triagem e liberação de contato.</td>
+<td>RF16, RF18, RF19, RF21</td>
+<td>vagas; documentos; comprovantes; notificacoes</td>
+</tr>
+<tr>
+<td><strong>documentos</strong></td>
+<td>Recebimento, validação, armazenamento e acesso controlado aos arquivos.</td>
+<td>RF17, RNF04</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>comprovantes</strong></td>
+<td>Emissão do comprovante em PDF e histórico de voluntariado.</td>
+<td>RF22, RF23</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>notificacoes</strong></td>
+<td>Notificações internas e envio de e-mails em segundo plano.</td>
+<td>RF05, RF20</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>moderacao</strong></td>
+<td>Homologação de organizações, denúncias e suspensão de contas.</td>
+<td>RF24, RF25</td>
+<td>usuarios; vagas; notificacoes</td>
+</tr>
+</tbody>
+</table>
+<p>.</p>
+<p>Nota: todos os módulos do <em>back-end</em> utilizam o core, que por isso não é repetido na coluna “Depende de”.</p>
+<p>Os módulos comunicam-se de três formas:</p>
+<p>1)  <strong>entre <em>front-end</em> e <em>back-end</em></strong>: requisições HTTP com JSON pela API REST, com o <em>token</em> JWT no cabeçalho Authorization; os documentos são enviados como <em>multipart/form-data</em> e os comprovantes são recebidos em PDF. O Quadro 7 lista os principais recursos da API;</p>
+<p>2)  <strong>entre módulos do <em>back-end</em></strong>: chamadas de função dentro do mesmo processo, sempre de um <em>service</em> para outro, respeitando as regras de dependência da seção 2.3;</p>
+<p>3)  <strong>entre o <em>back-end</em> e a infraestrutura</strong>: SQL sobre TCP (porta 3306) com o MySQL, leitura e gravação de arquivos no volume persistente e SMTP com TLS (porta 587) com o servidor de e-mail.</p>
+<p><strong>Quadro 7 –</strong> Principais recursos da API REST por módulo</p>
+<table>
+<thead>
+<tr>
+<th><strong>Módulo</strong></th>
+<th><strong>Principais recursos</strong></th>
+<th><strong>Perfis</strong></th>
+<th><strong>Requisitos</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>auth</td>
+<td>POST /auth/login; POST /auth/recuperacao-senha</td>
+<td>Público</td>
+<td>RF04, RF05</td>
+</tr>
+<tr>
+<td>usuarios</td>
+<td>POST /voluntarios; POST /organizacoes; GET e PUT /voluntarios/me e /organizacoes/me</td>
+<td>Público (cadastro); Voluntário; Organização</td>
+<td>RF01 a RF03, RF06, RF07</td>
+</tr>
+<tr>
+<td>vagas</td>
+<td>GET /vagas; GET /vagas/{id}; GET /vagas/recomendadas; POST /vagas; PUT e PATCH /vagas/{id}; GET /organizacoes/me/vagas</td>
+<td>Público (consulta); Voluntário; Organização dona</td>
+<td>RF08 a RF15</td>
+</tr>
+<tr>
+<td>candidaturas</td>
+<td>POST /vagas/{id}/candidaturas; GET /voluntarios/me/candidaturas; GET /vagas/{id}/candidaturas; PATCH /candidaturas/{id}; GET /candidaturas/{id}/contato</td>
+<td>Voluntário; Organização dona; Envolvidos</td>
+<td>RF16 a RF21</td>
+</tr>
+<tr>
+<td>documentos</td>
+<td>GET /documentos/{id}</td>
+<td>Envolvidos</td>
+<td>RF17, RNF04</td>
+</tr>
+<tr>
+<td>comprovantes</td>
+<td>GET /candidaturas/{id}/comprovante</td>
+<td>Voluntário</td>
+<td>RF22</td>
+</tr>
+<tr>
+<td>moderacao</td>
+<td>PATCH /admin/organizacoes/{id}; GET e PATCH /admin/denuncias; POST /denuncias</td>
+<td>Administrador; Autenticado (denúncia)</td>
+<td>RF24, RF25</td>
+</tr>
+</tbody>
+</table>
+<p>.</p>
+<p>Nota: todos os caminhos têm o prefixo /api/v1. “Envolvidos” são o voluntário da candidatura e a organização dona da vaga, conforme a ação permitida a cada um (Quadro 9). A documentação completa é gerada automaticamente pelo FastAPI, no padrão OpenAPI, e fica disponível em /docs.</p>
+<p>A Figura 5 apresenta o diagrama de pacotes, com a organização do código dos dois subsistemas e a estrutura interna padrão dos módulos do <em>back-end</em>.</p>
+<p><strong>Figura 5 –</strong> Diagrama de pacotes do VolunJá</p>
+<p><a href="../assets/arquitetura/figura5%20pacotes.png"><img alt="Diagrama de pacotes do front-end e do back-end, com a estrutura interna de um módulo" src="../assets/arquitetura/figura5%20pacotes.png" /></a></p>
+<p>Todos os módulos do <em>back-end</em> seguem a mesma estrutura de arquivos: router.py (<em>endpoints</em>), schemas.py (DTOs), service.py (regras de negócio), repository.py (consultas) e models.py (entidades). Essa padronização reduz o tempo de aprendizado ao mudar de módulo, o que favorece a prática de código coletivo adotada no processo (DV, seção 3.2).</p>
+<h4 id="253-visao-estrutural">2.5.3 Visão estrutural<a class="headerlink" href="#253-visao-estrutural" title="Permanent link">&para;</a></h4>
+<p>A visão estrutural é apresentada em dois níveis: os componentes de execução, no diagrama de componentes (Figura 6), e o modelo de domínio, no diagrama de classes (Figura 7).</p>
+<p><strong>Figura 6 –</strong> Diagrama de componentes do VolunJá</p>
+<p><a href="../assets/arquitetura/figura6%20componentes.png"><img alt="Diagrama de componentes da SPA e da API, com interfaces fornecidas e requeridas" src="../assets/arquitetura/figura6%20componentes.png" /></a></p>
+<p>O diagrama de componentes da Figura 6 mostra como as partes do sistema se conectam por meio de interfaces. A SPA requer a interface API REST, fornecida pela API VolunJá; dentro da API, os módulos dependem uns dos outros conforme o Quadro 6, sempre por meio dos seus <em>services</em>; e a API requer as interfaces SQL, de arquivos e SMTP, fornecidas, respectivamente, pelo MySQL, pelo armazenamento de arquivos e pelo servidor de e-mail.</p>
+<p>Nenhum módulo depende de auth, candidaturas ou moderacao, que ficam no topo da cadeia de dependências, enquanto usuarios, documentos, comprovantes e notificacoes são módulos de base, que não dependem de outros módulos de domínio. Essa organização, sem dependências circulares, permite testar cada módulo isoladamente, substituindo as suas dependências por dublês de teste.</p>
+<p>A Figura 7 define as entidades persistidas e os seus relacionamentos. As classes têm as seguintes responsabilidades:</p>
+<p>1)  <strong>Usuario</strong> concentra os dados de acesso comuns a todos os perfis. <strong>Voluntario</strong> e <strong>Organizacao</strong> especializam Usuario de forma disjunta, refletindo a regra de que os perfis de voluntário e de organização são exclusivos em uma mesma conta (DV, Tabela 4); o administrador é um Usuario com o perfil ADMINISTRADOR;</p>
+<p>2)  <strong>Organizacao</strong> representa tanto ONGs quanto responsáveis por projetos sociais (atributo tipo), identificados por CNPJ ou CPF (RF02 e RF03), e possui um estado de homologação (RF24);</p>
+<p>3)  <strong>Vaga</strong> reúne exatamente os campos padronizados do Documento de Visão, que são também os critérios de filtro da busca (RF08 e RF13); os seus métodos controlam o encerramento e informam se a vaga ainda aceita candidaturas;</p>
+<p>4)  <strong>Causa</strong> é um catálogo compartilhado pelas vagas, pelas áreas de atuação das organizações e pelos interesses dos voluntários; com a <strong>Disponibilidade</strong>, permite calcular a compatibilidade entre voluntários e vagas (RF15);</p>
+<p>5)  <strong>Candidatura</strong> liga um voluntário a uma vaga, com combinação única, e controla as transições de estado: de PENDENTE para ACEITA, RECUSADA ou CANCELADA. Ela é composta pelos <strong>DocumentoCandidatura</strong> enviados, cada um vinculado ao <strong>DocumentoExigido</strong> que atende, e pelo <strong>Comprovante</strong>, que possui um código de verificação;</p>
+<p>6)  <strong>Notificacao</strong> registra os avisos internos enviados aos usuários (RF20), e <strong>Denuncia</strong> registra as denúncias sobre vagas ou usuários, tratadas pelo administrador (RF25).</p>
+<p><strong>Figura 7 –</strong> Diagrama de classes do domínio</p>
+<p><a href="../assets/arquitetura/figura7%20classes.png"><img alt="Diagrama de classes com Usuario, Voluntario, Organizacao, Vaga, Candidatura e classes associadas" src="../assets/arquitetura/figura7%20classes.png" /></a></p>
+<p>Cada classe é mapeada para uma tabela do MySQL pelo SQLAlchemy, e a especialização de Usuario é implementada por herança com tabelas associadas (<em>joined table inheritance</em>). Os atributos de tipo enumerado assumem valores fixos, armazenados como colunas do tipo ENUM no MySQL — por exemplo, StatusVaga (ABERTA, ENCERRADA ou SUSPENSA) e StatusCandidatura (PENDENTE, ACEITA, RECUSADA ou CANCELADA).</p>
+<h3 id="26-visao-de-implantacao">2.6 Visão de implantação<a class="headerlink" href="#26-visao-de-implantacao" title="Permanent link">&para;</a></h3>
+<p>O VolunJá é implantado em contêineres Docker, orquestrados pelo Docker Compose, em uma máquina da própria equipe. Por se tratar de um produto mínimo viável (MVP) de uso acadêmico, com dezenas de usuários simultâneos nas validações e nas apresentações, um computador da equipe atende à carga prevista e dispensa custos de hospedagem. A aplicação é publicada na Internet por um túnel da Cloudflare (Cloudflare, 2026), em um domínio de teste, sem a necessidade de um servidor dedicado.</p>
+<p>Além do cloudflared, que conecta a máquina ao túnel, a composição tem três contêineres: o <strong>Nginx</strong>, que entrega o <em>build</em> da SPA e encaminha as requisições /api à API; a <strong>API</strong>, em que o FastAPI é executado pelo servidor ASGI Uvicorn; e o banco de dados <strong>MySQL 8.4 (LTS)</strong>, acessível apenas pela rede interna do Docker. Os dados e os documentos das candidaturas ficam em volumes persistentes, e os e-mails são enviados por um provedor SMTP externo. O MySQL, definido no DV (Quadro 5), é um sistema gerenciador de banco de dados relacional maduro e gratuito, adequado a dados fortemente relacionados — vagas, candidaturas e documentos — que exigem integridade referencial, e possui suporte nativo no SQLAlchemy.</p>
+<p>No desenvolvimento, cada integrante executa a mesma composição na própria máquina, e a integração contínua roda no GitHub Actions a cada <em>pull request</em>.</p>
+<p>A Figura 8 apresenta o diagrama de implantação da aplicação.</p>
+<p><strong>Figura 8 –</strong> Diagrama de implantação do VolunJá</p>
+<p><a href="../assets/arquitetura/figura8%20implantacao.png"><img alt="Diagrama de implantação com dispositivo do usuário, servidor em nuvem, contêineres e GitHub" src="../assets/arquitetura/figura8%20implantacao.png" /></a></p>
+<p>A documentação do projeto, em MkDocs, continua publicada no GitHub Pages (DV, Quadro 5), de forma independente da aplicação.</p>
+<h3 id="27-restricoes-adicionais">2.7 Restrições adicionais<a class="headerlink" href="#27-restricoes-adicionais" title="Permanent link">&para;</a></h3>
+<p>Além das metas e restrições do Quadro 4, o software está sujeito às seguintes restrições negociais:</p>
+<p>1)  o software é acessado diretamente pela Internet, por navegador, sem instalação; a consulta às vagas é pública (perfil Visitante), mas a candidatura, a publicação de vagas e a moderação exigem cadastro e <em>login</em> (DV, Tabela 4);</p>
+<p>2)  uma conta pertence a um único perfil, voluntário ou organização (DV, Tabela 4);</p>
+<p>3)  as vagas de uma organização só ficam visíveis após a homologação do cadastro pelo administrador (RF24); enquanto esse requisito, de prioridade Should, não for implementado, os cadastros são aprovados automaticamente;</p>
+<p>4)  o tratamento de dados pessoais — nome, CPF, contatos e documentos — segue a Lei Geral de Proteção de Dados Pessoais, LGPD (Brasil, 2018): coleta do mínimo necessário, consentimento no cadastro, acesso restrito às partes envolvidas em cada candidatura e exclusão da conta a pedido do titular;</p>
+<p>5)  nos testes, nas validações e nas apresentações são usados apenas dados fictícios, sem documentos ou dados pessoais reais;</p>
+<p>6)  o software é dimensionado, no MVP, para até 100 usuários autenticados simultaneamente, número compatível com o contexto acadêmico de validação;</p>
+<p>7)  por ser hospedado em uma máquina da equipe, sem custos de hospedagem, o sistema não tem garantia formal de disponibilidade contínua;</p>
+<p>8)  a interface é oferecida em português do Brasil, com datas no formato dd/mm/aaaa e horário de Brasília.</p>
+<p>As características de qualidade relevantes para o software, segundo o modelo de qualidade da norma ISO/IEC 25010 (International Organization for Standardization, 2011), estão descritas no Quadro 8.</p>
+<p><strong>Quadro 8 –</strong> Características de qualidade relevantes para o software</p>
+<table>
+<thead>
+<tr>
+<th><strong>Característica</strong></th>
+<th><strong>Como é atendida</strong></th>
+<th><strong>Justificativa</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Usabilidade (inclui acessibilidade)</strong></td>
+<td>Protótipos no Figma, testes de usabilidade a cada incremento, diretrizes WCAG 2.1 no nível AA (W3C, 2018) e mensagens de erro claras.</td>
+<td>Foco em UX do tema (DV, Quadro 1); RNF01 e RNF03; métrica M6.</td>
+</tr>
+<tr>
+<td><strong>Segurança</strong></td>
+<td>JWT com expiração, <em>hash</em> Argon2, autorização por perfil e por propriedade, validação com Pydantic, ORM contra injeção de SQL e limites no envio de arquivos.</td>
+<td>RNF04 e RNF05; proteção de dados pessoais (Brasil, 2018).</td>
+</tr>
+<tr>
+<td><strong>Confiabilidade</strong></td>
+<td>Transações no banco de dados, dados em volumes persistentes, tratamento centralizado de erros e testes automatizados.</td>
+<td>Evitar a perda de candidaturas e de documentos.</td>
+</tr>
+<tr>
+<td><strong>Eficiência de desempenho</strong></td>
+<td>Índices nos campos de filtro, paginação, e-mails enviados em segundo plano e arquivos estáticos com <em>cache</em> no Nginx.</td>
+<td>RNF06 e meta MR03.</td>
+</tr>
+<tr>
+<td><strong>Manutenibilidade</strong></td>
+<td>Monólito modular em camadas, padrões do Apêndice A e cobertura de testes de, no mínimo, 80%.</td>
+<td>RNF07 e prática de código coletivo (DV, seção 3.2).</td>
+</tr>
+<tr>
+<td><strong>Portabilidade</strong></td>
+<td>Contêineres Docker e SPA compatível com navegadores modernos em celular, tablet e desktop.</td>
+<td>RNF02 e meta MR08.</td>
+</tr>
+<tr>
+<td><strong>Compatibilidade</strong></td>
+<td>API documentada em OpenAPI, o que permite integrar outros clientes no futuro, como um aplicativo móvel.</td>
+<td>Evolução do produto.</td>
+</tr>
+</tbody>
+</table>
+<p>Como perfis diferentes acessam a aplicação, a segurança merece atenção especial. O Quadro 9 apresenta as permissões de cada perfil, derivadas da Tabela 4 do Documento de Visão.</p>
+<p><strong>Quadro 9 –</strong> Matriz de permissões por perfil</p>
+<table>
+<thead>
+<tr>
+<th><strong>Funcionalidade</strong></th>
+<th><strong>Visitante</strong></th>
+<th><strong>Voluntário</strong></th>
+<th><strong>Organização</strong></th>
+<th><strong>Administrador</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Buscar e visualizar vagas (RF12 a RF14)</td>
+<td>Sim</td>
+<td>Sim</td>
+<td>Sim</td>
+<td>Sim</td>
+</tr>
+<tr>
+<td>Cadastrar-se (RF01 a RF03)</td>
+<td>Sim</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Manter o próprio perfil (RF06 e RF07)</td>
+<td>—</td>
+<td>Sim</td>
+<td>Sim</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Gerir vagas (RF08 a RF11)</td>
+<td>—</td>
+<td>—</td>
+<td>Próprias</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Candidatar-se com documentos (RF16 e RF17)</td>
+<td>—</td>
+<td>Sim</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Acompanhar e cancelar candidaturas (RF18)</td>
+<td>—</td>
+<td>Próprias</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Triar candidaturas (RF19)</td>
+<td>—</td>
+<td>—</td>
+<td>Das próprias vagas</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Acessar documentos de candidaturas (RNF04)</td>
+<td>—</td>
+<td>Próprios</td>
+<td>Das próprias vagas</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Visualizar contato após o aceite (RF21)</td>
+<td>—</td>
+<td>Próprias</td>
+<td>Das próprias vagas</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Emitir comprovante (RF22)</td>
+<td>—</td>
+<td>Próprio</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Denunciar vaga ou usuário (RF25)</td>
+<td>—</td>
+<td>Sim</td>
+<td>Sim</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Homologar organizações e moderar (RF24 e RF25)</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Sim</td>
+</tr>
+<tr>
+<td>Manter usuários (DV, Tabela 4)</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Sim</td>
+</tr>
+</tbody>
+</table>
+<p>As permissões são aplicadas em duas etapas: (i) <strong>autorização por perfil</strong>, por dependências do FastAPI que verificam o perfil contido no <em>token</em> JWT antes de executar o <em>endpoint</em>; e (ii) <strong>autorização por propriedade</strong>, nos <em>services</em>, que verificam se o recurso pertence ao usuário autenticado, como a vaga que uma organização tenta editar. O administrador não acessa os documentos das candidaturas, pois não participa da relação entre voluntário e organização, em respeito ao princípio da necessidade da LGPD (Brasil, 2018). Além disso, o <em>token</em> expira em 60 minutos, as senhas têm no mínimo oito caracteres e as tentativas repetidas de <em>login</em> são limitadas no Nginx.</p>
+<h2 id="referencias">REFERÊNCIAS<a class="headerlink" href="#referencias" title="Permanent link">&para;</a></h2>
+<p>ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. <strong>NBR 14724</strong>: informação e documentação: trabalhos acadêmicos: apresentação. Rio de Janeiro: ABNT, 2011.</p>
+<p>ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. <strong>NBR 6023</strong>: informação e documentação: referências: elaboração. Rio de Janeiro: ABNT, 2018.</p>
+<p>ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. <strong>NBR 10520</strong>: informação e documentação: citações em documentos: apresentação. Rio de Janeiro: ABNT, 2023.</p>
+<p>BASS, Len; CLEMENTS, Paul; KAZMAN, Rick. <strong>Software architecture in practice</strong>. 4. ed. Boston: Addison-Wesley, 2021.</p>
+<p>BRASIL. <strong>Lei nº 13.709, de 14 de agosto de 2018</strong>. Lei Geral de Proteção de Dados Pessoais (LGPD). Brasília, DF: Presidência da República, 2018. Disponível em: <a href="https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm">https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm</a>. Acesso em: 5 out. 2026.</p>
+<p>CLOUDFLARE. <strong>Cloudflare Tunnel</strong>. [S. l.]: Cloudflare, 2026. Disponível em: <a href="https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/">https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/</a>. Acesso em: 6 out. 2026.</p>
+<p>CONVENTIONAL COMMITS. <strong>Conventional Commits 1.0.0</strong>. [S. l.], 2019. Disponível em: <a href="https://www.conventionalcommits.org/pt-br/v1.0.0/">https://www.conventionalcommits.org/pt-br/v1.0.0/</a>. Acesso em: 5 out. 2026.</p>
+<p>DOCKER. <strong>Docker documentation</strong>. [S. l.]: Docker Inc., 2026. Disponível em: <a href="https://docs.docker.com/">https://docs.docker.com/</a>. Acesso em: 5 out. 2026.</p>
+<p>FASTAPI. <strong>FastAPI documentation</strong>. [S. l.], 2026. Disponível em: <a href="https://fastapi.tiangolo.com/">https://fastapi.tiangolo.com/</a>. Acesso em: 5 out. 2026.</p>
+<p>FIELDING, Roy Thomas. <strong>Architectural styles and the design of network-based software architectures</strong>. 2000. Tese (Doutorado em Information and Computer Science) – University of California, Irvine, 2000.</p>
+<p>FOWLER, Martin. <strong>Patterns of enterprise application architecture</strong>. Boston: Addison-Wesley, 2002.</p>
+<p>GRUPO GOSLING. <strong>VolunJá</strong>: visão do produto e do projeto. Versão 0.3. Brasília, 2026. Documento da disciplina Métodos de Desenvolvimento de Software.</p>
+<p>INTERNATIONAL ORGANIZATION FOR STANDARDIZATION. <strong>ISO/IEC 25010</strong>: systems and software engineering: systems and software quality requirements and evaluation (SQuaRE): system and software quality models. Geneva: ISO, 2011.</p>
+<p>KRUCHTEN, Philippe B. The 4+1 view model of architecture. <strong>IEEE Software</strong>, Los Alamitos, v. 12, n. 6, p. 42-50, nov. 1995.</p>
+<p>MYSQL. <strong>MySQL 8.4 reference manual</strong>. [S. l.]: Oracle, 2026. Disponível em: <a href="https://dev.mysql.com/doc/refman/8.4/en/">https://dev.mysql.com/doc/refman/8.4/en/</a>. Acesso em: 5 out. 2026.</p>
+<p>OBJECT MANAGEMENT GROUP. <strong>OMG Unified Modeling Language (OMG UML)</strong>: version 2.5.1. Needham: OMG, 2017. Disponível em: <a href="https://www.omg.org/spec/UML/2.5.1/">https://www.omg.org/spec/UML/2.5.1/</a>. Acesso em: 5 out. 2026.</p>
+<p>OPENAPI INITIATIVE. <strong>OpenAPI specification</strong>: version 3.1.0. [S. l.], 2021. Disponível em: <a href="https://spec.openapis.org/oas/v3.1.0">https://spec.openapis.org/oas/v3.1.0</a>. Acesso em: 5 out. 2026.</p>
+<p>PRESSMAN, Roger S.; MAXIM, Bruce R. <strong>Engenharia de software</strong>: uma abordagem profissional. 8. ed. Porto Alegre: AMGH, 2016.</p>
+<p>REACT. <strong>React documentation</strong>. [S. l.]: Meta Open Source, 2026. Disponível em: <a href="https://react.dev/">https://react.dev/</a>. Acesso em: 5 out. 2026.</p>
+<p>SOMMERVILLE, Ian. <strong>Engenharia de software</strong>. 10. ed. São Paulo: Pearson, 2018.</p>
+<p>SQLALCHEMY. <strong>SQLAlchemy 2.0 documentation</strong>. [S. l.], 2026. Disponível em: <a href="https://docs.sqlalchemy.org/en/20/">https://docs.sqlalchemy.org/en/20/</a>. Acesso em: 5 out. 2026.</p>
+<p>VAN ROSSUM, Guido; WARSAW, Barry; COGHLAN, Alyssa. <strong>PEP 8</strong>: style guide for Python code. [S. l.]: Python Software Foundation, 2001. Disponível em: <a href="https://peps.python.org/pep-0008/">https://peps.python.org/pep-0008/</a>. Acesso em: 5 out. 2026.</p>
+<p>W3C. <strong>Web Content Accessibility Guidelines (WCAG) 2.1</strong>. [S. l.]: W3C, 2018. Disponível em: <a href="https://www.w3.org/TR/WCAG21/">https://www.w3.org/TR/WCAG21/</a>. Acesso em: 5 out. 2026.</p>
+<h2 id="apendice-a-padroes-de-codificacao-e-de-versionamento">APÊNDICE A – PADRÕES DE CODIFICAÇÃO E DE VERSIONAMENTO<a class="headerlink" href="#apendice-a-padroes-de-codificacao-e-de-versionamento" title="Permanent link">&para;</a></h2>
+<p>Este apêndice detalha os padrões referidos na meta MR04 e no requisito RNF07 (DV, Tabela 6). O cumprimento dos padrões é verificado automaticamente na integração contínua e na revisão dos <em>pull requests</em>, como parte do conceito de pronto (DV, seção 3.3). O Quadro 10 resume as convenções de nomenclatura.</p>
+<p><strong>Quadro 10 –</strong> Convenções de nomenclatura</p>
+<table>
+<thead>
+<tr>
+<th><strong>Elemento</strong></th>
+<th><strong>Python (<em>back-end</em>)</strong></th>
+<th><strong>JavaScript (<em>front-end</em>)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Arquivos</strong></td>
+<td><em>snake_case</em> (models.py, vaga_utils.py)</td>
+<td><em>camelCase</em> (vagaService.js); componentes em <em>PascalCase</em> (VagaCard.jsx)</td>
+</tr>
+<tr>
+<td><strong>Classes e componentes</strong></td>
+<td><em>PascalCase</em> (VagaService, VagaCreate)</td>
+<td><em>PascalCase</em> (VagaCard, FiltroVagas)</td>
+</tr>
+<tr>
+<td><strong>Funções e variáveis</strong></td>
+<td><em>snake_case</em> (listar_vagas)</td>
+<td><em>camelCase</em> (listarVagas)</td>
+</tr>
+<tr>
+<td><strong>Constantes</strong></td>
+<td><em>UPPER_SNAKE_CASE</em> (TAMANHO_MAXIMO_ARQUIVO)</td>
+<td><em>UPPER_SNAKE_CASE</em> (API_URL)</td>
+</tr>
+<tr>
+<td><strong><em>Hooks</em></strong></td>
+<td>—</td>
+<td>Prefixo use (useAuth, useVagas)</td>
+</tr>
+<tr>
+<td><strong>Idioma dos nomes</strong></td>
+<td>Termos de domínio em português, sem acentos (vaga, candidatura); termos técnicos em inglês (<em>Service</em>, <em>Repository</em>, Schema)</td>
+<td>Mesmo critério do <em>back-end</em></td>
+</tr>
+</tbody>
+</table>
+<h3 id="a1-back-end-python">A.1 <em>Back-end</em> (Python)<a class="headerlink" href="#a1-back-end-python" title="Permanent link">&para;</a></h3>
+<p>No <em>back-end</em>, adotam-se os seguintes padrões:</p>
+<p>1)  estilo PEP 8 (Van Rossum; Warsaw; Coghlan, 2001), verificado e formatado pelo Ruff, com linhas de até 88 caracteres;</p>
+<p>2)  anotações de tipo obrigatórias em funções públicas; toda entrada e saída da API é definida por <em>schemas</em> Pydantic;</p>
+<p>3)  cada módulo de domínio contém os arquivos router.py, schemas.py, service.py, repository.py e models.py, e as regras de negócio ficam apenas em service.py;</p>
+<p>4)  erros de negócio são representados por exceções próprias, convertidas em respostas HTTP por um tratador central — por exemplo, a exceção CandidaturaDuplicadaError;</p>
+<p>5)  testes com pytest na pasta tests, espelhando a estrutura dos módulos, com nomes no formato test_&lt;comportamento_esperado&gt;;</p>
+<p>6)  configurações e segredos ficam apenas em variáveis de ambiente: o arquivo .env não é versionado, e o arquivo .env.example documenta as variáveis necessárias.</p>
+<h3 id="a2-front-end-javascript-e-react">A.2 <em>Front-end</em> (JavaScript e React)<a class="headerlink" href="#a2-front-end-javascript-e-react" title="Permanent link">&para;</a></h3>
+<p>No <em>front-end</em>, adotam-se os seguintes padrões:</p>
+<p>1)  ESLint, com as regras recomendadas e os <em>plugins</em> react-hooks e jsx-a11y, e Prettier para a formatação;</p>
+<p>2)  apenas componentes funcionais com <em>hooks</em>, com um componente por arquivo;</p>
+<p>3)  chamadas à API feitas somente pelos módulos da pasta <em>services</em>, nunca diretamente nos componentes;</p>
+<p>4)  estilos em CSS Modules (Componente.module.css), usando os <em>tokens</em> de <em>design</em> definidos a partir do protótipo;</p>
+<p>5)  acessibilidade: elementos HTML semânticos, rótulos em todos os campos, textos alternativos em imagens, foco visível e navegação por teclado;</p>
+<p>6)  testes com Vitest e React Testing Library no mesmo diretório do componente, como VagaCard.test.jsx.</p>
+<h3 id="a3-api-rest-e-banco-de-dados">A.3 API REST e banco de dados<a class="headerlink" href="#a3-api-rest-e-banco-de-dados" title="Permanent link">&para;</a></h3>
+<p>Na API e no banco de dados, adotam-se as seguintes convenções:</p>
+<p>1)  recursos nomeados no plural e em português (/vagas, /candidaturas), com o prefixo /api/v1;</p>
+<p>2)  métodos HTTP com a semântica padrão: GET consulta, POST cria, PUT substitui, PATCH altera parcialmente e DELETE remove;</p>
+<p>3)  JSON com chaves em <em>snake_case</em> e datas no padrão ISO 8601; listas paginadas com os campos itens, total, pagina e tamanho; erros no formato {"detail": "mensagem"};</p>
+<p>4)  tabelas em <em>snake_case</em> e no plural (vagas, candidaturas), com chave primária id, chaves estrangeiras no formato &lt;entidade&gt;_id e colunas de auditoria criado_em e atualizado_em;</p>
+<p>5)  toda alteração no esquema do banco de dados é feita por migração do Alembic, versionada no Git; o banco nunca é alterado manualmente.</p>
+<h3 id="a4-versionamento">A.4 Versionamento<a class="headerlink" href="#a4-versionamento" title="Permanent link">&para;</a></h3>
+<p>No versionamento do código, adotam-se as seguintes regras:</p>
+<p>1)  <em>branches</em>: main (versão estável), developer (integração) e <em>branches</em> de trabalho criadas a partir da developer — feature/&lt;cenário&gt;-&lt;descrição&gt; (por exemplo, feature/cn06-candidatura), fix/&lt;descrição&gt; e docs/&lt;descrição&gt;;</p>
+<p>2)  mensagens de <em>commit</em> no padrão Conventional Commits (Conventional Commits, 2019), no formato &lt;tipo&gt;(&lt;escopo&gt;): &lt;descrição&gt;, com os tipos feat, fix, docs, test, refactor, style e chore — por exemplo, feat(candidaturas): valida documentos exigidos;</p>
+<p>3)  toda alteração entra na developer por <em>pull request</em> revisado por, no mínimo, um integrante, com <em>lint</em> e testes aprovados;</p>
+<p>4)  a main recebe a developer ao fim de cada sprint, após a revisão com o Dono do Produto (P.O.).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Voltar ao topo
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.top", "toc.integrate", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado para \u00e1rea de transfer\u00eancia", "clipboard.copy": "Copiar para \u00e1rea de transfer\u00eancia", "search.result.more.one": "Mais 1 nesta p\u00e1gina", "search.result.more.other": "Mais # nesta p\u00e1gina", "search.result.none": "Nenhum resultado encontrado", "search.result.one": "1 resultado encontrado", "search.result.other": "# resultados encontrados", "search.result.placeholder": "Digite para iniciar a busca", "search.result.term.missing": "Ausente", "select.version": "Selecione a vers\u00e3o"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
