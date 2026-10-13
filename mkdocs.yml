@@ -1,9 +1,30 @@
-site_name: Documentação
+site_name: VolunJá — Grupo Gosling
+site_description: Documentação do produto e do projeto VolunJá, desenvolvido na disciplina MDS em 2026.2.
+site_url: https://fga0138-mds-ajax.github.io/2026.2-T03-Gosling/
+repo_url: https://github.com/FGA0138-MDS-Ajax/2026.2-T03-Gosling
+repo_name: FGA0138-MDS-Ajax/2026.2-T03-Gosling
 
 nav:
-  - Instruções mkdocs: "index.md"
+  - Início: index.md
   - Atas de Reunião:
-    - Ata 1: "atas-reuniao/ata-reuniao-1.md"
-
+      - Ata 1: atas-reuniao/ata-reuniao-1.md
+  - Documentos:
+    - Documento de visão: visão.md
+    - Documento de Arquitetura: arquitetura.md
 theme:
   name: material
+  language: pt
+  features:
+    - navigation.top
+    - toc.integrate
+    - toc.follow
+
+plugins:
+  - search:
+      lang: pt
+
+markdown_extensions:
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 2
