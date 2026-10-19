@@ -2,7 +2,7 @@
 
 # Documento de Arquitetura
 
-**Versão 0.2**
+**Versão 0.3**
 
 Arquivos originais: [PDF](documento%20de%20arquitetura.pdf)
 
@@ -25,6 +25,7 @@ Arquivos originais: [PDF](documento%20de%20arquitetura.pdf)
 | 17/09/2026 | 0.0 | Criação da estrutura inicial dos documentos de visão e arquitetura | Cauã Henrique Moura Rodrigues |
 | 05/10/2026 | 0.1 | Elaboração do documento conforme o *template* da disciplina: representação arquitetural, metas e restrições, visões de uso, lógica, estrutural e de implantação, restrições adicionais, referências e padrões de codificação (Apêndice A) | Equipe Gosling |
 | 06/10/2026 | 0.2 | Reestruturação conforme o *template* da disciplina: implantação simplificada em contêineres Docker, publicada por túnel da Cloudflare; síntese das tecnologias e dos recursos da API; remoção do glossário, das enumerações e do quadro de ambientes; figuras refeitas no Figma | Equipe Gosling |
+| 18/10/2026 | 0.3 | Inclusão de RF26 e RF27: calendário, validação transacional de conflitos, ocorrências de vagas, contrato da API e permissões; roteiro de atualização das figuras no Figma. | Equipe Gosling |
 
  
 
@@ -52,9 +53,15 @@ O detalhamento do escopo se encontra na Declaração de Escopo do Projeto (seç�
 
 5)  um administrador homologa as organizações e modera vagas e usuários.
 
-Ao longo deste documento, as partes do Documento de Visão usadas nas decisões arquiteturais são referenciadas de forma explícita (por exemplo, “DV, Quadro 5”), e os requisitos são identificados pelos códigos da Tabela 6 do Documento de Visão (RF01 a RF25 e RNF01 a RNF07).
+o voluntário consulta o calendário das candidaturas PENDENTES e ACEITAS (RF26); novas candidaturas são bloqueadas quando existe sobreposição de horários com outra vaga (RF27).
+
+
+Ao longo deste documento, as partes do Documento de Visão usadas nas decisões arquiteturais são referenciadas de forma explícita (por exemplo, “DV, Quadro 5”), e os requisitos são identificados pelos códigos da Tabela 6 do Documento de Visão (RF01 a RF27 e RNF01 a RNF07).
 
 O documento está organizado em duas seções. Após esta introdução, a seção 2 apresenta a representação arquitetural: as definições, a justificativa da escolha, o detalhamento do estilo, as metas e restrições, as visões de uso, de organização lógica, estrutural e de implantação e as restrições adicionais. Ao final, encontram-se as referências e o Apêndice A, com os padrões de codificação e de versionamento.
+
+**Atualização das figuras:** os textos e quadros desta revisão incluem RF26 e RF27. As Figuras 1 a 7 ainda são as exportações anteriores do Figma e devem receber as alterações detalhadas em ajustes-figma-calendario.md antes da entrega final das figuras. A Figura 8 não exige mudança de infraestrutura.
+
 
 ## 2 REPRESENTAÇÃO ARQUITETURAL
 
@@ -127,6 +134,9 @@ Completam a pilha as bibliotecas de apoio — Axios, no cliente HTTP; CSS Module
 
 A Figura 2 mostra os elementos da Figura 1 em funcionamento, por meio do diagrama de sequência da candidatura a uma vaga (RF16 e RF17). A requisição percorre as camadas de cima para baixo, e a resposta retorna no sentido inverso; o e-mail de aviso à organização é enviado em segundo plano, depois que a resposta já foi devolvida ao voluntário.
 
+Para RF27, o fluxo passa a validar os horários antes de salvar arquivos, candidatura e comprovante. O serviço abre uma transação, bloqueia a linha do voluntário, consulta as candidaturas ativas e compara todas as ocorrências. Com conflito, desfaz a transação e devolve HTTP 409 com os dados da vaga conflitante; sem conflito, persiste e confirma a transação antes de notificar.
+
+
 **Figura 2 –** Interação entre as camadas na candidatura a uma vaga (diagrama de sequência)
 
 [![Diagrama de sequência da candidatura: SPA, router, services, repository e MySQL](assets/arquitetura/figura2%20sequencia%20candidatura.png)](assets/arquitetura/figura2%20sequencia%20candidatura.png)
@@ -180,6 +190,7 @@ O Quadro 4 apresenta as metas e as restrições de funcionamento que orientam o 
 | **MR07** | A interface deve ser responsiva a partir de 360 px de largura e atender às diretrizes WCAG 2.1 no nível AA. | Responsividade e acessibilidade (RNF02 e RNF03) e foco em UX (DV, Quadro 1). | Testes com Playwright em telas de celular, tablet e desktop; verificação com axe-core sem violações graves. |
 | **MR08** | A aplicação deve ser executável em contêineres Docker, com a mesma composição em qualquer máquina da equipe. | Evita diferenças de configuração entre as máquinas dos integrantes e simplifica a preparação do ambiente na Sprint 5 (DV, Tabela 3). | O comando docker compose up inicia o sistema completo. |
 | **MR09** | Os documentos das candidaturas devem ser arquivos PDF, JPG ou PNG de até 5 MB cada. | Segurança dos dados (RNF04): reduz o risco de arquivos maliciosos e o uso excessivo de disco. | Testes de envio com tipos e tamanhos inválidos. |
+| MR10 | A verificação de conflitos e o registro da candidatura devem ser atômicos por voluntário, inclusive sob requisições simultâneas. | RF27 e RN01 a RN05 do DV. | Testes CT09 a CT12 e CT14 do DV; apenas uma candidatura sobreposta pode ser confirmada. |
 
  .
 
@@ -220,6 +231,7 @@ Alguns requisitos do Documento de Visão contribuíram diretamente para a escolh
 | **RF05 e RF20 (e-mails)** | Envio assíncrono pelo módulo de notificações, para não aumentar o tempo de resposta das requisições. |
 | **RF24 e RF25 (homologação e moderação)** | Módulo de moderação isolado, acessível apenas ao perfil Administrador. |
 | **RNF07 (manutenibilidade)** | Monólito modular em camadas e padrões de codificação definidos no Apêndice A. |
+| RF26 e RF27 (calendário e conflito de horário) | Agenda derivada das candidaturas ativas e das ocorrências das vagas; validação no serviço de candidaturas, com transação e bloqueio por voluntário. |
 
  .
 
@@ -233,6 +245,9 @@ A funcionalidade mais complexa é a **candidatura a uma vaga** (cenário CN06), 
 
 O fluxo da Figura 4 evidencia as regras que a camada de negócio deve garantir: somente voluntários autenticados podem se candidatar; a vaga precisa estar aberta; cada voluntário pode ter apenas uma candidatura por vaga; os arquivos são validados antes do registro; e os contatos só são liberados após o aceite. Enquanto a candidatura estiver pendente, o voluntário pode cancelá-la (RF18).
 
+Também é obrigatório validar ausência de sobreposição com candidaturas PENDENTES ou ACEITAS (RF27). A interface mostra a vaga conflitante e oferece o acesso à agenda (RF26); o bloqueio não depende de JavaScript do navegador. RECUSADAS e CANCELADAS liberam o horário. ENCERRADA indica o fim das inscrições da vaga e, isoladamente, não libera compromissos ativos.
+
+
 #### 2.5.2 Visão de organização lógica
 
 O sistema é subdividido em dois subsistemas — o *front-end* (SPA) e o *back-end* (API) — e cada um deles, em módulos com responsabilidades próprias. O Quadro 6 lista os módulos, a razão lógica de cada um, os requisitos que atendem e as suas dependências.
@@ -243,7 +258,7 @@ O sistema é subdividido em dois subsistemas — o *front-end* (SPA) e o *back-e
 |----|----|----|----|
 | ***Front-end* (SPA em React)** |  |  |  |
 | **app** | Ponto de entrada: rotas, layout e provedores de contexto; restringe as rotas de acordo com o perfil. | RF04, RNF05 | pages; contexts e *hooks* |
-| **pages** | Telas agrupadas por perfil: públicas, voluntário, organização e administrador. | RF01 a RF25 | components; contexts e *hooks*; *services* |
+| pages | Telas por perfil, incluindo calendário e agenda diária do voluntário, e mensagem de conflito na candidatura. | RF01 a RF27 | components; contexts e hooks; services |
 | **components** | Componentes de interface reutilizáveis e acessíveis, como formulários, cartões de vaga, filtros e janelas modais. | RNF01 a RNF03 | utils e styles |
 | **contexts e *hooks*** | Estado compartilhado (sessão e perfil) e lógica reutilizável entre as telas. | RF04 | *services* |
 | ***services*** | Acesso à API REST, com um serviço por recurso e um cliente HTTP configurado. | Todos | API REST (*back-end*) |
@@ -252,8 +267,8 @@ O sistema é subdividido em dois subsistemas — o *front-end* (SPA) e o *back-e
 | **core** | Configuração, segurança (*hash* e JWT), sessão de banco de dados, erros e logs. | RNF04 | — |
 | **auth** | *Login*, emissão de *token* e recuperação de senha. | RF04, RF05 | usuarios; notificacoes |
 | **usuarios** | Contas, voluntários, organizações e perfis. | RF01 a RF03, RF06, RF07 | — |
-| **vagas** | Publicação, edição, encerramento, busca, recomendação e documentos exigidos. | RF08 a RF15 | usuarios |
-| **candidaturas** | Candidatura, acompanhamento, cancelamento, triagem e liberação de contato. | RF16, RF18, RF19, RF21 | vagas; documentos; comprovantes; notificacoes |
+| vagas | Publicação, edição, busca e ocorrências com início e fim; horários imutáveis enquanto houver candidatura ativa. | RF08 a RF15; apoio a RF26 e RF27 | usuarios |
+| candidaturas | POST /vagas/{id}/candidaturas; GET /voluntarios/me/candidaturas; GET /voluntarios/me/calendario; GET /vagas/{id}/candidaturas; PATCH /candidaturas/{id}; GET /candidaturas/{id}/contato | Voluntário; Organização dona; Envolvidos | RF16 a RF21, RF26, RF27 |
 | **documentos** | Recebimento, validação, armazenamento e acesso controlado aos arquivos. | RF17, RNF04 | — |
 | **comprovantes** | Emissão do comprovante em PDF e histórico de voluntariado. | RF22, RF23 | — |
 | **notificacoes** | Notificações internas e envio de e-mails em segundo plano. | RF05, RF20 | — |
@@ -287,6 +302,17 @@ Os módulos comunicam-se de três formas:
 
 Nota: todos os caminhos têm o prefixo /api/v1. “Envolvidos” são o voluntário da candidatura e a organização dona da vaga, conforme a ação permitida a cada um (Quadro 9). A documentação completa é gerada automaticamente pelo FastAPI, no padrão OpenAPI, e fica disponível em /docs.
 
+**Contrato do calendário (RF26):** GET /api/v1/voluntarios/me/calendario?inicio=2026-11-16&fim=2026-11-23 consulta um intervalo de datas com início inclusivo e fim exclusivo. Exige JWT de voluntário e usa a identidade do token. Retorna HTTP 200 com eventos contendo candidatura_id, vaga_id, titulo_vaga, organizacao, status, inicio e fim; sem eventos, retorna lista vazia. As datas delimitam dias no fuso America/Sao_Paulo; parâmetros ausentes, inválidos ou inicio >= fim retornam 422.
+
+**Contrato de conflito (RF27):** POST /api/v1/vagas/{id}/candidaturas retorna HTTP 409 com codigo=CONFLITO_HORARIO, mensagem e conflitos contendo vaga_id, titulo_vaga, inicio e fim de cada ocorrência conflitante da própria agenda. A SPA apresenta os nomes e os horários e a ação Ver meu calendário. O retorno 201 ocorre somente após a confirmação da transação; não se emite comprovante nem aviso de sucesso no caminho de conflito.
+
+**Concorrência e persistência:** o CandidaturaService controla a transação. Por meio do UsuarioService e de seu repository, obtém bloqueio SELECT FOR UPDATE na linha do voluntário, inclusive quando ele ainda não possui candidaturas. Após adquirir o bloqueio, usa leituras atuais com bloqueio para consultar as candidaturas ativas e suas ocorrências; valida e grava na mesma transação. Criar, cancelar, aceitar ou recusar candidaturas deve respeitar a mesma disciplina de bloqueio. A restrição UNIQUE(voluntario_id, vaga_id) continua necessária, mas sozinha não impede sobreposições entre vagas diferentes.
+
+**Edição e ordem dos bloqueios:** criar candidatura e editar horários também bloqueiam a linha da vaga antes de ler seus horários ou verificar candidaturas ativas. Quando uma operação precisa dos dois bloqueios, a ordem é voluntário e depois vaga; alterações que atinjam vários voluntários ordenam os IDs. O serviço de vagas recusa alteração de horários se houver candidatura PENDENTE ou ACEITA, evitando invalidar a agenda já assumida.
+
+**Comparação temporal:** armazenar início e fim em UTC e converter para America/Sao_Paulo na interface. Há conflito se inicio_novo < fim_existente e fim_novo > inicio_existente. Comparar todas as ocorrências, inclusive intervalos entre dias; horários consecutivos são permitidos. Índices em candidaturas(voluntario_id, status) e ocorrencias_vaga(vaga_id, inicio, fim) apoiam as consultas. A agenda é uma projeção dos dados existentes, sem tabela de calendário duplicada.
+
+
 A Figura 5 apresenta o diagrama de pacotes, com a organização do código dos dois subsistemas e a estrutura interna padrão dos módulos do *back-end*.
 
 **Figura 5 –** Diagrama de pacotes do VolunJá
@@ -313,13 +339,16 @@ A Figura 7 define as entidades persistidas e os seus relacionamentos. As classes
 
 2)  **Organizacao** representa tanto ONGs quanto responsáveis por projetos sociais (atributo tipo), identificados por CNPJ ou CPF (RF02 e RF03), e possui um estado de homologação (RF24);
 
-3)  **Vaga** reúne exatamente os campos padronizados do Documento de Visão, que são também os critérios de filtro da busca (RF08 e RF13); os seus métodos controlam o encerramento e informam se a vaga ainda aceita candidaturas;
+3)  **Vaga** reúne os campos padronizados do Documento de Visão e suas ocorrências com início e fim; seus atributos apoiam os filtros da busca (RF08 e RF13); os seus métodos controlam o encerramento e informam se a vaga ainda aceita candidaturas;
 
 4)  **Causa** é um catálogo compartilhado pelas vagas, pelas áreas de atuação das organizações e pelos interesses dos voluntários; com a **Disponibilidade**, permite calcular a compatibilidade entre voluntários e vagas (RF15);
 
 5)  **Candidatura** liga um voluntário a uma vaga, com combinação única, e controla as transições de estado: de PENDENTE para ACEITA, RECUSADA ou CANCELADA. Ela é composta pelos **DocumentoCandidatura** enviados, cada um vinculado ao **DocumentoExigido** que atende, e pelo **Comprovante**, que possui um código de verificação;
 
 6)  **Notificacao** registra os avisos internos enviados aos usuários (RF20), e **Denuncia** registra as denúncias sobre vagas ou usuários, tratadas pelo administrador (RF25).
+
+7) **OcorrenciaVaga** representa cada intervalo agendado, com id, vaga_id, inicio e fim. Vaga compõe uma ou mais ocorrências; inicio deve ser anterior a fim. A candidatura abrange todas as ocorrências da vaga. O calendário é derivado de Voluntario → Candidatura → Vaga → OcorrenciaVaga, preservando o status da candidatura. Disponibilidade continua representando preferências do perfil, não compromissos assumidos.
+
 
 **Figura 7 –** Diagrama de classes do domínio
 
@@ -364,6 +393,9 @@ Além das metas e restrições do Quadro 4, o software está sujeito às seguint
 
 8)  a interface é oferecida em português do Brasil, com datas no formato dd/mm/aaaa e horário de Brasília.
 
+9) a candidatura deve obedecer às regras RN01 a RN05 do DV: bloquear conflitos com candidaturas ativas, informar a vaga conflitante e preservar a consistência da agenda em operações concorrentes (RF26 e RF27).
+
+
 As características de qualidade relevantes para o software, segundo o modelo de qualidade da norma ISO/IEC 25010 (International Organization for Standardization, 2011), estão descritas no Quadro 8.
 
 **Quadro 8 –** Características de qualidade relevantes para o software
@@ -399,6 +431,7 @@ Como perfis diferentes acessam a aplicação, a segurança merece atenção espe
 | Denunciar vaga ou usuário (RF25) | — | Sim | Sim | — |
 | Homologar organizações e moderar (RF24 e RF25) | — | — | — | Sim |
 | Manter usuários (DV, Tabela 4) | — | — | — | Sim |
+| Consultar calendário (RF26) | — | Próprio | — | — |
 
  
 

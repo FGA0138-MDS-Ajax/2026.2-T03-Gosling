@@ -2,7 +2,7 @@
 
 # Visão do Produto e do Projeto
 
-**Versão 0.2**
+**Versão 0.4**
 
 Arquivos originais: [PDF](documento%20de%20visao.pdf)
 
@@ -26,6 +26,7 @@ Arquivos originais: [PDF](documento%20de%20visao.pdf)
 | 17/09/2026 | 0.1 | Estruturação do documento conforme template da disciplina; registro do problema, da declaração de posição do produto, dos objetivos, do escopo inicial e do backlog preliminar | Equipe Gosling |
 | 21/09/2026 | 0.2 | Preenchimento completo do documento no template da disciplina (seções 1 a 7), com espaços reservados para as informações pendentes | Equipe Gosling |
 | 30/09/2026 | 0.3 | Preenchimento dos campos de pesquisa bem como alinhamento de sprints definidas conforme o andamento do projeto | Equipe Gosling |
+| 18/10/2026 | 0.4 | Inclusão do calendário do voluntário (RF26) e do bloqueio de conflitos de horário (RF27); detalhamento dos horários das vagas, regras de negócio e critérios de aceitação. | Equipe Gosling |
 
 
 ## 1 VISÃO GERAL DO PRODUTO
@@ -65,6 +66,9 @@ A Figura 1 tem como efeito o fato de que **voluntários e ONGs não se encontram
 #### 1.1.3 Solução de software proposta
 
 Propõe-se uma **aplicação web** que centraliza a publicação e a busca de vagas de voluntariado, atuando como ponte entre ONGs e voluntários. A solução ataca as causas da Figura 1 em quatro frentes: reúne as vagas em um catálogo único com campos padronizados (*informação*); transforma esses campos em filtros de busca (*compatibilidade*); estrutura a candidatura, do envio de documentos ao comprovante e ao contato com o responsável (*processo*); e oferece às ONGs um canal de divulgação sem exigir infraestrutura própria (*tecnologia*).
+
+A solução também oferece um calendário pessoal com as vagas em que o voluntário possui candidatura ativa e os horários de cada dia (RF26). Antes de registrar uma nova candidatura, verifica a agenda e impede sobreposição com outra vaga, identificando o conflito para o usuário (RF27).
+
 
 O **foco em UX** faz parte da solução: como o público é heterogêneo em idade e familiaridade digital, uma interface confusa reproduziria dentro do sistema a mesma barreira que existe fora dele. Por isso, usabilidade e acessibilidade são requisitos do backlog (seção 4.4) e são medidas conforme a seção 5.1.
 
@@ -132,7 +136,10 @@ O Quadro 4 compara o produto às plataformas já existentes que conectam pessoas
 
 5.  Entregar uma interface acessível e fácil de usar para pessoas com diferentes níveis de familiaridade digital.
 
-Os objetivos 1 a 3 respondem às causas de informação e compatibilidade; os objetivos 4 e 5, ao processo manual de candidatura; e o objetivo 6, ao foco em UX do tema.
+7. Permitir que o voluntário consulte sua agenda de vagas e impedir candidaturas com horários sobrepostos (RF26 e RF27).
+
+
+Os objetivos 1 a 3 respondem às causas de informação e compatibilidade; os objetivos 4 e 5, ao processo manual de candidatura; o objetivo 6, ao foco em UX; e o objetivo 7, à organização dos compromissos e à prevenção de conflitos de horário.
 
 ### 1.4 Tecnologias a Serem Utilizadas
 
@@ -210,7 +217,7 @@ O projeto é organizado em 11 sprints de 7 dias, de quarta a terça-feira, alinh
 | Sprint 6 | Kick-off do desenvolvimento: cadastro e autenticação (CN01) | 21/10/2026 | 27/10/2026 | Incremento e RT | Grupo |  |
 | Sprint 7 | Perfis de voluntário e de organização (CN02 e CN03) | 28/10/2026 | 03/11/2026 | Incremento e RT | Grupo |  |
 | Sprint 8 | Publicação e gestão de vagas (CN04) | 04/11/2026 | 10/11/2026 | Incremento e RT; ponto de controle (09/11 ou 11/11) | Grupo |  |
-| Sprint 9 | Busca e candidatura (CN05 e CN06) | 11/11/2026 | 17/11/2026 | Incremento e RT; inspeção (16/11) | Grupo |  |
+| Sprint 9 | Busca, candidatura e calendário (CN05, CN06 e CN10) | 11/11/2026 | 17/11/2026 | Incremento e RT; inspeção (16/11) | Grupo |  |
 | Sprint 10 | Triagem, conexão e comprovante (CN07 e CN08); correção dos defeitos da inspeção | 18/11/2026 | 24/11/2026 | Incremento e RT | Grupo |  |
 | Sprint 11 | Ajustes de UX e entrega final | 25/11/2026 | 01/12/2026 | Incremento e RU; apresentação do software (30/11 ou 02/12) | Grupo |  |
 
@@ -339,6 +346,9 @@ O escopo do produto corresponde a uma **aplicação web** na qual será possíve
 
 - realizar a **ponte de conexão** entre o responsável pela vaga na ONG e o voluntário, para as demais tratativas.
 
+O escopo inclui o calendário do voluntário e o bloqueio de candidaturas incompatíveis com seus compromissos na plataforma. Cada vaga deve informar datas e horários exatos de início e fim de todas as ocorrências; o período do dia e a carga horária permanecem como informações de busca.
+
+
 ### 4.1 Backlog do produto
 
 O backlog é organizado por perfis (seção 4.2) e cenários (seção 4.3) e detalhado na Tabela 6 (seção 4.4). A priorização usa a técnica MoSCoW, com o seguinte significado para este produto, a ser validado pelo P.O.:
@@ -397,16 +407,32 @@ A Tabela 5 agrupa as funcionalidades em cenários e indica a sprint prevista par
 | CN03 | Gestão do perfil da organização | Sprint 7 |
 | CN04 | Publicação e gestão de vagas pela ONG | Sprint 8 |
 | CN05 | Busca e visualização de vagas | Sprint 9 |
-| CN06 | Candidatura do voluntário à vaga | Sprint 9 |
+| CN06 | Candidatura do voluntário à vaga com validação de horários | Sprint 9 |
 | CN07 | Triagem de candidaturas e conexão entre ONG e voluntário | Sprint 10 |
 | CN08 | Comprovação da atividade voluntária | Sprint 10 |
 | CN09 | Administração e moderação da plataforma | Sprints 9 a 11 |
+| CN10 | Consulta do calendário do voluntário | Sprint 9 |
 
 
 
 ### 4.4 Tabela de Backlog do produto
 
-Os requisitos **Must** formam o MVP e cobrem o caminho completo da questão-problema: a ONG publica a vaga (RF07), o voluntário a encontra por filtros (RF12), candidata-se com documentos (RF15 e RF16), é triado (RF18), recebe o comprovante (RF21) e é conectado ao responsável (RF20). As *user stories* seguem o formato "Eu, como &lt;perfil&gt;, quero &lt;ação&gt;, para &lt;benefício&gt;" e ficam registradas no backlog em markdown.
+Os requisitos **Must** formam o MVP e cobrem o caminho completo da questão-problema: a ONG publica a vaga (RF08), o voluntário a encontra por filtros (RF13), candidata-se com documentos e sem conflito de horário (RF16, RF17 e RF27), consulta seu calendário (RF26), é triado (RF19), recebe o comprovante (RF22) e é conectado ao responsável (RF21). As *user stories* seguem o formato "Eu, como &lt;perfil&gt;, quero &lt;ação&gt;, para &lt;benefício&gt;" e ficam registradas no backlog em markdown.
+
+**US26:** Eu, como voluntário, quero visualizar em um calendário as vagas em que estou inscrito e os horários de cada dia, para organizar meus compromissos de voluntariado.
+
+**US27:** Eu, como voluntário, quero ser avisado e impedido de me candidatar a uma vaga com horário conflitante, para não assumir compromissos simultâneos.
+
+**RN01 — Agenda ativa:** candidaturas PENDENTES e ACEITAS ocupam os horários de todas as ocorrências da vaga. RECUSADAS e CANCELADAS não ocupam a agenda. Encerrar o recebimento de candidaturas de uma vaga não cancela os compromissos já assumidos.
+
+**RN02 — Sobreposição:** há conflito quando início_novo < fim_existente e fim_novo > início_existente. Horários consecutivos, como 09h–10h e 10h–11h, são permitidos. Basta uma ocorrência em conflito para impedir a candidatura inteira. Datas diferentes só conflitam quando os intervalos efetivamente se cruzam, inclusive ao atravessar a meia-noite.
+
+**RN03 — Datas e horários:** toda ocorrência deve ter início anterior ao fim, com exibição no horário de Brasília. No MVP, a ONG cadastra explicitamente cada ocorrência; regras automáticas de recorrência e integração com calendários externos ficam fora do escopo.
+
+**RN04 — Bloqueio e retorno:** a verificação ocorre no servidor antes do registro. Havendo conflito, não são criados candidatura, comprovante ou notificação de sucesso. A interface informa nome da vaga conflitante, data, início e fim, e oferece acesso ao calendário.
+
+**RN05 — Consistência:** no MVP, a edição dos horários de uma vaga é bloqueada enquanto existir candidatura PENDENTE ou ACEITA. O calendário reflete imediatamente o registro, a recusa ou o cancelamento de uma candidatura após a confirmação do servidor.
+
 
 **Tabela 6 –** Backlog do produto
 
@@ -421,15 +447,15 @@ Os requisitos **Must** formam o MVP e cobrem o caminho completo da questão-prob
 | CN01-RF05 | A definir | Recuperação de senha | Funcional | Should | Redefinir a senha por link enviado ao e-mail cadastrado. | US05 |
 | CN02-RF06 | 7 | Manter perfil do voluntário | Funcional | Must | Editar dados pessoais, áreas de interesse e disponibilidade (dias, período e carga horária). | US06 |
 | CN03-RF07 | 7 | Manter perfil da organização | Funcional | Must | Editar os dados institucionais, a descrição da ONG e os canais de contato. | US07 |
-| CN04-RF08 | 8 | Cadastrar vaga de voluntariado | Funcional | Must | Publicar vaga com os campos padronizados: descrição, atividades, causa, modalidade, local, carga horária, período e nº de vagas. | US08 |
-| CN04-RF09 | 8 | Editar e encerrar vaga | Funcional | Must | Alterar os dados de uma vaga publicada e encerrá-la quando preenchida ou cancelada. | US09 |
+| CN04-RF08 | 8 | Cadastrar vaga de voluntariado | Funcional | Must | Publicar vaga com descrição, atividades, causa, modalidade, local, carga horária, período, nº de vagas e uma ou mais ocorrências com data/hora de início e fim. | US08 |
+| CN04-RF09 | 8 | Editar e encerrar vaga | Funcional | Must | Alterar os dados da vaga e encerrá-la. No MVP, impedir alteração dos horários enquanto houver candidaturas PENDENTES ou ACEITAS. | US09 |
 | CN04-RF10 | 8 | Listar vagas da organização | Funcional | Must | Painel da ONG com suas vagas, a situação de cada uma e o número de candidaturas. | US10 |
 | CN04-RF11 | A definir | Definir documentação exigida | Funcional | Should | Indicar os documentos que o voluntário deve enviar ao se candidatar. | US11 |
 | CN05-RF12 | A definir | Listar vagas disponíveis | Funcional | Must | Listar publicamente as vagas abertas, com suas informações essenciais. | US12 |
 | CN05-RF13 | A definir | Buscar vagas por filtros | Funcional | Must | Filtrar vagas por área de atuação/causa, modalidade, local, carga horária e período. | US13 |
-| CN05-RF14 | A definir | Visualizar detalhes da vaga | Funcional | Must | Exibir a página completa da vaga e os dados públicos da organização. | US14 |
+| CN05-RF14 | 9 | Visualizar detalhes da vaga | Funcional | Must | Exibir a página completa da vaga, a organização e todas as datas e horários de início e fim das atividades. | US14 |
 | CN05-RF15 | A definir | Recomendar vagas compatíveis | Funcional | Could | Sugerir vagas compatíveis com os interesses e a disponibilidade do voluntário. | US15 |
-| CN06-RF16 | A definir | Candidatar-se a uma vaga | Funcional | Must | Registrar o interesse do voluntário em uma vaga específica. | US16 |
+| CN06-RF16 | 9 | Candidatar-se a uma vaga | Funcional | Must | Registrar a candidatura somente após validar ausência de conflito de horário com as candidaturas ativas do voluntário (RF27). | US16 |
 | CN06-RF17 | A definir | Enviar documentação da candidatura | Funcional | Must | Enviar os documentos exigidos pela organização no ato da candidatura. | US17 |
 | CN06-RF18 | A definir | Acompanhar candidaturas | Funcional | Must | Consultar a situação das próprias candidaturas e cancelá-las. | US18 |
 | CN07-RF19 | A definir | Triar candidaturas recebidas | Funcional | Must | Ver os candidatos de uma vaga, com perfil e documentos, e aceitar ou recusar cada um. | US19 |
@@ -439,6 +465,8 @@ Os requisitos **Must** formam o MVP e cobrem o caminho completo da questão-prob
 | CN08-RF23 | A definir | Registrar histórico de voluntariado | Funcional | Could | Manter no perfil o histórico de atividades e de horas de voluntariado. | US23 |
 | CN09-RF24 | A definir | Homologar cadastro de organizações | Funcional | Should | Validar o cadastro de uma ONG antes de suas vagas serem publicadas. | US24 |
 | CN09-RF25 | A definir | Moderar vagas e usuários | Funcional | Could | Remover vagas irregulares e suspender contas a partir de denúncias, com um botão de denúncia que alerta o painel do administrador do sistema. | US25 |
+| CN10-RF26 | 9 | Consultar calendário do voluntário | Funcional | Must | Exibir as vagas com candidatura PENDENTE ou ACEITA em calendário e agenda diária, com nome da vaga, ONG, status e horários de início e fim. | US26 |
+| CN06-RF27 | 9 | Impedir candidatura com conflito de horário | Funcional | Must | Bloquear nova candidatura quando qualquer horário se sobrepuser ao de uma candidatura PENDENTE ou ACEITA; informar a vaga conflitante, data e horários. | US27 |
 | RNF01 | A definir | Usabilidade | Não funcional | Must | Usuário sem treinamento conclui busca e candidatura, conforme a meta da métrica M6. | \- |
 | RNF02 | A definir | Responsividade | Não funcional | Must | Adaptar-se a telas de celular, *tablet* e *desktop*. | \- |
 | RNF03 | A definir | Acessibilidade | Não funcional | Should | Seguir boas práticas de acessibilidade web (contraste, textos alternativos, teclado). | \- |
@@ -505,12 +533,19 @@ A Tabela 7 lista os casos de teste de sistema e de integração previstos para o
 | **Código** | **Nome do teste** | **Objetivo** | **Nível** | **Tipo** | **Precondições** | **Critério de aceite (resultado esperado)** | **Resultado obtido (evidência)** | **Reparos executados** | **Ciclos executados** |
 |----|----|----|----|----|----|----|----|----|----|
 | CT01 | Cadastro de voluntário | Verificar o cadastro de pessoa física (CN01-RF01) | Sistema | Funcional | Aplicação disponível; e-mail não cadastrado | Conta criada e usuário autenticado com perfil Voluntário |  |  |  |
-| CT02 | Publicação de vaga | Verificar o cadastro de vaga com todos os campos padronizados (CN04-RF07) | Sistema | Funcional | Organização autenticada | Vaga publicada e visível na listagem pública |  |  |  |
-| CT03 | Busca com filtros | Verificar se os filtros retornam apenas vagas compatíveis (CN05-RF12) | Sistema | Funcional | Base com vagas de causas, modalidades e períodos distintos | Resultado contém somente as vagas que satisfazem todos os filtros |  |  |  |
-| CT04 | Candidatura com documentação | Verificar o registro da candidatura e o envio dos documentos (CN06-RF15 e RF16) | Sistema | Funcional | Voluntário autenticado; vaga aberta | Candidatura registrada, documentos anexados e comprovante emitido |  |  |  |
-| CT05 | Triagem e conexão | Verificar o aceite da candidatura e a liberação do contato (CN07-RF18 e RF20) | Sistema | Funcional | Vaga com ao menos uma candidatura | Candidatura aceita e contato do responsável disponibilizado |  |  |  |
+| CT02 | Publicação de vaga | Verificar o cadastro de vaga com todos os campos padronizados (CN04-RF08) | Sistema | Funcional | Organização autenticada | Vaga publicada e visível na listagem pública |  |  |  |
+| CT03 | Busca com filtros | Verificar se os filtros retornam apenas vagas compatíveis (CN05-RF13) | Sistema | Funcional | Base com vagas de causas, modalidades e períodos distintos | Resultado contém somente as vagas que satisfazem todos os filtros |  |  |  |
+| CT04 | Candidatura com documentação | Verificar o registro da candidatura e o envio dos documentos (CN06-RF16 e RF17) | Sistema | Funcional | Voluntário autenticado; vaga aberta | Candidatura registrada, documentos anexados e comprovante emitido |  |  |  |
+| CT05 | Triagem e conexão | Verificar o aceite da candidatura e a liberação do contato (CN07-RF19 e RF21) | Sistema | Funcional | Vaga com ao menos uma candidatura | Candidatura aceita e contato do responsável disponibilizado |  |  |  |
 | CT06 | Controle de acesso por perfil | Verificar se cada perfil acessa apenas o que lhe é permitido (RNF05) | Integração | Não funcional (segurança) | Contas dos perfis Visitante, Voluntário e Organização | Acesso negado a toda funcionalidade fora das permissões da Tabela 4 |  |  |  |
 | CT07 | Usabilidade da busca e da candidatura | Verificar se o usuário conclui os fluxos principais sem treinamento (RNF01) | Sistema | Não funcional (usabilidade) | Protótipo ou incremento disponível; participantes recrutados | Taxa de sucesso maior ou igual a 80% (M6) |  |  |  |
+| CT08 | Calendário do voluntário | Validar RF26 | Sistema | Funcional | Vagas com candidaturas em estados distintos | Mostrar somente PENDENTES e ACEITAS, com vaga, ONG, status e horários do dia; dia vazio com mensagem. |  |  |  |
+| CT09 | Conflito de horários | Validar RF27 | Sistema | Funcional | Candidatura ativa das 09h às 11h | Bloquear 10h–12h, 09h–11h e 08h–12h; identificar vaga e horário; não criar registro, comprovante ou aviso de sucesso. |  |  |  |
+| CT10 | Intervalos permitidos | Validar RN02 | Sistema | Funcional | Candidatura ativa das 09h às 11h | Permitir 11h–12h e datas sem sobreposição; bloquear intervalos que cruzem a meia-noite e se sobreponham. |  |  |  |
+| CT11 | Liberação de horário | Validar RN01 e RN05 | Sistema | Funcional | Candidatura antes PENDENTE | Após recusa ou cancelamento, liberar horário e atualizar calendário; aceite mantém o bloqueio. |  |  |  |
+| CT12 | Candidaturas simultâneas | Validar RF27 e atomicidade | Integração | Funcional | Duas requisições simultâneas do mesmo voluntário para vagas sobrepostas | Somente uma candidatura registrada; a outra recebe conflito. |  |  |  |
+| CT13 | Proteção da agenda | Validar RF26 e RNF05 | Integração | Segurança | Contas de dois voluntários e de organização | Cada voluntário consulta somente sua agenda; acesso sem autenticação ou com outro perfil é negado. |  |  |  |
+| CT14 | Ocorrências e edição | Validar RF08, RF09 e RN03 | Sistema | Funcional | Vaga com várias ocorrências; candidatura ativa | Rejeitar início >= fim e edição de horários com candidatura ativa; conflito em uma ocorrência bloqueia a candidatura inteira. |  |  |  |
 
 
 
