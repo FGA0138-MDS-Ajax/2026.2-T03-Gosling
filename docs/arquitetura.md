@@ -4,7 +4,9 @@
 
 **Versão 0.3**
 
-Arquivos originais: [PDF](documento%20de%20arquitetura.pdf)
+Arquivos de referência: [PDF](documento%20de%20arquitetura.pdf) · [Word](documento%20de%20arquitetura.docx).
+
+Esta página apresenta a versão 0.3 do Documento de Arquitetura, em conjunto com a versão 0.4 da [Visão do Produto e do Projeto](visão.md). Texto, tabelas e diagramas foram conferidos com os arquivos de referência em 28/10/2026.
 
 ## Tabela 1 – Integrantes do Grupo
 
@@ -16,8 +18,6 @@ Arquivos originais: [PDF](documento%20de%20arquitetura.pdf)
 | 222026528 | Rafael Rodrigues Alencar | Dev Frontend/Backend | 25 |
 | **Total de pontos** |  |  | **100** |
 
- 
-
 ## Tabela 2 – Histórico de Revisões
 
 | **Data** | **Versão** | **Descrição** | **Autor(es)** |
@@ -27,8 +27,6 @@ Arquivos originais: [PDF](documento%20de%20arquitetura.pdf)
 | 06/10/2026 | 0.2 | Reestruturação conforme o *template* da disciplina: implantação simplificada em contêineres Docker, publicada por túnel da Cloudflare; síntese das tecnologias e dos recursos da API; remoção do glossário, das enumerações e do quadro de ambientes; figuras refeitas no Figma | Equipe Gosling |
 | 18/10/2026 | 0.3 | Inclusão de RF26 e RF27: calendário, validação transacional de conflitos, ocorrências de vagas, contrato da API e permissões; roteiro de atualização das figuras no Figma. | Equipe Gosling |
 
- 
-
 ## 1 INTRODUÇÃO
 
 ### 1.1 Propósito
@@ -37,31 +35,29 @@ Este documento descreve a arquitetura do sistema **VolunJá**, desenvolvido pelo
 
 O documento registra as decisões arquiteturais da equipe e as justifica a partir do Documento de Visão do Produto e do Projeto. A arquitetura é apresentada por meio de visões complementares — de uso, de organização lógica, estrutural e de implantação —, inspiradas no modelo de visões arquiteturais proposto por Kruchten (1995) e representadas com a Linguagem de Modelagem Unificada — UML (Object Management Group, 2017).
 
-Trata-se de um artefato vivo: ele é atualizado sempre que uma decisão arquitetural for revista ao longo das sprints, e cada revisão é registrada no Histórico de Revisões (Tabela 2).
+Trata-se de um artefato vivo: ele é atualizado sempre que uma decisão arquitetural for revista ao longo das sprints, e cada revisão é registrada no Histórico de Revisões (Tabela 2). Na apresentação do documento, nas referências e nas citações, seguem-se as normas da Associação Brasileira de Normas Técnicas (2011, 2018, 2023): NBR 14724, NBR 6023 e NBR 10520, respectivamente.
 
 ### 1.2 Escopo
 
 O detalhamento do escopo se encontra na Declaração de Escopo do Projeto (seção 4) do Documento de Visão do Produto e do Projeto (Grupo Gosling, 2026), doravante denominado **DV**, que contém os perfis de acesso (Tabela 4), os cenários funcionais (Tabela 5) e o backlog do produto (Tabela 6). Porém, em linhas gerais, o escopo do produto compreende uma aplicação web que conecta voluntários e organizações do terceiro setor, na qual:
 
-1)  organizações não governamentais (ONGs) e responsáveis por projetos sociais se cadastram e publicam vagas de voluntariado com campos padronizados: descrição, atividades, área de atuação/causa, modalidade, local, carga horária, período e número de vagas;
+1. organizações não governamentais (ONGs) e responsáveis por projetos sociais se cadastram e publicam vagas de voluntariado com campos padronizados: descrição, atividades, área de atuação/causa, modalidade, local, carga horária, período e número de vagas;
 
-2)  voluntários se cadastram, mantêm um perfil com interesses e disponibilidade e buscam vagas por filtros sobre esses mesmos campos;
+2. voluntários se cadastram, mantêm um perfil com interesses e disponibilidade e buscam vagas por filtros sobre esses mesmos campos;
 
-3)  o voluntário se candidata a uma vaga, envia a documentação exigida e recebe um comprovante;
+3. o voluntário se candidata a uma vaga, envia a documentação exigida e recebe um comprovante;
 
-4)  a organização faz a triagem das candidaturas e, após o aceite, o sistema libera o contato entre o responsável pela vaga e o voluntário;
+4. a organização faz a triagem das candidaturas e, após o aceite, o sistema libera o contato entre o responsável pela vaga e o voluntário;
 
-5)  um administrador homologa as organizações e modera vagas e usuários.
+5. um administrador homologa as organizações e modera vagas e usuários;
 
-o voluntário consulta o calendário das candidaturas PENDENTES e ACEITAS (RF26); novas candidaturas são bloqueadas quando existe sobreposição de horários com outra vaga (RF27).
-
+6. o voluntário consulta o calendário das candidaturas PENDENTES e ACEITAS (RF26); novas candidaturas são bloqueadas quando existe sobreposição de horários com outra vaga (RF27).
 
 Ao longo deste documento, as partes do Documento de Visão usadas nas decisões arquiteturais são referenciadas de forma explícita (por exemplo, “DV, Quadro 5”), e os requisitos são identificados pelos códigos da Tabela 6 do Documento de Visão (RF01 a RF27 e RNF01 a RNF07).
 
 O documento está organizado em duas seções. Após esta introdução, a seção 2 apresenta a representação arquitetural: as definições, a justificativa da escolha, o detalhamento do estilo, as metas e restrições, as visões de uso, de organização lógica, estrutural e de implantação e as restrições adicionais. Ao final, encontram-se as referências e o Apêndice A, com os padrões de codificação e de versionamento.
 
-**Atualização das figuras:** os textos e quadros desta revisão incluem RF26 e RF27. As Figuras 1 a 7 ainda são as exportações anteriores do Figma e devem receber as alterações detalhadas em ajustes-figma-calendario.md antes da entrega final das figuras. A Figura 8 não exige mudança de infraestrutura.
-
+**Diagramas de referência:** as Figuras 1 a 8 reproduzem as imagens incorporadas ao arquivo Word desta versão, incluindo as atualizações nas Figuras 2, 3, 4, 6 e 7. O fluxo transacional de conflito de horários (RF27) é detalhado nas seções 2.3 e 2.5.2; a consulta do calendário (RF26), nas seções 2.5.2 e 2.7.
 
 ## 2 REPRESENTAÇÃO ARQUITETURAL
 
@@ -75,17 +71,17 @@ Na organização em camadas, cada camada oferece serviços à camada superior e 
 
 Como recomendam Pressman e Maxim (2016), a escolha do estilo arquitetural partiu da análise de alternativas à luz dos requisitos e das restrições do projeto. Os elementos do Documento de Visão listados a seguir funcionam como condicionantes da arquitetura:
 
-1)  **natureza do produto** (DV, seção 1.1.3 e Quadro 2): o VolunJá é uma aplicação web usada por perfis distintos — voluntários, organizações e administradores — que compartilham um catálogo único de vagas. Centralizar os dados e as regras em um servidor, acessado por clientes leves no navegador, é a forma natural de atender a esse cenário;
+1. **natureza do produto** (DV, seção 1.1.3 e Quadro 2): o VolunJá é uma aplicação web usada por perfis distintos — voluntários, organizações e administradores — que compartilham um catálogo único de vagas. Centralizar os dados e as regras em um servidor, acessado por clientes leves no navegador, é a forma natural de atender a esse cenário;
 
-2)  **foco na experiência do usuário (UX)** (DV, Quadro 1, objetivo específico 6 e requisitos RNF01 a RNF03): uma SPA em React oferece navegação fluida, retorno imediato nos filtros de busca e componentes de interface reutilizáveis, o que favorece a consistência e a acessibilidade. Como o *front-end* é desacoplado, ele pode ser ajustado após cada teste de usabilidade (métrica M6) sem alterar o *back-end*;
+2. **foco na experiência do usuário (UX)** (DV, Quadro 1, objetivo específico 6 e requisitos RNF01 a RNF03): uma SPA em React oferece navegação fluida, retorno imediato nos filtros de busca e componentes de interface reutilizáveis, o que favorece a consistência e a acessibilidade. Como o *front-end* é desacoplado, ele pode ser ajustado após cada teste de usabilidade (métrica M6) sem alterar o *back-end*;
 
-3)  **tecnologias definidas pela equipe** (DV, Quadro 5): JavaScript com React no *front-end*, Python no *back-end* e MySQL como banco de dados. Entre os *frameworks* Python, o FastAPI foi escolhido por gerar automaticamente a documentação no padrão OpenAPI (OpenAPI Initiative, 2021), que serve de contrato entre *front-end* e *back-end*, por validar os dados de entrada com Pydantic, por oferecer injeção de dependências para autenticação e testes e por apresentar curva de aprendizado reduzida;
+3. **tecnologias definidas pela equipe** (DV, Quadro 5): JavaScript com React no *front-end*, Python no *back-end* e MySQL como banco de dados. Entre os *frameworks* Python, o FastAPI foi escolhido por gerar automaticamente a documentação no padrão OpenAPI (OpenAPI Initiative, 2021), que serve de contrato entre *front-end* e *back-end*, por validar os dados de entrada com Pydantic, por oferecer injeção de dependências para autenticação e testes e por apresentar curva de aprendizado reduzida;
 
-4)  **equipe, prazo e riscos** (DV, seção 2.1, Tabela 3 e Quadro 8): quatro integrantes e seis sprints de desenvolvimento (Sprints 6 a 11). Um monólito evita a complexidade operacional de sistemas distribuídos, o que mitiga os riscos R2 (inexperiência com as tecnologias) e R3 (escopo grande demais), enquanto a divisão em módulos permite que os integrantes trabalhem em paralelo sobre cenários diferentes;
+4. **equipe, prazo e riscos** (DV, seção 2.1, Tabela 3 e Quadro 8): quatro integrantes e seis sprints de desenvolvimento (Sprints 6 a 11). Um monólito evita a complexidade operacional de sistemas distribuídos, o que mitiga os riscos R2 (inexperiência com as tecnologias) e R3 (escopo grande demais), enquanto a divisão em módulos permite que os integrantes trabalhem em paralelo sobre cenários diferentes;
 
-5)  **processo e qualidade** (DV, seções 3.2 e 3.3 e Quadro 11): as práticas do XP (*Extreme Programming*) adotadas, como a integração contínua e os testes automatizados, e a meta de cobertura de testes da métrica M4 (no mínimo 80%) exigem código testável. A separação em camadas, com dependências injetadas, permite testar as regras de negócio isoladamente;
+5. **processo e qualidade** (DV, seções 3.2 e 3.3 e Quadro 11): as práticas do XP (*Extreme Programming*) adotadas, como a integração contínua e os testes automatizados, e a meta de cobertura de testes da métrica M4 (no mínimo 80%) exigem código testável. A separação em camadas, com dependências injetadas, permite testar as regras de negócio isoladamente;
 
-6)  **perfis e segurança** (DV, Tabela 4, e requisitos RNF04 e RNF05): o controle de acesso por perfil precisa ser garantido em um único ponto confiável. Na arquitetura cliente-servidor, toda verificação de permissão ocorre no *back-end*, e o *front-end* apenas oculta as opções não permitidas.
+6. **perfis e segurança** (DV, Tabela 4, e requisitos RNF04 e RNF05): o controle de acesso por perfil precisa ser garantido em um único ponto confiável. Na arquitetura cliente-servidor, toda verificação de permissão ocorre no *back-end*, e o *front-end* apenas oculta as opções não permitidas.
 
 O Quadro 1 resume as alternativas de estilo arquitetural avaliadas pela equipe e o motivo da decisão.
 
@@ -97,8 +93,6 @@ O Quadro 1 resume as alternativas de estilo arquitetural avaliadas pela equipe e
 | **Microsserviços** | Escalabilidade e implantação independentes por serviço. | Complexidade de rede, implantação e monitoramento desproporcional a quatro integrantes e seis sprints; agrava os riscos R2 e R3. | Descartada |
 | ***Back-end* como serviço (BaaS), por exemplo, Firebase** | Infraestrutura gerenciada e autenticação pronta. | Regras de negócio e de autorização dispersas no cliente; dependência de fornecedor; não utiliza o Python definido no DV. | Descartada |
 | **Cliente-servidor em camadas: SPA em React e API REST em FastAPI (monólito modular)** | Separação de responsabilidades; trabalho paralelo entre *front-end* e *back-end*; contrato OpenAPI; testabilidade; implantação única. | Duas bases de código (*front-end* e *back-end*) e necessidade de configurar o *proxy* reverso. | **Adotada** |
-
- 
 
 ### 2.3 Detalhamento
 
@@ -128,14 +122,11 @@ Os elementos do estilo arquitetural são instanciados com as tecnologias do Quad
 | **Contêineres** | Docker e Docker Compose | Mesma composição de serviços em qualquer máquina da equipe. |
 | **Integração contínua** | GitHub Actions | Já utilizado na publicação da documentação (DV, Quadro 5); executa *lint* e testes a cada *pull request*. |
 
- 
-
 Completam a pilha as bibliotecas de apoio — Axios, no cliente HTTP; CSS Modules, na estilização; e ReportLab, na geração do comprovante em PDF (RF22) — e as ferramentas de qualidade e testes previstas no DV (seção 6.1).
 
 A Figura 2 mostra os elementos da Figura 1 em funcionamento, por meio do diagrama de sequência da candidatura a uma vaga (RF16 e RF17). A requisição percorre as camadas de cima para baixo, e a resposta retorna no sentido inverso; o e-mail de aviso à organização é enviado em segundo plano, depois que a resposta já foi devolvida ao voluntário.
 
 Para RF27, o fluxo passa a validar os horários antes de salvar arquivos, candidatura e comprovante. O serviço abre uma transação, bloqueia a linha do voluntário, consulta as candidaturas ativas e compara todas as ocorrências. Com conflito, desfaz a transação e devolve HTTP 409 com os dados da vaga conflitante; sem conflito, persiste e confirma a transação antes de notificar.
-
 
 **Figura 2 –** Interação entre as camadas na candidatura a uma vaga (diagrama de sequência)
 
@@ -161,17 +152,15 @@ O Quadro 3 explica a responsabilidade de cada elemento da arquitetura e as suas 
 | **Armazenamento de arquivos** | Guardar os documentos das candidaturas. | Arquivos já validados (PDF, JPG ou PNG, até 5 MB). | Caminho interno do arquivo; acesso somente pela API, após a verificação de permissão (RNF04). |
 | **Servidor SMTP** | Entregar os e-mails do sistema. | Mensagens do módulo de notificações. | E-mails de recuperação de senha (RF05) e de resultado da candidatura (RF20). |
 
- .
-
 Além das responsabilidades, quatro regras de dependência garantem a integridade do estilo:
 
-1)  cada camada depende apenas da camada imediatamente inferior (*router*, *service*, *repository* e model), nunca no sentido inverso;
+1. cada camada depende apenas da camada imediatamente inferior (*router*, *service*, *repository* e model), nunca no sentido inverso;
 
-2)  um módulo acessa outro somente por meio do *service* desse módulo, e nunca diretamente pelo *repository* ou pelos *models*;
+2. um módulo acessa outro somente por meio do *service* desse módulo, e nunca diretamente pelo *repository* ou pelos *models*;
 
-3)  o *front-end* comunica-se com o *back-end* exclusivamente pela API REST documentada em OpenAPI;
+3. o *front-end* comunica-se com o *back-end* exclusivamente pela API REST documentada em OpenAPI;
 
-4)  toda regra de negócio e toda verificação de permissão ficam no *back-end*.
+4. toda regra de negócio e toda verificação de permissão ficam no *back-end*.
 
 ### 2.4 Metas e restrições arquiteturais
 
@@ -192,21 +181,19 @@ O Quadro 4 apresenta as metas e as restrições de funcionamento que orientam o 
 | **MR09** | Os documentos das candidaturas devem ser arquivos PDF, JPG ou PNG de até 5 MB cada. | Segurança dos dados (RNF04): reduz o risco de arquivos maliciosos e o uso excessivo de disco. | Testes de envio com tipos e tamanhos inválidos. |
 | MR10 | A verificação de conflitos e o registro da candidatura devem ser atômicos por voluntário, inclusive sob requisições simultâneas. | RF27 e RN01 a RN05 do DV. | Testes CT09 a CT12 e CT14 do DV; apenas uma candidatura sobreposta pode ser confirmada. |
 
- .
-
 Também são de interesse dos desenvolvedores a política de *branches*, a convenção de mensagens de *commit* e as regras de revisão de código, descritas no Apêndice A, junto com os padrões de codificação.
 
 ### 2.5 Visões
 
 A arquitetura é comunicada por quatro visões complementares:
 
-1)  **visão de uso** (seção 2.5.1): o escopo do sistema, por meio dos casos de uso e da funcionalidade mais complexa;
+1. **visão de uso** (seção 2.5.1): o escopo do sistema, por meio dos casos de uso e da funcionalidade mais complexa;
 
-2)  **visão de organização lógica** (seção 2.5.2): os módulos, as camadas e as formas de comunicação entre eles;
+2. **visão de organização lógica** (seção 2.5.2): os módulos, as camadas e as formas de comunicação entre eles;
 
-3)  **visão estrutural** (seção 2.5.3): a composição do sistema em classes e componentes e as relações entre as suas partes;
+3. **visão estrutural** (seção 2.5.3): a composição do sistema em classes e componentes e as relações entre as suas partes;
 
-4)  **visão de implantação** (seção 2.6): o ambiente em que o sistema será executado.
+4. **visão de implantação** (seção 2.6): o ambiente em que o sistema será executado.
 
 #### 2.5.1 Visão de uso
 
@@ -233,8 +220,6 @@ Alguns requisitos do Documento de Visão contribuíram diretamente para a escolh
 | **RNF07 (manutenibilidade)** | Monólito modular em camadas e padrões de codificação definidos no Apêndice A. |
 | RF26 e RF27 (calendário e conflito de horário) | Agenda derivada das candidaturas ativas e das ocorrências das vagas; validação no serviço de candidaturas, com transação e bloqueio por voluntário. |
 
- .
-
 Além dos requisitos, pesaram na escolha a decisão da equipe de adotar tecnologias já conhecidas pelos integrantes — Python, JavaScript e React —, registrada como mitigação do risco R2 (DV, Quadro 8); a documentação extensa do FastAPI e do React, que reduz o tempo de aprendizado; e o prazo de seis sprints de desenvolvimento (DV, Tabela 3), que desaconselha estilos distribuídos.
 
 A funcionalidade mais complexa é a **candidatura a uma vaga** (cenário CN06), com o seu desdobramento na triagem e na conexão entre as partes (CN07 e CN08). Ela envolve três participantes, envio e validação de arquivos, regras de estado da candidatura, emissão de comprovante, notificações e liberação controlada de dados de contato. A Figura 4 apresenta o seu diagrama de atividades.
@@ -246,7 +231,6 @@ A funcionalidade mais complexa é a **candidatura a uma vaga** (cenário CN06), 
 O fluxo da Figura 4 evidencia as regras que a camada de negócio deve garantir: somente voluntários autenticados podem se candidatar; a vaga precisa estar aberta; cada voluntário pode ter apenas uma candidatura por vaga; os arquivos são validados antes do registro; e os contatos só são liberados após o aceite. Enquanto a candidatura estiver pendente, o voluntário pode cancelá-la (RF18).
 
 Também é obrigatório validar ausência de sobreposição com candidaturas PENDENTES ou ACEITAS (RF27). A interface mostra a vaga conflitante e oferece o acesso à agenda (RF26); o bloqueio não depende de JavaScript do navegador. RECUSADAS e CANCELADAS liberam o horário. ENCERRADA indica o fim das inscrições da vaga e, isoladamente, não libera compromissos ativos.
-
 
 #### 2.5.2 Visão de organização lógica
 
@@ -268,23 +252,21 @@ O sistema é subdividido em dois subsistemas — o *front-end* (SPA) e o *back-e
 | **auth** | *Login*, emissão de *token* e recuperação de senha. | RF04, RF05 | usuarios; notificacoes |
 | **usuarios** | Contas, voluntários, organizações e perfis. | RF01 a RF03, RF06, RF07 | — |
 | vagas | Publicação, edição, busca e ocorrências com início e fim; horários imutáveis enquanto houver candidatura ativa. | RF08 a RF15; apoio a RF26 e RF27 | usuarios |
-| candidaturas | POST /vagas/{id}/candidaturas; GET /voluntarios/me/candidaturas; GET /voluntarios/me/calendario; GET /vagas/{id}/candidaturas; PATCH /candidaturas/{id}; GET /candidaturas/{id}/contato | Voluntário; Organização dona; Envolvidos | RF16 a RF21, RF26, RF27 |
+| **candidaturas** | Candidatura, agenda do voluntário, validação de conflitos, acompanhamento, cancelamento, triagem e contato. | RF16, RF18, RF19, RF21, RF26, RF27 | usuarios; vagas; documentos; comprovantes; notificacoes |
 | **documentos** | Recebimento, validação, armazenamento e acesso controlado aos arquivos. | RF17, RNF04 | — |
 | **comprovantes** | Emissão do comprovante em PDF e histórico de voluntariado. | RF22, RF23 | — |
 | **notificacoes** | Notificações internas e envio de e-mails em segundo plano. | RF05, RF20 | — |
 | **moderacao** | Homologação de organizações, denúncias e suspensão de contas. | RF24, RF25 | usuarios; vagas; notificacoes |
 
- .
-
 Nota: todos os módulos do *back-end* utilizam o core, que por isso não é repetido na coluna “Depende de”.
 
 Os módulos comunicam-se de três formas:
 
-1)  **entre *front-end* e *back-end***: requisições HTTP com JSON pela API REST, com o *token* JWT no cabeçalho Authorization; os documentos são enviados como *multipart/form-data* e os comprovantes são recebidos em PDF. O Quadro 7 lista os principais recursos da API;
+1. **entre *front-end* e *back-end***: requisições HTTP com JSON pela API REST, com o *token* JWT no cabeçalho Authorization; os documentos são enviados como *multipart/form-data* e os comprovantes são recebidos em PDF. O Quadro 7 lista os principais recursos da API;
 
-2)  **entre módulos do *back-end***: chamadas de função dentro do mesmo processo, sempre de um *service* para outro, respeitando as regras de dependência da seção 2.3;
+2. **entre módulos do *back-end***: chamadas de função dentro do mesmo processo, sempre de um *service* para outro, respeitando as regras de dependência da seção 2.3;
 
-3)  **entre o *back-end* e a infraestrutura**: SQL sobre TCP (porta 3306) com o MySQL, leitura e gravação de arquivos no volume persistente e SMTP com TLS (porta 587) com o servidor de e-mail.
+3. **entre o *back-end* e a infraestrutura**: SQL sobre TCP (porta 3306) com o MySQL, leitura e gravação de arquivos no volume persistente e SMTP com TLS (porta 587) com o servidor de e-mail.
 
 **Quadro 7 –** Principais recursos da API REST por módulo
 
@@ -293,12 +275,10 @@ Os módulos comunicam-se de três formas:
 | auth | POST /auth/login; POST /auth/recuperacao-senha | Público | RF04, RF05 |
 | usuarios | POST /voluntarios; POST /organizacoes; GET e PUT /voluntarios/me e /organizacoes/me | Público (cadastro); Voluntário; Organização | RF01 a RF03, RF06, RF07 |
 | vagas | GET /vagas; GET /vagas/{id}; GET /vagas/recomendadas; POST /vagas; PUT e PATCH /vagas/{id}; GET /organizacoes/me/vagas | Público (consulta); Voluntário; Organização dona | RF08 a RF15 |
-| candidaturas | POST /vagas/{id}/candidaturas; GET /voluntarios/me/candidaturas; GET /vagas/{id}/candidaturas; PATCH /candidaturas/{id}; GET /candidaturas/{id}/contato | Voluntário; Organização dona; Envolvidos | RF16 a RF21 |
+| candidaturas | POST /vagas/{id}/candidaturas; GET /voluntarios/me/candidaturas; GET /voluntarios/me/calendario; GET /vagas/{id}/candidaturas; PATCH /candidaturas/{id}; GET /candidaturas/{id}/contato | Voluntário; Organização dona; Envolvidos | RF16 a RF21, RF26, RF27 |
 | documentos | GET /documentos/{id} | Envolvidos | RF17, RNF04 |
 | comprovantes | GET /candidaturas/{id}/comprovante | Voluntário | RF22 |
 | moderacao | PATCH /admin/organizacoes/{id}; GET e PATCH /admin/denuncias; POST /denuncias | Administrador; Autenticado (denúncia) | RF24, RF25 |
-
- .
 
 Nota: todos os caminhos têm o prefixo /api/v1. “Envolvidos” são o voluntário da candidatura e a organização dona da vaga, conforme a ação permitida a cada um (Quadro 9). A documentação completa é gerada automaticamente pelo FastAPI, no padrão OpenAPI, e fica disponível em /docs.
 
@@ -310,8 +290,7 @@ Nota: todos os caminhos têm o prefixo /api/v1. “Envolvidos” são o voluntá
 
 **Edição e ordem dos bloqueios:** criar candidatura e editar horários também bloqueiam a linha da vaga antes de ler seus horários ou verificar candidaturas ativas. Quando uma operação precisa dos dois bloqueios, a ordem é voluntário e depois vaga; alterações que atinjam vários voluntários ordenam os IDs. O serviço de vagas recusa alteração de horários se houver candidatura PENDENTE ou ACEITA, evitando invalidar a agenda já assumida.
 
-**Comparação temporal:** armazenar início e fim em UTC e converter para America/Sao_Paulo na interface. Há conflito se inicio_novo < fim_existente e fim_novo > inicio_existente. Comparar todas as ocorrências, inclusive intervalos entre dias; horários consecutivos são permitidos. Índices em candidaturas(voluntario_id, status) e ocorrencias_vaga(vaga_id, inicio, fim) apoiam as consultas. A agenda é uma projeção dos dados existentes, sem tabela de calendário duplicada.
-
+**Comparação temporal:** armazenar início e fim em UTC e converter para America/Sao_Paulo na interface. Há conflito se `inicio_novo < fim_existente e fim_novo > inicio_existente`. Comparar todas as ocorrências, inclusive intervalos entre dias; horários consecutivos são permitidos. Índices em candidaturas(voluntario_id, status) e ocorrencias_vaga(vaga_id, inicio, fim) apoiam as consultas. A agenda é uma projeção dos dados existentes, sem tabela de calendário duplicada.
 
 A Figura 5 apresenta o diagrama de pacotes, com a organização do código dos dois subsistemas e a estrutura interna padrão dos módulos do *back-end*.
 
@@ -335,20 +314,19 @@ Nenhum módulo depende de auth, candidaturas ou moderacao, que ficam no topo da 
 
 A Figura 7 define as entidades persistidas e os seus relacionamentos. As classes têm as seguintes responsabilidades:
 
-1)  **Usuario** concentra os dados de acesso comuns a todos os perfis. **Voluntario** e **Organizacao** especializam Usuario de forma disjunta, refletindo a regra de que os perfis de voluntário e de organização são exclusivos em uma mesma conta (DV, Tabela 4); o administrador é um Usuario com o perfil ADMINISTRADOR;
+1. **Usuario** concentra os dados de acesso comuns a todos os perfis. **Voluntario** e **Organizacao** especializam Usuario de forma disjunta, refletindo a regra de que os perfis de voluntário e de organização são exclusivos em uma mesma conta (DV, Tabela 4); o administrador é um Usuario com o perfil ADMINISTRADOR;
 
-2)  **Organizacao** representa tanto ONGs quanto responsáveis por projetos sociais (atributo tipo), identificados por CNPJ ou CPF (RF02 e RF03), e possui um estado de homologação (RF24);
+2. **Organizacao** representa tanto ONGs quanto responsáveis por projetos sociais (atributo tipo), identificados por CNPJ ou CPF (RF02 e RF03), e possui um estado de homologação (RF24);
 
-3)  **Vaga** reúne os campos padronizados do Documento de Visão e suas ocorrências com início e fim; seus atributos apoiam os filtros da busca (RF08 e RF13); os seus métodos controlam o encerramento e informam se a vaga ainda aceita candidaturas;
+3. **Vaga** reúne os campos padronizados do Documento de Visão e suas ocorrências com início e fim; seus atributos apoiam os filtros da busca (RF08 e RF13); os seus métodos controlam o encerramento e informam se a vaga ainda aceita candidaturas;
 
-4)  **Causa** é um catálogo compartilhado pelas vagas, pelas áreas de atuação das organizações e pelos interesses dos voluntários; com a **Disponibilidade**, permite calcular a compatibilidade entre voluntários e vagas (RF15);
+4. **Causa** é um catálogo compartilhado pelas vagas, pelas áreas de atuação das organizações e pelos interesses dos voluntários; com a **Disponibilidade**, permite calcular a compatibilidade entre voluntários e vagas (RF15);
 
-5)  **Candidatura** liga um voluntário a uma vaga, com combinação única, e controla as transições de estado: de PENDENTE para ACEITA, RECUSADA ou CANCELADA. Ela é composta pelos **DocumentoCandidatura** enviados, cada um vinculado ao **DocumentoExigido** que atende, e pelo **Comprovante**, que possui um código de verificação;
+5. **Candidatura** liga um voluntário a uma vaga, com combinação única, e controla as transições de estado: de PENDENTE para ACEITA, RECUSADA ou CANCELADA. Ela é composta pelos **DocumentoCandidatura** enviados, cada um vinculado ao **DocumentoExigido** que atende, e pelo **Comprovante**, que possui um código de verificação;
 
-6)  **Notificacao** registra os avisos internos enviados aos usuários (RF20), e **Denuncia** registra as denúncias sobre vagas ou usuários, tratadas pelo administrador (RF25).
+6. **Notificacao** registra os avisos internos enviados aos usuários (RF20), e **Denuncia** registra as denúncias sobre vagas ou usuários, tratadas pelo administrador (RF25).
 
-7) **OcorrenciaVaga** representa cada intervalo agendado, com id, vaga_id, inicio e fim. Vaga compõe uma ou mais ocorrências; inicio deve ser anterior a fim. A candidatura abrange todas as ocorrências da vaga. O calendário é derivado de Voluntario → Candidatura → Vaga → OcorrenciaVaga, preservando o status da candidatura. Disponibilidade continua representando preferências do perfil, não compromissos assumidos.
-
+7. **OcorrenciaVaga** representa cada intervalo agendado, com id, vaga_id, inicio e fim. Vaga compõe uma ou mais ocorrências; inicio deve ser anterior a fim. A candidatura abrange todas as ocorrências da vaga. O calendário é derivado de Voluntario → Candidatura → Vaga → OcorrenciaVaga, preservando o status da candidatura. Disponibilidade continua representando preferências do perfil, não compromissos assumidos.
 
 **Figura 7 –** Diagrama de classes do domínio
 
@@ -368,8 +346,7 @@ A Figura 8 apresenta o diagrama de implantação da aplicação.
 
 **Figura 8 –** Diagrama de implantação do VolunJá
 
-[![Diagrama de implantação com dispositivo do usuário, servidor em nuvem, contêineres e GitHub](assets/arquitetura/figura8%20implantacao.png)](assets/arquitetura/figura8%20implantacao.png)
-
+[![Diagrama de implantação com dispositivo do usuário, máquina da equipe, Cloudflare Tunnel, contêineres e GitHub](assets/arquitetura/figura8%20implantacao.png)](assets/arquitetura/figura8%20implantacao.png)
 
 A documentação do projeto, em MkDocs, continua publicada no GitHub Pages (DV, Quadro 5), de forma independente da aplicação.
 
@@ -377,24 +354,23 @@ A documentação do projeto, em MkDocs, continua publicada no GitHub Pages (DV, 
 
 Além das metas e restrições do Quadro 4, o software está sujeito às seguintes restrições negociais:
 
-1)  o software é acessado diretamente pela Internet, por navegador, sem instalação; a consulta às vagas é pública (perfil Visitante), mas a candidatura, a publicação de vagas e a moderação exigem cadastro e *login* (DV, Tabela 4);
+1. o software é acessado diretamente pela Internet, por navegador, sem instalação; a consulta às vagas é pública (perfil Visitante), mas a candidatura, a publicação de vagas e a moderação exigem cadastro e *login* (DV, Tabela 4);
 
-2)  uma conta pertence a um único perfil, voluntário ou organização (DV, Tabela 4);
+2. uma conta pertence a um único perfil, voluntário ou organização (DV, Tabela 4);
 
-3)  as vagas de uma organização só ficam visíveis após a homologação do cadastro pelo administrador (RF24); enquanto esse requisito, de prioridade Should, não for implementado, os cadastros são aprovados automaticamente;
+3. as vagas de uma organização só ficam visíveis após a homologação do cadastro pelo administrador (RF24); enquanto esse requisito, de prioridade Should, não for implementado, os cadastros são aprovados automaticamente;
 
-4)  o tratamento de dados pessoais — nome, CPF, contatos e documentos — segue a Lei Geral de Proteção de Dados Pessoais, LGPD (Brasil, 2018): coleta do mínimo necessário, consentimento no cadastro, acesso restrito às partes envolvidas em cada candidatura e exclusão da conta a pedido do titular;
+4. o tratamento de dados pessoais — nome, CPF, contatos e documentos — segue a Lei Geral de Proteção de Dados Pessoais, LGPD (Brasil, 2018): coleta do mínimo necessário, consentimento no cadastro, acesso restrito às partes envolvidas em cada candidatura e exclusão da conta a pedido do titular;
 
-5)  nos testes, nas validações e nas apresentações são usados apenas dados fictícios, sem documentos ou dados pessoais reais;
+5. nos testes, nas validações e nas apresentações são usados apenas dados fictícios, sem documentos ou dados pessoais reais;
 
-6)  o software é dimensionado, no MVP, para até 100 usuários autenticados simultaneamente, número compatível com o contexto acadêmico de validação;
+6. o software é dimensionado, no MVP, para até 100 usuários autenticados simultaneamente, número compatível com o contexto acadêmico de validação;
 
-7)  por ser hospedado em uma máquina da equipe, sem custos de hospedagem, o sistema não tem garantia formal de disponibilidade contínua;
+7. por ser hospedado em uma máquina da equipe, sem custos de hospedagem, o sistema não tem garantia formal de disponibilidade contínua;
 
-8)  a interface é oferecida em português do Brasil, com datas no formato dd/mm/aaaa e horário de Brasília.
+8. a interface é oferecida em português do Brasil, com datas no formato dd/mm/aaaa e horário de Brasília.
 
-9) a candidatura deve obedecer às regras RN01 a RN05 do DV: bloquear conflitos com candidaturas ativas, informar a vaga conflitante e preservar a consistência da agenda em operações concorrentes (RF26 e RF27).
-
+9. a candidatura deve obedecer às regras RN01 a RN05 do DV: bloquear conflitos com candidaturas ativas, informar a vaga conflitante e preservar a consistência da agenda em operações concorrentes (RF26 e RF27).
 
 As características de qualidade relevantes para o software, segundo o modelo de qualidade da norma ISO/IEC 25010 (International Organization for Standardization, 2011), estão descritas no Quadro 8.
 
@@ -409,8 +385,6 @@ As características de qualidade relevantes para o software, segundo o modelo de
 | **Manutenibilidade** | Monólito modular em camadas, padrões do Apêndice A e cobertura de testes de, no mínimo, 80%. | RNF07 e prática de código coletivo (DV, seção 3.2). |
 | **Portabilidade** | Contêineres Docker e SPA compatível com navegadores modernos em celular, tablet e desktop. | RNF02 e meta MR08. |
 | **Compatibilidade** | API documentada em OpenAPI, o que permite integrar outros clientes no futuro, como um aplicativo móvel. | Evolução do produto. |
-
- 
 
 Como perfis diferentes acessam a aplicação, a segurança merece atenção especial. O Quadro 9 apresenta as permissões de cada perfil, derivadas da Tabela 4 do Documento de Visão.
 
@@ -432,8 +406,6 @@ Como perfis diferentes acessam a aplicação, a segurança merece atenção espe
 | Homologar organizações e moderar (RF24 e RF25) | — | — | — | Sim |
 | Manter usuários (DV, Tabela 4) | — | — | — | Sim |
 | Consultar calendário (RF26) | — | Próprio | — | — |
-
- 
 
 As permissões são aplicadas em duas etapas: (i) **autorização por perfil**, por dependências do FastAPI que verificam o perfil contido no *token* JWT antes de executar o *endpoint*; e (ii) **autorização por propriedade**, nos *services*, que verificam se o recurso pertence ao usuário autenticado, como a vaga que uma organização tenta editar. O administrador não acessa os documentos das candidaturas, pois não participa da relação entre voluntário e organização, em respeito ao princípio da necessidade da LGPD (Brasil, 2018). Além disso, o *token* expira em 60 minutos, as senhas têm no mínimo oito caracteres e as tentativas repetidas de *login* são limitadas no Nginx.
 
@@ -461,7 +433,7 @@ FIELDING, Roy Thomas. **Architectural styles and the design of network-based sof
 
 FOWLER, Martin. **Patterns of enterprise application architecture**. Boston: Addison-Wesley, 2002.
 
-GRUPO GOSLING. **VolunJá**: visão do produto e do projeto. Versão 0.3. Brasília, 2026. Documento da disciplina Métodos de Desenvolvimento de Software.
+GRUPO GOSLING. **VolunJá**: visão do produto e do projeto. Versão 0.4. Brasília, 2026. Documento da disciplina Métodos de Desenvolvimento de Software.
 
 INTERNATIONAL ORGANIZATION FOR STANDARDIZATION. **ISO/IEC 25010**: systems and software engineering: systems and software quality requirements and evaluation (SQuaRE): system and software quality models. Geneva: ISO, 2011.
 
@@ -500,62 +472,60 @@ Este apêndice detalha os padrões referidos na meta MR04 e no requisito RNF07 (
 | ***Hooks*** | — | Prefixo use (useAuth, useVagas) |
 | **Idioma dos nomes** | Termos de domínio em português, sem acentos (vaga, candidatura); termos técnicos em inglês (*Service*, *Repository*, Schema) | Mesmo critério do *back-end* |
 
- 
-
 ### A.1 *Back-end* (Python)
 
 No *back-end*, adotam-se os seguintes padrões:
 
-1)  estilo PEP 8 (Van Rossum; Warsaw; Coghlan, 2001), verificado e formatado pelo Ruff, com linhas de até 88 caracteres;
+1. estilo PEP 8 (Van Rossum; Warsaw; Coghlan, 2001), verificado e formatado pelo Ruff, com linhas de até 88 caracteres;
 
-2)  anotações de tipo obrigatórias em funções públicas; toda entrada e saída da API é definida por *schemas* Pydantic;
+2. anotações de tipo obrigatórias em funções públicas; toda entrada e saída da API é definida por *schemas* Pydantic;
 
-3)  cada módulo de domínio contém os arquivos router.py, schemas.py, service.py, repository.py e models.py, e as regras de negócio ficam apenas em service.py;
+3. cada módulo de domínio contém os arquivos router.py, schemas.py, service.py, repository.py e models.py, e as regras de negócio ficam apenas em service.py;
 
-4)  erros de negócio são representados por exceções próprias, convertidas em respostas HTTP por um tratador central — por exemplo, a exceção CandidaturaDuplicadaError;
+4. erros de negócio são representados por exceções próprias, convertidas em respostas HTTP por um tratador central — por exemplo, a exceção CandidaturaDuplicadaError;
 
-5)  testes com pytest na pasta tests, espelhando a estrutura dos módulos, com nomes no formato test\_&lt;comportamento_esperado&gt;;
+5. testes com pytest na pasta tests, espelhando a estrutura dos módulos, com nomes no formato test\_&lt;comportamento_esperado&gt;;
 
-6)  configurações e segredos ficam apenas em variáveis de ambiente: o arquivo .env não é versionado, e o arquivo .env.example documenta as variáveis necessárias.
+6. configurações e segredos ficam apenas em variáveis de ambiente: o arquivo .env não é versionado, e o arquivo .env.example documenta as variáveis necessárias.
 
 ### A.2 *Front-end* (JavaScript e React)
 
 No *front-end*, adotam-se os seguintes padrões:
 
-1)  ESLint, com as regras recomendadas e os *plugins* react-hooks e jsx-a11y, e Prettier para a formatação;
+1. ESLint, com as regras recomendadas e os *plugins* react-hooks e jsx-a11y, e Prettier para a formatação;
 
-2)  apenas componentes funcionais com *hooks*, com um componente por arquivo;
+2. apenas componentes funcionais com *hooks*, com um componente por arquivo;
 
-3)  chamadas à API feitas somente pelos módulos da pasta *services*, nunca diretamente nos componentes;
+3. chamadas à API feitas somente pelos módulos da pasta *services*, nunca diretamente nos componentes;
 
-4)  estilos em CSS Modules (Componente.module.css), usando os *tokens* de *design* definidos a partir do protótipo;
+4. estilos em CSS Modules (Componente.module.css), usando os *tokens* de *design* definidos a partir do protótipo;
 
-5)  acessibilidade: elementos HTML semânticos, rótulos em todos os campos, textos alternativos em imagens, foco visível e navegação por teclado;
+5. acessibilidade: elementos HTML semânticos, rótulos em todos os campos, textos alternativos em imagens, foco visível e navegação por teclado;
 
-6)  testes com Vitest e React Testing Library no mesmo diretório do componente, como VagaCard.test.jsx.
+6. testes com Vitest e React Testing Library no mesmo diretório do componente, como VagaCard.test.jsx.
 
 ### A.3 API REST e banco de dados
 
 Na API e no banco de dados, adotam-se as seguintes convenções:
 
-1)  recursos nomeados no plural e em português (/vagas, /candidaturas), com o prefixo /api/v1;
+1. recursos nomeados no plural e em português (/vagas, /candidaturas), com o prefixo /api/v1;
 
-2)  métodos HTTP com a semântica padrão: GET consulta, POST cria, PUT substitui, PATCH altera parcialmente e DELETE remove;
+2. métodos HTTP com a semântica padrão: GET consulta, POST cria, PUT substitui, PATCH altera parcialmente e DELETE remove;
 
-3)  JSON com chaves em *snake_case* e datas no padrão ISO 8601; listas paginadas com os campos itens, total, pagina e tamanho; erros no formato {"detail": "mensagem"};
+3. JSON com chaves em *snake_case* e datas no padrão ISO 8601; listas paginadas com os campos itens, total, pagina e tamanho; erros no formato {"detail": "mensagem"};
 
-4)  tabelas em *snake_case* e no plural (vagas, candidaturas), com chave primária id, chaves estrangeiras no formato &lt;entidade&gt;\_id e colunas de auditoria criado_em e atualizado_em;
+4. tabelas em *snake_case* e no plural (vagas, candidaturas), com chave primária id, chaves estrangeiras no formato &lt;entidade&gt;\_id e colunas de auditoria criado_em e atualizado_em;
 
-5)  toda alteração no esquema do banco de dados é feita por migração do Alembic, versionada no Git; o banco nunca é alterado manualmente.
+5. toda alteração no esquema do banco de dados é feita por migração do Alembic, versionada no Git; o banco nunca é alterado manualmente.
 
 ### A.4 Versionamento
 
 No versionamento do código, adotam-se as seguintes regras:
 
-1)  *branches*: main (versão estável), developer (integração) e *branches* de trabalho criadas a partir da developer — feature/&lt;cenário&gt;-&lt;descrição&gt; (por exemplo, feature/cn06-candidatura), fix/&lt;descrição&gt; e docs/&lt;descrição&gt;;
+1. *branches*: main (versão estável), developer (integração) e *branches* de trabalho criadas a partir da developer — feature/&lt;cenário&gt;-&lt;descrição&gt; (por exemplo, feature/cn06-candidatura), fix/&lt;descrição&gt; e docs/&lt;descrição&gt;;
 
-2)  mensagens de *commit* no padrão Conventional Commits (Conventional Commits, 2019), no formato &lt;tipo&gt;(&lt;escopo&gt;): &lt;descrição&gt;, com os tipos feat, fix, docs, test, refactor, style e chore — por exemplo, feat(candidaturas): valida documentos exigidos;
+2. mensagens de *commit* no padrão Conventional Commits (Conventional Commits, 2019), no formato &lt;tipo&gt;(&lt;escopo&gt;): &lt;descrição&gt;, com os tipos feat, fix, docs, test, refactor, style e chore — por exemplo, feat(candidaturas): valida documentos exigidos;
 
-3)  toda alteração entra na developer por *pull request* revisado por, no mínimo, um integrante, com *lint* e testes aprovados;
+3. toda alteração entra na developer por *pull request* revisado por, no mínimo, um integrante, com *lint* e testes aprovados;
 
-4)  a main recebe a developer ao fim de cada sprint, após a revisão com o Dono do Produto (P.O.).
+4. a main recebe a developer ao fim de cada sprint, após a revisão com o Dono do Produto (P.O.).

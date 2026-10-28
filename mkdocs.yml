@@ -8,9 +8,10 @@ nav:
   - Início: index.md
   - Atas de Reunião:
       - Ata 1: atas-reuniao/ata-reuniao-1.md
+      - Ata 2: atas-reuniao/ata-reuniao-2.md
   - Documentos:
-    - Documento de visão: visão.md
-    - Documento de Arquitetura: arquitetura.md
+      - Documento de Visão: visão.md
+      - Documento de Arquitetura: arquitetura.md
 theme:
   name: material
   language: pt

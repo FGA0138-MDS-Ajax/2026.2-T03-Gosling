@@ -1,2 +1,24 @@
 # Arquivos temporários de bloqueio do Microsoft Office
 ~$*
+
+# Documentação gerada pelo MkDocs
+/site/
+
+# Ambientes e arquivos gerados pelo Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Dependências e builds do frontend
+node_modules/
+dist/
+coverage/
+
+# Configurações locais (manter exemplos versionados)
+.env
+.env.*
+!.env.example

@@ -4,7 +4,11 @@
 
 **Versão 0.4**
 
-Arquivos originais: [PDF](documento%20de%20visao.pdf)
+Arquivos de referência: [PDF](documento%20de%20visao.pdf) · [Word](documento%20de%20visao.docx).
+
+Esta página apresenta a versão 0.4 da Visão do Produto e do Projeto, incluindo o calendário do voluntário (RF26), o bloqueio de conflitos de horário (RF27), as regras RN01 a RN05 e os casos de teste CT01 a CT14. O conteúdo foi conferido com os arquivos de referência em 28/10/2026; as decisões técnicas são detalhadas no [Documento de Arquitetura](arquitetura.md).
+
+Este documento registra as informações gerais do produto e do projeto desenvolvidos pelo grupo Gosling na disciplina de Métodos de Desenvolvimento de Software (MDS), no semestre 2026.2. Trata-se de um artefato vivo: ele é refinado e atualizado ao longo de todo o ciclo de vida do produto, e cada revisão é registrada no Histórico de Revisões (Tabela 2). Adotam-se os padrões da ABNT para a numeração de figuras, tabelas e quadros e para as referências bibliográficas.
 
 ## Tabela 1 – Integrantes do Grupo
 
@@ -16,8 +20,6 @@ Arquivos originais: [PDF](documento%20de%20visao.pdf)
 | 222026528 | Rafael Rodrigues Alencar | Dev Frontend/Backend | 25 |
 | **Total de pontos** |  |  | **100** |
 
-
-
 ## Tabela 2 – Histórico de Revisões
 
 | **Data** | **Versão** | **Descrição** | **Autor** |
@@ -27,7 +29,6 @@ Arquivos originais: [PDF](documento%20de%20visao.pdf)
 | 21/09/2026 | 0.2 | Preenchimento completo do documento no template da disciplina (seções 1 a 7), com espaços reservados para as informações pendentes | Equipe Gosling |
 | 30/09/2026 | 0.3 | Preenchimento dos campos de pesquisa bem como alinhamento de sprints definidas conforme o andamento do projeto | Equipe Gosling |
 | 18/10/2026 | 0.4 | Inclusão do calendário do voluntário (RF26) e do bloqueio de conflitos de horário (RF27); detalhamento dos horários das vagas, regras de negócio e critérios de aceitação. | Equipe Gosling |
-
 
 ## 1 VISÃO GERAL DO PRODUTO
 
@@ -47,8 +48,6 @@ Hoje, a divulgação de vagas de voluntariado é **descentralizada e informal**:
 | **Problema** | Pessoas interessadas em realizar trabalho voluntário e organizações que necessitam de voluntários têm dificuldade para se encontrar e identificar oportunidades compatíveis quanto a interesse, disponibilidade, localização e necessidades das atividades. |
 | **Questão-problema** | Como facilitar o encontro entre pessoas interessadas em trabalho voluntário e organizações que necessitam de voluntários, considerando suas necessidades e disponibilidades? |
 
-
-
 #### 1.1.2 Problema encontrado
 
 Atualmente as ONGs e os trabalhadores voluntários têm dificuldade de centralizar suas publicações de vagas, bem como dificuldade de saber onde buscar todas as vagas de trabalho voluntário disponíveis. O problema tem duas perspectivas:
@@ -61,6 +60,8 @@ Atualmente as ONGs e os trabalhadores voluntários têm dificuldade de centraliz
 
 [![Diagrama de Ishikawa: causas da dificuldade de conectar voluntários e ONGs.](assets/visao/figura1-ishikawa.png)](assets/visao/figura1-ishikawa.png)
 
+Fonte: Elaborado por Miguel Tobias com o auxílio da IA Claude.
+
 A Figura 1 tem como efeito o fato de que **voluntários e ONGs não se encontram de forma eficiente**, com causas agrupadas em cinco categorias interligadas. A dispersão da **informação** torna o **processo** de triagem manual e caro para a ONG; esse custo faz com que organizações com equipes pequenas (**pessoas**) invistam pouco em captação, o que realimenta a baixa visibilidade. Já a ausência de um canal digital adequado (**tecnologia**) impede que critérios de **compatibilidade** (turno, carga horária, modalidade e localização) sejam aplicados antes do contato humano.
 
 #### 1.1.3 Solução de software proposta
@@ -68,7 +69,6 @@ A Figura 1 tem como efeito o fato de que **voluntários e ONGs não se encontram
 Propõe-se uma **aplicação web** que centraliza a publicação e a busca de vagas de voluntariado, atuando como ponte entre ONGs e voluntários. A solução ataca as causas da Figura 1 em quatro frentes: reúne as vagas em um catálogo único com campos padronizados (*informação*); transforma esses campos em filtros de busca (*compatibilidade*); estrutura a candidatura, do envio de documentos ao comprovante e ao contato com o responsável (*processo*); e oferece às ONGs um canal de divulgação sem exigir infraestrutura própria (*tecnologia*).
 
 A solução também oferece um calendário pessoal com as vagas em que o voluntário possui candidatura ativa e os horários de cada dia (RF26). Antes de registrar uma nova candidatura, verifica a agenda e impede sobreposição com outra vaga, identificando o conflito para o usuário (RF27).
-
 
 O **foco em UX** faz parte da solução: como o público é heterogêneo em idade e familiaridade digital, uma interface confusa reproduziria dentro do sistema a mesma barreira que existe fora dele. Por isso, usabilidade e acessibilidade são requisitos do backlog (seção 4.4) e são medidas conforme a seção 5.1.
 
@@ -86,8 +86,6 @@ O Quadro 2 apresenta a declaração de posição do produto no formato proposto 
 | **Ao contrário:** | Da divulgação dispersa em redes sociais, grupos de mensagens e sites de cada organização. Sem o produto, a conexão continua dependendo do acaso: a ONG não preenche suas vagas e o voluntário desiste por não encontrar uma oportunidade compatível. |
 | **Nosso produto:** | Estrutura a busca sobre os mesmos campos que a ONG preenche ao publicar a vaga e tem a interface projetada e avaliada com foco em UX, para ser utilizável por pessoas com diferentes níveis de familiaridade digital. |
 
-
-
 O diferencial declarado no Quadro 2 se apoia em dois pontos: a padronização dos campos da vaga, que viabiliza a busca por compatibilidade, e o cuidado com a experiência de uso.
 
 #### 1.2.1 Usuários-alvo e clientes
@@ -99,8 +97,6 @@ O diferencial declarado no Quadro 2 se apoia em dois pontos: a padronização do
 | **Voluntário** | Pessoa física interessada em doar tempo a causas sociais; possui disponibilidade limitada e específica (turnos, dias, carga horária); perfil heterogêneo em idade, formação e familiaridade digital - de estudantes a aposentados. | Passa a ter um ponto único de busca, com filtros que respeitam sua agenda e sua localização, além de um registro formal da candidatura e um comprovante da atividade. |
 | **ONG / Organização** | Organização do terceiro setor, frequentemente com equipe reduzida e sem área dedicada à captação de voluntários; possui demandas recorrentes e sazonais por mão de obra voluntária. | Ganha visibilidade para suas vagas além da própria rede de contatos e recebe candidaturas já organizadas segundo os critérios que ela mesma definiu, reduzindo o esforço de triagem. |
 | **Cliente / P.O.** | Professor da disciplina, que acompanha o histórico de commits e o desenvolvimento do projeto; tem como ponto de contato com a equipe o monitor responsável pelo grupo Gosling. | Avalia se o produto atende aos seus usuários-alvo e se cumpre os requisitos previamente delimitados pelo escopo do problema, sendo quem valida e homologa as entregas da equipe. |
-
-
 
 Como mostra o Quadro 3, voluntários e ONGs são os usuários diretos e representam as duas pontas da conexão; o cliente valida se a solução atende ao escopo.
 
@@ -122,22 +118,13 @@ O Quadro 4 compara o produto às plataformas já existentes que conectam pessoas
 
 **Objetivos específicos:**
 
-1.  Permitir que organizações se cadastrem e publiquem vagas com informações padronizadas.
-
-<!-- -->
-
-1.  Permitir que voluntários se cadastrem e mantenham um perfil com seus interesses e sua disponibilidade.
-
-2.  Oferecer busca de vagas por filtros de causa, modalidade, local, carga horária e período.
-
-3.  Estruturar a candidatura, com envio de documentação e emissão de comprovante.
-
-4.  Conectar o responsável pela vaga na ONG ao voluntário candidato.
-
-5.  Entregar uma interface acessível e fácil de usar para pessoas com diferentes níveis de familiaridade digital.
-
+1. Permitir que organizações se cadastrem e publiquem vagas com informações padronizadas.
+2. Permitir que voluntários se cadastrem e mantenham um perfil com seus interesses e sua disponibilidade.
+3. Oferecer busca de vagas por filtros de causa, modalidade, local, carga horária e período.
+4. Estruturar a candidatura, com envio de documentação e emissão de comprovante.
+5. Conectar o responsável pela vaga na ONG ao voluntário candidato.
+6. Entregar uma interface acessível e fácil de usar para pessoas com diferentes níveis de familiaridade digital.
 7. Permitir que o voluntário consulte sua agenda de vagas e impedir candidaturas com horários sobrepostos (RF26 e RF27).
-
 
 Os objetivos 1 a 3 respondem às causas de informação e compatibilidade; os objetivos 4 e 5, ao processo manual de candidatura; o objetivo 6, ao foco em UX; e o objetivo 7, à organização dos compromissos e à prevenção de conflitos de horário.
 
@@ -158,8 +145,6 @@ Os objetivos 1 a 3 respondem às causas de informação e compatibilidade; os ob
 | Testes | Partes de automação no actions e partes de UX. | A definir |
 | Métodos e técnicas | Scrum e XP (seção 3); MoSCoW (seção 4.1); GQM (seção 5.1); Ishikawa (seção 1.1) | Definido |
 
-
-
 O Quadro 5 registra quais tecnologias serão adotadas; o detalhamento de como elas se articulam é objeto do Documento de Arquitetura.
 
 ## 2 VISÃO GERAL DO PROJETO
@@ -171,6 +156,8 @@ O projeto adota um **ciclo de vida iterativo e incremental**, em sprints de 7 di
 **Figura 2 –** Ciclo de vida adotado no projeto
 
 [![Ciclo de vida do projeto: metodologia ágil, Scrum, XP, métodos e ferramentas.](assets/visao/figura2-ciclo-de-vida.png)](assets/visao/figura2-ciclo-de-vida.png)
+
+Fonte: Elaborado por Miguel Tobias com o auxílio da IA Claude.
 
 - **Metodologia:** ágil, baseada em Scrum e XP.
 
@@ -199,8 +186,6 @@ O Quadro 6 distribui os papéis do projeto, sem relação de hierarquia entre el
 | **Designer / UX** | Elaborar protótipos e conduzir os testes de usabilidade. | Grupo | Cauã, Juan, Miguel, Rafael |
 | **Cliente** | Validar requisitos, participar das revisões e homologar as entregas. | Professor da disciplina | Monitor responsável pelo grupo Gosling |
 
-
-
 ### 2.3 Planejamento das Fases e/ou Iterações do Projeto
 
 O projeto é organizado em 11 sprints de 7 dias, de quarta a terça-feira, alinhadas ao cronograma da disciplina. As Sprints 1 a 5 cobrem a documentação: entrega do Documento de Visão em 30/09 e do Documento de Arquitetura em 07/10, com apresentações em 14/10 e 19/10. As Sprints 6 a 11 cobrem o desenvolvimento, do kick-off em 26/10 à apresentação do software em funcionamento. A Tabela 3 é atualizada ao final de cada sprint, com o percentual de conclusão em intervalos mínimos de 10%.
@@ -221,8 +206,6 @@ O projeto é organizado em 11 sprints de 7 dias, de quarta a terça-feira, alinh
 | Sprint 10 | Triagem, conexão e comprovante (CN07 e CN08); correção dos defeitos da inspeção | 18/11/2026 | 24/11/2026 | Incremento e RT | Grupo |  |
 | Sprint 11 | Ajustes de UX e entrega final | 25/11/2026 | 01/12/2026 | Incremento e RU; apresentação do software (30/11 ou 02/12) | Grupo |  |
 
-
-
 Legenda: DV = Documento de Visão; DA = Documento de Arquitetura; BLP = backlog do produto; PROTO = protótipo de interface; RT = relatório de testes; RU = relatório de usabilidade; CN = cenário (Tabela 5).
 
 ### 2.4 Matriz de Comunicação
@@ -237,8 +220,6 @@ O Quadro 7 apresenta a estratégia de comunicação usada para acompanhar o prog
 | Planejamento da sprint | Equipe e P.O. | Início de cada sprint | Backlog da sprint |
 | Revisão e retrospectiva da sprint | Equipe, P.O. e cliente | Fim de cada sprint | Incremento validado; ações de melhoria |
 | Comunicação da situação do projeto | Equipe, professor e monitor | Semanal | Ata de reunião; relatório de situação |
-
-
 
 Canais utilizados: Discord.
 
@@ -257,8 +238,6 @@ Os riscos são identificados, classificados pelo grau de exposição (probabilid
 | **R5** - Indisponibilidade do cliente para validar entregas | Média | Agendar validações com antecedência e registrar requisitos por escrito. | P.O. valida provisoriamente, com homologação posterior em ata. |
 | **R6** - Interface não atender ao foco em UX | Alta | Prototipar antes de codificar e testar a usabilidade a cada incremento. | Usar a Sprint 11 para corrigir os problemas encontrados. |
 | **R7** - Requisitos baseados em hipóteses, sem contato direto com ONGs e voluntários | Alta | Basear os requisitos em dados públicos e em vagas reais; testar o protótipo com potenciais voluntários a cada incremento. | Revisar o backlog e reprogramar as funcionalidades cujas hipóteses não se confirmarem. |
-
-
 
 ### 2.6 Critérios de Replanejamento
 
@@ -284,35 +263,19 @@ O processo segue o **Scrum**, com os papéis do Quadro 6, e incorpora práticas 
 
 [![Fluxo de desenvolvimento: refinamento, planejamento, design, desenvolvimento, verificação, revisão e retrospectiva.](assets/visao/figura3-processo-de-desenvolvimento.png)](assets/visao/figura3-processo-de-desenvolvimento.png)
 
+Fonte: Elaborado por Miguel Tobias com auxílio da IA Gemini.
+
 ### 3.1 Scrum adaptado
 
 Cada sprint percorre as atividades abaixo, cada uma com um responsável:
 
-1.  **Refinamento do backlog** (P.O., contínuo): detalhar e priorizar os itens.
-
-<!-- -->
-
-1.  **Planejamento da sprint** (equipe e P.O.): selecionar os itens e dividi-los em tarefas.
-
-<!-- -->
-
-1.  **Design de interface** (Designer/UX): prototipar os itens antes de codificar.
-
-<!-- -->
-
-1.  **Desenvolvimento** (Desenvolvedores): codificar e testar, com integração contínua.
-
-<!-- -->
-
-1.  **Verificação** (Analista de Qualidade): executar o roteiro de testes e revisar o código.
-
-<!-- -->
-
-1.  **Revisão da sprint** (equipe, P.O. e cliente): apresentar e validar o incremento.
-
-<!-- -->
-
-1.  **Retrospectiva** (Scrum Master): avaliar o processo e atualizar riscos e métricas.
+1. **Refinamento do backlog** (P.O., contínuo): detalhar e priorizar os itens.
+2. **Planejamento da sprint** (equipe e P.O.): selecionar os itens e dividi-los em tarefas.
+3. **Design de interface** (Designer/UX): prototipar os itens antes de codificar.
+4. **Desenvolvimento** (Desenvolvedores): codificar e testar, com integração contínua.
+5. **Verificação** (Analista de Qualidade): executar o roteiro de testes e revisar o código.
+6. **Revisão da sprint** (equipe, P.O. e cliente): apresentar e validar o incremento.
+7. **Retrospectiva** (Scrum Master): avaliar o processo e atualizar riscos e métricas.
 
 ### 3.2 Práticas do XP adotadas
 
@@ -348,7 +311,6 @@ O escopo do produto corresponde a uma **aplicação web** na qual será possíve
 
 O escopo inclui o calendário do voluntário e o bloqueio de candidaturas incompatíveis com seus compromissos na plataforma. Cada vaga deve informar datas e horários exatos de início e fim de todas as ocorrências; o período do dia e a carga horária permanecem como informações de busca.
 
-
 ### 4.1 Backlog do produto
 
 O backlog é organizado por perfis (seção 4.2) e cenários (seção 4.3) e detalhado na Tabela 6 (seção 4.4). A priorização usa a técnica MoSCoW, com o seguinte significado para este produto, a ser validado pelo P.O.:
@@ -371,8 +333,6 @@ Como a equipe não tem acesso direto a ONGs e voluntários para aplicar question
 | **Usuários representativos** | Prototipação e teste de usabilidade | Valida as hipóteses de interface com potenciais voluntários (colegas e pessoas próximas), conforme a métrica M6. |
 | **Cliente / P.O.** | Reuniões de validação | Confirmam as prioridades e o escopo de cada sprint. |
 
-
-
 Foram analisadas 5 vagas de voluntariado publicadas nas plataformas <https://www.linkedin.com>; <https://voluntariadoemacao.sejus.df.gov.br/>, entre 17/09/2026 e 30/09/2026.
 
 ### 4.2 Perfis
@@ -387,8 +347,6 @@ A Tabela 4 apresenta os perfis de acesso do sistema e suas permissões.
 | 2 | **Voluntário** | Pessoa física autenticada. | Permissões do Visitante; manter o próprio perfil; candidatar-se e enviar documentos; acompanhar candidaturas; emitir comprovante; ver o contato do responsável após o aceite. |
 | 3 | **ONG / Organização / Responsável por Projetos Sociais** | Organização autenticada que publica vagas. | Manter o perfil da organização; criar, editar e encerrar vagas; triar, aceitar ou recusar candidaturas; ver o contato dos voluntários aceitos. |
 | 4 | **Administrador** | Mantém os perfis de acesso da aplicação. | Manter usuários; homologar organizações; moderar vagas irregulares. |
-
-
 
 Os perfis 2 e 3 são exclusivos em uma mesma conta, pois têm fluxos e telas distintos.
 
@@ -413,8 +371,6 @@ A Tabela 5 agrupa as funcionalidades em cenários e indica a sprint prevista par
 | CN09 | Administração e moderação da plataforma | Sprints 9 a 11 |
 | CN10 | Consulta do calendário do voluntário | Sprint 9 |
 
-
-
 ### 4.4 Tabela de Backlog do produto
 
 Os requisitos **Must** formam o MVP e cobrem o caminho completo da questão-problema: a ONG publica a vaga (RF08), o voluntário a encontra por filtros (RF13), candidata-se com documentos e sem conflito de horário (RF16, RF17 e RF27), consulta seu calendário (RF26), é triado (RF19), recebe o comprovante (RF22) e é conectado ao responsável (RF21). As *user stories* seguem o formato "Eu, como &lt;perfil&gt;, quero &lt;ação&gt;, para &lt;benefício&gt;" e ficam registradas no backlog em markdown.
@@ -425,14 +381,13 @@ Os requisitos **Must** formam o MVP e cobrem o caminho completo da questão-prob
 
 **RN01 — Agenda ativa:** candidaturas PENDENTES e ACEITAS ocupam os horários de todas as ocorrências da vaga. RECUSADAS e CANCELADAS não ocupam a agenda. Encerrar o recebimento de candidaturas de uma vaga não cancela os compromissos já assumidos.
 
-**RN02 — Sobreposição:** há conflito quando início_novo < fim_existente e fim_novo > início_existente. Horários consecutivos, como 09h–10h e 10h–11h, são permitidos. Basta uma ocorrência em conflito para impedir a candidatura inteira. Datas diferentes só conflitam quando os intervalos efetivamente se cruzam, inclusive ao atravessar a meia-noite.
+**RN02 — Sobreposição:** há conflito quando `início_novo < fim_existente e fim_novo > início_existente`. Horários consecutivos, como 09h–10h e 10h–11h, são permitidos. Basta uma ocorrência em conflito para impedir a candidatura inteira. Datas diferentes só conflitam quando os intervalos efetivamente se cruzam, inclusive ao atravessar a meia-noite.
 
 **RN03 — Datas e horários:** toda ocorrência deve ter início anterior ao fim, com exibição no horário de Brasília. No MVP, a ONG cadastra explicitamente cada ocorrência; regras automáticas de recorrência e integração com calendários externos ficam fora do escopo.
 
 **RN04 — Bloqueio e retorno:** a verificação ocorre no servidor antes do registro. Havendo conflito, não são criados candidatura, comprovante ou notificação de sucesso. A interface informa nome da vaga conflitante, data, início e fim, e oferece acesso ao calendário.
 
 **RN05 — Consistência:** no MVP, a edição dos horários de uma vaga é bloqueada enquanto existir candidatura PENDENTE ou ACEITA. O calendário reflete imediatamente o registro, a recusa ou o cancelamento de uma candidatura após a confirmação do servidor.
-
 
 **Tabela 6 –** Backlog do produto
 
@@ -475,8 +430,6 @@ Os requisitos **Must** formam o MVP e cobrem o caminho completo da questão-prob
 | RNF06 | A definir | Desempenho da busca | Não funcional | Should | Apresentar o resultado da busca com filtros em tempo adequado à interação. | \- |
 | RNF07 | A definir | Manutenibilidade | Não funcional | Should | Seguir os padrões de código definidos no Documento de Arquitetura. | \- |
 
-
-
 Nota: os requisitos com sprint "A definir" serão alocados no planejamento de cada sprint, dentro do prazo do projeto (até a Sprint 11).
 
 ## 5 MÉTRICAS E MEDIÇÕES
@@ -495,8 +448,6 @@ As medições seguem a abordagem **GQM** (*Goal Question Metric*): cada objetivo
 | **Do ponto de vista de** | Equipe e Dono do Produto | Analista de Qualidade e usuários finais |
 | **No contexto de** | Disciplina MDS, semestre 2026.2, grupo Gosling | Incrementos entregues a cada sprint |
 
-
-
 **Quadro 11 –** Questões, métricas e formas de análise
 
 | **Questão** | **Métrica** | **Cálculo e unidade** | **Valor esperado** | **Forma de análise** |
@@ -507,8 +458,6 @@ As medições seguem a abordagem **GQM** (*Goal Question Metric*): cada objetivo
 | O código está coberto por testes? (obj. 2) | M4 - Cobertura de testes | (Linhas cobertas ÷ linhas totais) × 100, em % | Maior ou igual a 80% | Verificada a cada *pull request*. |
 | O produto é entregue com defeitos? (obj. 2) | M5 - Densidade de defeitos | Defeitos encontrados ÷ pontos entregues | Decrescente ao longo do projeto | Alta densidade prioriza a correção na sprint seguinte. |
 | Os usuários concluem as tarefas principais? (obj. 2) | M6 - Taxa de sucesso em tarefa | (Participantes que concluíram ÷ total) × 100, em % | Maior ou igual a 80% em busca e candidatura | Abaixo da meta, gera ajustes de UX no backlog. |
-
-
 
 A métrica M6 verifica se o foco em UX do tema foi de fato alcançado. O Scrum Master coleta M1 a M3 e o Analista de Qualidade coleta M4 a M6, ao final de cada sprint, com registro no relatório de situação (Quadro 7).
 
@@ -546,8 +495,6 @@ A Tabela 7 lista os casos de teste de sistema e de integração previstos para o
 | CT12 | Candidaturas simultâneas | Validar RF27 e atomicidade | Integração | Funcional | Duas requisições simultâneas do mesmo voluntário para vagas sobrepostas | Somente uma candidatura registrada; a outra recebe conflito. |  |  |  |
 | CT13 | Proteção da agenda | Validar RF26 e RNF05 | Integração | Segurança | Contas de dois voluntários e de organização | Cada voluntário consulta somente sua agenda; acesso sem autenticação ou com outro perfil é negado. |  |  |  |
 | CT14 | Ocorrências e edição | Validar RF08, RF09 e RN03 | Sistema | Funcional | Vaga com várias ocorrências; candidatura ativa | Rejeitar início >= fim e edição de horários com candidatura ativa; conflito em uma ocorrência bloqueia a candidatura inteira. |  |  |  |
-
-
 
 ## REFERÊNCIAS
 
