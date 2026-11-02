@@ -1,0 +1,25 @@
+import http from './http'
+
+export async function login(email, senha) {
+  const { data } = await http.post(
+    '/auth/login',
+    { email: email.trim(), senha },
+    { publicRequest: true },
+  )
+  return data
+}
+
+export async function getSession() {
+  const { data } = await http.get('/auth/me')
+  return data
+}
+
+export async function getProfile(perfil) {
+  const paths = {
+    VOLUNTARIO: '/voluntarios/me',
+    ORGANIZACAO: '/organizacoes/me',
+    ADMINISTRADOR: '/admin/me',
+  }
+  const { data } = await http.get(paths[perfil])
+  return data
+}
