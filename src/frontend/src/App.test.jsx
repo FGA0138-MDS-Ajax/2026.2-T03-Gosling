@@ -50,6 +50,44 @@ async function fillAndSubmit(user) {
 }
 
 describe('fluxo de autenticação', () => {
+  it('abre o acesso público ao cadastro da organização pelo teclado', async () => {
+    const user = userEvent.setup()
+    open()
+    const link = await screen.findByRole('link', { name: 'Cadastre sua organização' })
+    expect(link).toHaveAttribute('href', '/cadastro/organizacao')
+    link.focus()
+    await user.keyboard('{Enter}')
+    expect(screen.getByRole('heading', { name: 'Cadastro de organização' })).toBeVisible()
+    expect(screen.getByText('O cadastro de organizações ainda não está disponível.')).toBeVisible()
+    expect(authService.login).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('link', { name: 'Entrar na minha conta' }))
+    expect(await screen.findByRole('heading', { name: 'Entre no VolunJá' })).toBeVisible()
+  })
+
+  it('permite à ONG entrar pelo teclado e preserva seu tipo ao restaurar a sessão', async () => {
+    const user = userEvent.setup()
+    const data = session('ORGANIZACAO')
+    authService.login.mockResolvedValue(data)
+    authService.getSession.mockResolvedValue(data)
+    const view = open()
+    const email = await screen.findByLabelText('E-mail')
+    email.focus()
+    await user.keyboard('ong@example.com')
+    await user.tab()
+    await user.keyboard('SenhaDeTeste123!{Enter}')
+    expect(await screen.findByRole('heading', { name: 'Área de Organização' })).toBeVisible()
+    expect(screen.getByText('Tipo de organização: ONG')).toBeVisible()
+    expect(authService.login).toHaveBeenCalledWith('ong@example.com', 'SenhaDeTeste123!')
+    expect(authService.getProfile).toHaveBeenCalledWith('ORGANIZACAO')
+    view.unmount()
+    open('/organizacao')
+    expect(await screen.findByRole('heading', { name: 'Área de Organização' })).toBeVisible()
+    expect(screen.getByText('Tipo de organização: ONG')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Sair' }))
+    expect(await screen.findByRole('heading', { name: 'Entre no VolunJá' })).toBeVisible()
+    expect(readSession()).toBeNull()
+  })
+
   it('valida campos obrigatórios antes de chamar a API', async () => {
     const user = userEvent.setup()
     open()

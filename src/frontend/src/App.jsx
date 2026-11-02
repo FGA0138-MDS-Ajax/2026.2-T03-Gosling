@@ -3,6 +3,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
+import OrganizationSignupPage from './pages/OrganizationSignupPage'
 import VolunteerSignupPage from './pages/VolunteerSignupPage'
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro/voluntario" element={<VolunteerSignupPage />} />
+      <Route path="/cadastro/organizacao" element={<OrganizationSignupPage />} />
       <Route element={<ProtectedRoute perfil="VOLUNTARIO" />}>
         <Route path="/voluntario" element={<ProfilePage />} />
       </Route>

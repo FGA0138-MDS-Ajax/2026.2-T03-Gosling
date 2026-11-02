@@ -131,6 +131,12 @@ export default function LoginPage() {
               Cadastre-se como voluntário
             </Link>
           </p>
+          <p className={styles.signup}>
+            Representa uma ONG?{' '}
+            <Link className={styles.signupLink} to="/cadastro/organizacao">
+              Cadastre sua organização
+            </Link>
+          </p>
         </section>
       </main>
       <footer className={styles.footer}>VolunJá · Conectando pessoas e causas</footer>
