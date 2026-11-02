@@ -12,6 +12,7 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
+coverage.xml
 
 # Dependências e builds do frontend
 node_modules/
@@ -22,3 +23,7 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# Evidencias locais de navegacao automatizada
+playwright-report/
+test-results/
