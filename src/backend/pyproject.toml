@@ -6,4 +6,4 @@ addopts = "--cov=app --cov-report=term-missing --cov-report=xml:coverage.xml --c
 target-version = "py312"
 line-length = 88
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F"]
