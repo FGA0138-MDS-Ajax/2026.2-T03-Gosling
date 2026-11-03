@@ -2,9 +2,9 @@ import os
 from fastapi import APIRouter, Depends, HTTPException, status
 import pymysql
 
-from repository import UsuarioRepository
-from schemas import LoginRequest, LoginResponse
-from service import (
+from app.repository import UsuarioRepository
+from app.schemas import LoginRequest, LoginResponse
+from app.service import (
     AuthService,
     CredenciaisInvalidasException,
     ContaSemAcessoException,

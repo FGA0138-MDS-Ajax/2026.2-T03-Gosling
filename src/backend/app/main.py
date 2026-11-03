@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
 
-from router import router as auth_router
+from app.router import router as auth_router
 app = FastAPI(
     title="API - Módulo de Autenticação",
     version = "1.0.0",
