@@ -1,20 +1,14 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status
 import pymysql
 
 from app.jwt_geraçao.repository import UsuarioRepository
-from backend.app.jwt_geraçao.schemas import LoginRequest, LoginResponse
-from backend.app.jwt_geraçao.service import (
+from app.jwt_geraçao.schemas import LoginRequest, LoginResponse
+from app.jwt_geraçao.service import (
     AuthService,
     CredenciaisInvalidasException,
     ContaSemAcessoException,
 )
 
-router = APIRouter()
-
-@router.get("/exemplo")
-def exemplo():
-    return {"ok": True}
 router = APIRouter(prefix="/api/v1/auth", tags=["Autenticação"])
 
 
@@ -37,6 +31,11 @@ def get_auth_service(conn=Depends(get_db_connection)) -> AuthService:
     repository = UsuarioRepository(db_connection=conn)
     # 2. Devolve o serviço pronto
     return AuthService(usuario_repository=repository)
+
+
+@router.get("/exemplo")
+def exemplo():
+    return {"ok": True}
 
 
 @router.post(
