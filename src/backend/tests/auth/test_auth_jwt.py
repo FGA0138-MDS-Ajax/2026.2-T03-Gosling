@@ -9,15 +9,15 @@ if str(backend_dir) not in sys.path:
     sys.path.append(str(backend_dir))
 
 from argon2 import PasswordHasher  # noqa: E402
-from backend.app.jwt_geraçao.repository import UsuarioEntity, UsuarioRepository  # noqa: E402
-from backend.app.jwt_geraçao.service import (  # noqa: E402
+from app.jwt_geraçao.repository import UsuarioEntity, UsuarioRepository  # noqa: E402
+from app.jwt_geraçao.service import (  # noqa: E402
     AuthService,
     CredenciaisInvalidasException,
     ContaSemAcessoException,
     SECRET_KEY,
     ALGORITHM,
 )
-from backend.app.jwt_geraçao.schemas import LoginRequest  # noqa: E402
+from app.jwt_geraçao.schemas import LoginRequest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from app.jwt_geraçao.main import app  # noqa: E402
 
