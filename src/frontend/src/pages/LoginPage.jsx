@@ -5,7 +5,17 @@ import { useAuth } from '../hooks/useAuth'
 import { profileRoute } from '../utils/profileRoutes'
 import styles from './Auth.module.css'
 
-export default function LoginPage() {
+const CADASTROS_PADRAO = [
+  { pergunta: 'Ainda não tem conta?', texto: 'Cadastre-se como voluntário', to: '/cadastro/voluntario' },
+  { pergunta: 'Representa uma ONG?', texto: 'Cadastre sua organização', to: '/cadastro/organizacao' },
+  { pergunta: 'Responsável por um projeto social?', texto: 'Entre como projeto social', to: '/login/projeto-social' },
+]
+
+export default function LoginPage({
+  titulo = 'Entre no VolunJá',
+  subtitulo = 'Acesse sua conta para continuar.',
+  cadastros = CADASTROS_PADRAO,
+}) {
   const { usuario, loading, restoreError, sessionExpired, login } = useAuth()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -67,8 +77,8 @@ export default function LoginPage() {
           <p className={styles.signature}>Pessoas e causas, mais próximas.</p>
         </section>
         <section className={styles.formPanel}>
-          <h1>Entre no VolunJá</h1>
-          <p className={styles.subtitle}>Acesse sua conta para continuar.</p>
+          <h1>{titulo}</h1>
+          <p className={styles.subtitle}>{subtitulo}</p>
           {sessionExpired && (
             <p role="status" className={styles.notice}>
               Sua sessão expirou. Entre novamente.
@@ -125,18 +135,12 @@ export default function LoginPage() {
               </button>
             </fieldset>
           </form>
-          <p className={styles.signup}>
-            Ainda não tem conta?{' '}
-            <Link className={styles.signupLink} to="/cadastro/voluntario">
-              Cadastre-se como voluntário
-            </Link>
-          </p>
-          <p className={styles.signup}>
-            Representa uma ONG?{' '}
-            <Link className={styles.signupLink} to="/cadastro/organizacao">
-              Cadastre sua organização
-            </Link>
-          </p>
+          {cadastros.map(({ pergunta, texto, to }) => (
+            <p key={to} className={styles.signup}>
+              {pergunta}{' '}
+              <Link className={styles.signupLink} to={to}>{texto}</Link>
+            </p>
+          ))}
         </section>
       </main>
       <footer className={styles.footer}>VolunJá · Conectando pessoas e causas</footer>
