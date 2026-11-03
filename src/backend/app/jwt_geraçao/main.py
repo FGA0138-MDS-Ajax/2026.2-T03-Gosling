@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from app.auth.router import router as auth_router
 from app.core.errors import register_error_handlers
 from app.usuarios.router import router as usuarios_router
-from fastapi import FastAPI
 from app.jwt_geraçao.router import router as jwt_router
 
 app = FastAPI()

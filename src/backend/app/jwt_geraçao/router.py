@@ -9,7 +9,6 @@ from backend.app.jwt_geraçao.service import (
     CredenciaisInvalidasException,
     ContaSemAcessoException,
 )
-from fastapi import APIRouter
 
 router = APIRouter()
 

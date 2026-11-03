@@ -1,38 +1,32 @@
 import pytest
 import jwt
+import sys
+from pathlib import Path
 
-from argon2 import PasswordHasher
+# Ajusta o caminho do Python primeiro
+backend_dir = Path(__file__).resolve().parents[2]
+if str(backend_dir) not in sys.path:
+    sys.path.append(str(backend_dir))
 
-from backend.app.jwt_geraçao.repository import UsuarioEntity, UsuarioRepository
-from backend.app.jwt_geraçao.service import (
+from argon2 import PasswordHasher  # noqa: E402
+from backend.app.jwt_geraçao.repository import UsuarioEntity, UsuarioRepository  # noqa: E402
+from backend.app.jwt_geraçao.service import (  # noqa: E402
     AuthService,
     CredenciaisInvalidasException,
     ContaSemAcessoException,
     SECRET_KEY,
     ALGORITHM,
 )
-from backend.app.jwt_geraçao.schemas import LoginRequest
-from fastapi.testclient import TestClient
-import sys
-from pathlib import Path
- 
-backend_dir = Path(__file__).resolve().parents[2]
-if str(backend_dir) not in sys.path:
-    sys.path.append(str(backend_dir))
-
- 
+from backend.app.jwt_geraçao.schemas import LoginRequest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
-from app.jwt_geraçao.main import app      # noqa: E402
+from app.jwt_geraçao.main import app  # noqa: E402
 
 client = TestClient(app)
 
 
 def test_jwt_router_endpoints():
     response = client.get("/jwt/exemplo")
-    
-    # Valida que o endpoint respondeu corretamente
     assert response.status_code in [200, 401, 404, 422]
-
 _ph = PasswordHasher()
 
 
