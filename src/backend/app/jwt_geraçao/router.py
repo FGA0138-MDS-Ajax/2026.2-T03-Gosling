@@ -9,7 +9,13 @@ from backend.app.jwt_geraçao.service import (
     CredenciaisInvalidasException,
     ContaSemAcessoException,
 )
+from fastapi import APIRouter
 
+router = APIRouter()
+
+@router.get("/exemplo")
+def exemplo():
+    return {"ok": True}
 router = APIRouter(prefix="/api/v1/auth", tags=["Autenticação"])
 
 
