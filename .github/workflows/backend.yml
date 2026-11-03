@@ -52,6 +52,8 @@ jobs:
       - name: Aplicar migracoes no MySQL de teste
         run: python -m alembic upgrade head
       - name: Executar testes e medir cobertura
+        env:
+          PYTHONPATH: ../..
         run: python -m pytest
       - name: Salvar relatorio de cobertura
         if: always()
