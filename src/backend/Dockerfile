@@ -5,4 +5,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/backend/app ./app
 COPY src/backend/migrations ./migrations
 COPY src/backend/alembic.ini .
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.jwt_geracao.main:app --host 0.0.0.0 --port 8000"]
