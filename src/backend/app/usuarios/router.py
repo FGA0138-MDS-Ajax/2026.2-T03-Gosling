@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from app.dependencies import require_perfil
+from backend.app.jwt_geração.dependencies import require_perfil
 from app.usuarios.enums import Perfil
 from app.usuarios.schemas import UsuarioPublico
 

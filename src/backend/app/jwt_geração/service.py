@@ -5,8 +5,8 @@ import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, VerificationError
 
-from app.repository import UsuarioRepository
-from app.schemas import LoginRequest, LoginResponse
+from backend.app.jwt_geração.repository import UsuarioRepository
+from backend.app.jwt_geração.schemas import LoginRequest, LoginResponse
 
 
 SECRET_KEY = os.getenv(
