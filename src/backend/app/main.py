@@ -1,15 +1,15 @@
-import uvicorn
 from fastapi import FastAPI
 
-from app.router import router as auth_router
-app = FastAPI(
-    title="API - Módulo de Autenticação",
-    version = "1.0.0",
-    description="Imprementação da Iusse Must para emissão de JWT de 60min"
-)
+from app.auth.router import router as auth_router
+from app.core.errors import register_error_handlers
+from app.usuarios.router import router as usuarios_router
 
-app.include_router(auth_router)
+app = FastAPI(title="VolunJá")
+register_error_handlers(app)
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(usuarios_router, prefix="/api/v1")
 
-if __name__ == "__main__":
-    print("[*] Inicializando o servidor FastAPI local na porta 800")
-    uvicorn.run("main:app", host="127.0.0.1", port=8000)
+
+@app.get("/api/v1/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
