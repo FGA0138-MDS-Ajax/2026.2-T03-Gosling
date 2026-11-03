@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Response
 
 from app.auth.schemas import LoginRequest, LoginResponse, SessaoResponse
 from app.auth.service import AuthService
-from backend.app.jwt_geraçao.dependencies import get_auth_service, get_sessao
+from app.jwt_geraçao.dependencies import get_auth_service, get_sessao
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 
