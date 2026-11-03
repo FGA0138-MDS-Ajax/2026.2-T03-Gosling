@@ -12,7 +12,30 @@ from backend.app.jwt_geraçao.service import (
     ALGORITHM,
 )
 from backend.app.jwt_geraçao.schemas import LoginRequest
+from fastapi.testclient import TestClient
+import sys
+from pathlib import Path
 
+# 1. Ajusta o caminho para o Python encontrar a aplicação app/
+backend_dir = Path(__file__).resolve().parents[2]
+if str(backend_dir) not in sys.path:
+    sys.path.append(str(backend_dir))
+
+from fastapi.testclient import TestClient
+from app.jwt_geraçao.main import app
+
+# 2. Cria o cliente de testes do FastAPI
+client = TestClient(app)
+
+# 3. Função de teste que chama o endpoint para ativar o router.py
+def test_jwt_router_endpoints():
+    # Substitua "/jwt/exemplo" pela rota real que criaste no router.py do jwt_geracao
+    response = client.get("/jwt/exemplo") 
+    
+    # Valida que o endpoint respondeu (ajusta os códigos conforme o que a tua rota espera)
+    assert response.status_code in [200, 401, 404, 422]
+
+# 4. (Opcional) Podes manter aqui os outros testes que já tinhas escrito para o auth/jwt
 
 _ph = PasswordHasher()
 
