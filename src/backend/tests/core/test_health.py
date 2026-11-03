@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from backend.app.jwt_geração.main import app
+from backend.app.jwt_geraçao.main import app
 
 
 def test_health_retorna_sistema_disponivel() -> None:

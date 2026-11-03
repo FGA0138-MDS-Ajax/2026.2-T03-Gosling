@@ -2,9 +2,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 import pymysql
 
-from backend.app.jwt_geração.repository import UsuarioRepository
-from backend.app.jwt_geração.schemas import LoginRequest, LoginResponse
-from backend.app.jwt_geração.service import (
+from backend.app.jwt_geraçao.repository import UsuarioRepository
+from backend.app.jwt_geraçao.schemas import LoginRequest, LoginResponse
+from backend.app.jwt_geraçao.service import (
     AuthService,
     CredenciaisInvalidasException,
     ContaSemAcessoException,

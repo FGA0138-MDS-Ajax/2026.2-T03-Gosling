@@ -3,15 +3,15 @@ import jwt
 
 from argon2 import PasswordHasher
 
-from backend.app.jwt_geração.repository import UsuarioEntity, UsuarioRepository
-from backend.app.jwt_geração.service import (
+from backend.app.jwt_geraçao.repository import UsuarioEntity, UsuarioRepository
+from backend.app.jwt_geraçao.service import (
     AuthService,
     CredenciaisInvalidasException,
     ContaSemAcessoException,
     SECRET_KEY,
     ALGORITHM,
 )
-from backend.app.jwt_geração.schemas import LoginRequest
+from backend.app.jwt_geraçao.schemas import LoginRequest
 
 
 _ph = PasswordHasher()
