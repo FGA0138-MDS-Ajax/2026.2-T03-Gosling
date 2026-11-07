@@ -325,12 +325,6 @@ def test_main_registra_rota_de_voluntarios():
     from app.voluntarios.main import app
 
     assert isinstance(app, FastAPI)
-    assert "/api/v1/voluntarios" in [rota.path for rota in app.routes]
-    
-def test_main_registra_rota_de_voluntarios():
-    from app.voluntarios.main import app
-
-    assert isinstance(app, FastAPI)
 
     rotas = app.openapi()["paths"]
     assert "/api/v1/voluntarios" in rotas

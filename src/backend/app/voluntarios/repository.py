@@ -51,7 +51,9 @@ class VoluntarioRepository:
             ativo=bool(row["ativo"]),
         )
 
-    def buscar_por_identificador(self, identificador: str) -> Optional[VoluntarioEntity]:
+    def buscar_por_identificador(
+        self, identificador: str
+    ) -> Optional[VoluntarioEntity]:
         if not self.conn:
             return None
 

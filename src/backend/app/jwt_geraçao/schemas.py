@@ -20,6 +20,8 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "Bearer"
     expires_in_minutes: int = 60
+
+
 class TokenPayload(BaseModel):
     sub: str
     perfil: str

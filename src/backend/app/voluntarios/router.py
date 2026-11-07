@@ -46,7 +46,10 @@ def get_voluntario_service(db=Depends(get_db)) -> VoluntarioService:
     response_model=CadastroVoluntarioResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Cadastrar voluntário e iniciar sessão",
-    description="Persiste uma conta de pessoa física como voluntário e retorna a sessão inicial via JWT.",
+    description=(
+        "Persiste uma conta de pessoa física como voluntário "
+        "e retorna a sessão inicial via JWT."
+    ),
 )
 def cadastrar_voluntario(
     dados: CadastroVoluntarioRequest,
