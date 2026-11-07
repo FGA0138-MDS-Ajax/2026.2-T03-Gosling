@@ -3,12 +3,12 @@ import os
 import pymysql
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from  voluntarios.repository import VoluntarioRepository
-from  voluntarios.schemas import (
+from app.voluntarios.repository import VoluntarioRepository
+from app.voluntarios.schemas import (
     CadastroVoluntarioRequest,
     CadastroVoluntarioResponse,
 )
-from  voluntarios.service import (
+from app.voluntarios.service import (
     ConsentimentoObrigatorioException,
     EmailJaCadastradoException,
     IdentificacaoJaCadastradaException,

@@ -5,8 +5,8 @@ from datetime import datetime, timedelta, timezone
 import jwt
 from argon2 import PasswordHasher
 
-from voluntarios.repository import VoluntarioEntity, VoluntarioRepository
-from voluntarios.schemas import (
+from app.voluntarios.repository import VoluntarioEntity, VoluntarioRepository
+from app.voluntarios.schemas import (
     CadastroVoluntarioRequest,
     CadastroVoluntarioResponse,
     VoluntarioPublicoDTO,
