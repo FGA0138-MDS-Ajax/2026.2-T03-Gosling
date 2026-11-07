@@ -12,7 +12,6 @@ class UsuarioEntity(BaseModel):
     ativo: bool
 
 
-
 class UsuarioRepository:
     def __init__(self, db_connection):
         self.conn = db_connection

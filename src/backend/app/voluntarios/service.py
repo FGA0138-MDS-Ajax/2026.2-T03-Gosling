@@ -1,0 +1,103 @@
+import os
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import jwt
+from argon2 import PasswordHasher
+
+from app.voluntarios.repository import VoluntarioEntity, VoluntarioRepository
+from app.voluntarios.schemas import (
+    CadastroVoluntarioRequest,
+    CadastroVoluntarioResponse,
+    VoluntarioPublicoDTO,
+)
+
+SECRET_KEY = os.getenv(
+    "SECRET_KEY", "chave_secreta_padrao_para_ambiente_dev_32_bytes_minimo"
+)
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+TOKEN_ISSUER = "volun-ja-api"
+
+
+class EmailJaCadastradoException(Exception):
+    pass
+
+
+class IdentificacaoJaCadastradaException(Exception):
+    pass
+
+
+class ConsentimentoObrigatorioException(Exception):
+    pass
+
+
+class VoluntarioService:
+    def __init__(self, voluntario_repository: VoluntarioRepository):
+        self.repository = voluntario_repository
+        self.ph = PasswordHasher()
+
+    def cadastrar_voluntario(
+        self, dados: CadastroVoluntarioRequest
+    ) -> CadastroVoluntarioResponse:
+        if not dados.consentimento_termos:
+            raise ConsentimentoObrigatorioException(
+                "É obrigatório aceitar os termos de consentimento para "
+                "realizar o cadastro."
+            )
+
+        if self.repository.buscar_por_email(dados.email):
+            raise EmailJaCadastradoException(
+                "Já existe um cadastro com esse endereço de e-mail."
+            )
+
+        if self.repository.buscar_por_identificador(dados.identificacao):
+            raise IdentificacaoJaCadastradaException(
+                "Já existe um cadastro com esse documento de identificação."
+            )
+
+        hash_senha = self.ph.hash(dados.password)
+
+        novo_id = str(uuid.uuid4())
+        novo_voluntario = VoluntarioEntity(
+            id=novo_id,
+            nome_completo=dados.nome_completo.strip(),
+            email=dados.email.lower(),
+            identificacao=dados.identificacao.strip(),
+            password_hash=hash_senha,
+            consentimento_termos=dados.consentimento_termos,
+            perfil="Voluntario",
+            ativo=True,
+        )
+
+        voluntario_salvo = self.repository.salvar(novo_voluntario)
+
+        agora = datetime.now(timezone.utc)
+        expiracao = agora + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
+        payload = {
+            "sub": voluntario_salvo.id,
+            "email": voluntario_salvo.email,
+            "perfil": voluntario_salvo.perfil,
+            "iat": agora,
+            "exp": expiracao,
+            "iss": TOKEN_ISSUER,
+        }
+
+        token_jwt = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+        voluntario_dto = VoluntarioPublicoDTO(
+            id=voluntario_salvo.id,
+            nome_completo=voluntario_salvo.nome_completo,
+            email=voluntario_salvo.email,
+            identificacao=voluntario_salvo.identificacao,
+            perfil=voluntario_salvo.perfil,
+        )
+
+        return CadastroVoluntarioResponse(
+            mensagem="Voluntário cadastrado com sucesso.",
+            voluntario=voluntario_dto,
+            access_token=token_jwt,
+            token_type="Bearer",
+            expires_in_minutes=ACCESS_TOKEN_EXPIRE_MINUTES,
+        )

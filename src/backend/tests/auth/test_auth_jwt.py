@@ -27,6 +27,8 @@ client = TestClient(app)
 def test_jwt_router_endpoints():
     response = client.get("/jwt/exemplo")
     assert response.status_code in [200, 401, 404, 422]
+
+
 _ph = PasswordHasher()
 
 

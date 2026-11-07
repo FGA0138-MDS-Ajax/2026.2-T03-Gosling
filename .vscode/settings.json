@@ -1,3 +1,6 @@
 {
-    "python.terminal.useEnvFile": true
+    "python.terminal.useEnvFile": true,
+    "python.analysis.extraPaths": [
+        "./src/backend/app"
+    ]
 }
