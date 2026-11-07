@@ -52,7 +52,7 @@ class VoluntarioRepository:
         )
 
     def buscar_por_identificador(
-        self, identificador: str
+    self, identificador: str        
     ) -> Optional[VoluntarioEntity]:
         if not self.conn:
             return None
