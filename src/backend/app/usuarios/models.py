@@ -1,6 +1,15 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, String, func
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -35,6 +44,7 @@ class Voluntario(Usuario):
 
 class Organizacao(Usuario):
     __tablename__ = "organizacoes"
+    __table_args__ = (UniqueConstraint("cnpj", name="uq_organizacoes_cnpj"),)
 
     id: Mapped[int] = mapped_column(
         ForeignKey("usuarios.id", ondelete="CASCADE"), primary_key=True
@@ -44,4 +54,18 @@ class Organizacao(Usuario):
         default=TipoOrganizacao.ONG,
         server_default="ONG",
     )
+
+    razao_social: Mapped[str | None] = mapped_column(String(200))
+    cnpj: Mapped[str | None] = mapped_column(String(14))
+    area_atuacao: Mapped[str | None] = mapped_column(String(150))
+    endereco: Mapped[str | None] = mapped_column(String(500))
+    responsavel: Mapped[str | None] = mapped_column(String(150))
+    descricao: Mapped[str | None] = mapped_column(Text)
+    telefone: Mapped[str | None] = mapped_column(String(15))
+
+    consentimento_termos: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0"
+    )
+    homologada: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
+
     __mapper_args__ = {"polymorphic_identity": Perfil.ORGANIZACAO}

@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
 from app.core.security import hash_password
-from app.jwt_geraçao.main import app
+from app.main import app
 from app.usuarios.enums import TipoOrganizacao
 from app.usuarios.models import Organizacao, Usuario, Voluntario
 
