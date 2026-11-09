@@ -8,6 +8,7 @@ export default function HomePage() {
       <h1>Conectando pessoas e causas.</h1>
       <p>Encontre seu próximo encontro com o voluntariado.</p>
       <Link className={styles.primaryLink} to="/login">Entrar na minha conta</Link>
+      <p><Link to="/vagas">Explorar vagas sem entrar</Link></p>
     </main>
   )
 }

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import AuthProvider from './contexts/AuthProvider'
 import * as authService from './services/authService'
+import * as vagasService from './services/vagasService'
 import {
   clearSession,
   readSession,
@@ -17,10 +18,14 @@ vi.mock('./services/authService', () => ({
   getSession: vi.fn(),
   getProfile: vi.fn(),
 }))
+vi.mock('./services/vagasService', () => ({
+  listarVagas: vi.fn(), publicarVaga: vi.fn(),
+}))
 
 beforeEach(() => {
   vi.resetAllMocks()
   authService.getProfile.mockResolvedValue({})
+  vagasService.listarVagas.mockResolvedValue({ itens: [], total: 0, pagina: 1, por_pagina: 20 })
 })
 
 function session(perfil = 'VOLUNTARIO') {
@@ -50,6 +55,44 @@ async function fillAndSubmit(user) {
 }
 
 describe('fluxo de autenticação', () => {
+  it.each(['VOLUNTARIO', 'ORGANIZACAO'])(
+    'retorna às vagas depois do login do perfil %s iniciado pelo catálogo',
+    async (perfil) => {
+      const user = userEvent.setup()
+      authService.login.mockResolvedValue(session(perfil))
+      open('/vagas')
+      await user.click(screen.getByRole('link', { name: 'Entrar', exact: true }))
+      await screen.findByRole('heading', { name: 'Entre no VolunJá' })
+      await fillAndSubmit(user)
+
+      expect(await screen.findByRole('heading', { name: 'Vagas de voluntariado' })).toBeVisible()
+      const publicar = screen.queryByRole('button', { name: 'Publicar vaga', exact: true })
+      if (perfil === 'ORGANIZACAO') expect(publicar).toBeVisible()
+      else expect(publicar).not.toBeInTheDocument()
+    },
+  )
+
+  it('abre o formulário de publicação a partir da área da ONG', async () => {
+    const originalShowModal = HTMLDialogElement.prototype.showModal
+    HTMLDialogElement.prototype.showModal = function () {
+      this.setAttribute('open', '')
+    }
+    try {
+      const user = userEvent.setup()
+      const data = session('ORGANIZACAO')
+      writeSession(data.access_token, data.expires_at)
+      authService.getSession.mockResolvedValue(data)
+      open('/organizacao')
+      await screen.findByRole('heading', { name: 'Área de Organização' })
+      await user.click(screen.getByRole('link', { name: 'Publicar vaga' }))
+
+      expect(await screen.findByRole('dialog', { name: 'Publicar vaga' })).toBeVisible()
+      expect(screen.getByRole('heading', { name: 'Vagas de voluntariado' })).toBeVisible()
+    } finally {
+      HTMLDialogElement.prototype.showModal = originalShowModal
+    }
+  })
+
   it('abre o acesso público ao cadastro da organização pelo teclado', async () => {
     const user = userEvent.setup()
     open()

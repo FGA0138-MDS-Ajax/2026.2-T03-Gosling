@@ -7,11 +7,13 @@ import OrganizationSignupPage from './pages/OrganizationSignupPage'
 import ProjetoSocialLoginPage from './pages/ProjetoSocialLoginPage'
 import ProjetoSocialSignupPage from './pages/ProjetoSocialSignupPage'
 import VolunteerSignupPage from './pages/VolunteerSignupPage'
+import VagasPage from './pages/VagasPage'
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/vagas" element={<VagasPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/login/projeto-social" element={<ProjetoSocialLoginPage />} />
       <Route path="/cadastro/voluntario" element={<VolunteerSignupPage />} />

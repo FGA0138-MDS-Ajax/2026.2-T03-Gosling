@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { getProfile } from '../services/authService'
 import { PROFILE_NAMES } from '../utils/profileRoutes'
@@ -30,6 +31,18 @@ export default function ProfilePage() {
       {usuario.tipo && (
         <p>Tipo de organização: {usuario.tipo === 'ONG' ? 'ONG' : 'Projeto social'}</p>
       )}
+      <nav className={styles.profileNavigation} aria-label="Navegação da conta">
+        <Link to="/vagas">Explorar vagas</Link>
+        {usuario.perfil === 'ORGANIZACAO' && usuario.tipo === 'ONG' && (
+          <Link
+            className={styles.primaryLink}
+            to="/vagas"
+            state={{ abrirPublicacao: true }}
+          >
+            Publicar vaga
+          </Link>
+        )}
+      </nav>
       {error ? <p role="alert">{error}</p> : (
         <p role="status">{validated ? 'Sua conta está autenticada.' : 'Carregando sua conta…'}</p>
       )}

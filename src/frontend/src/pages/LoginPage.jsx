@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import SessionStatus from '../components/SessionStatus'
 import { useAuth } from '../hooks/useAuth'
 import { profileRoute } from '../utils/profileRoutes'
@@ -17,6 +17,7 @@ export default function LoginPage({
   cadastros = CADASTROS_PADRAO,
 }) {
   const { usuario, loading, restoreError, sessionExpired, login } = useAuth()
+  const location = useLocation()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -28,7 +29,12 @@ export default function LoginPage({
   const passwordInput = useRef(null)
 
   if (loading || restoreError) return <SessionStatus />
-  if (usuario) return <Navigate to={profileRoute(usuario.perfil)} replace />
+  if (usuario) {
+    const destino = location.state?.from === '/vagas'
+      ? '/vagas'
+      : profileRoute(usuario.perfil)
+    return <Navigate to={destino} replace />
+  }
 
   async function handleSubmit(event) {
     event.preventDefault()
