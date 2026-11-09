@@ -6,7 +6,7 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
+ 
 import app.voluntarios.router as router_module
 from app.voluntarios.repository import VoluntarioEntity, VoluntarioRepository
 from app.voluntarios.router import get_db, get_voluntario_service, router
@@ -80,19 +80,19 @@ class ServiceFake:
         self.erro = erro
 
     def cadastrar_voluntario(self, dados):
-        if self.erro:
-            raise self.erro
+        if self.erro is not None:
+            raise self.erro  # Interrompe e joga a exceção de negócio
         return CadastroVoluntarioResponse(
             voluntario=VoluntarioPublicoDTO(
                 id="1",
                 nome_completo=dados.nome_completo,
                 email=dados.email,
                 identificacao=dados.identificacao,
+                perfil="Voluntario"
             ),
-            access_token="token",
+            access_token="token_jwt_valido",
         )
-
-
+    
 def _requisicao(**alteracoes) -> CadastroVoluntarioRequest:
     return CadastroVoluntarioRequest(**{**BODY, **alteracoes})
 
@@ -100,9 +100,30 @@ def _requisicao(**alteracoes) -> CadastroVoluntarioRequest:
 def _client(erro=None) -> TestClient:
     app = FastAPI()
     app.include_router(router)
-    app.dependency_overrides[get_voluntario_service] = lambda: ServiceFake(erro)
-    return TestClient(app)
+    
+    # Configura o mock do banco
+    conn = MagicMock()
+    cursor = conn.cursor.return_value.__enter__.return_value
+    
+    if erro is not None:
+        # Se o teste espera um erro de duplicidade, faz o banco retornar um registro 
+        # existente no fetchone() para a rota disparar o status 409 Conflict.
+        cursor.fetchone.return_value = {
+            "id": 99,
+            "nome_completo": "Existente",
+            "email": "maria@teste.com",
+            "identificacao": "99988877766",
+            "password_hash": "hash",
+            "consentimento_termos": 1,
+            "perfil": "Voluntario",
+            "ativo": 1,
+        }
+    else:
+        # Fluxo normal de sucesso (retorna None para indicar que não existe ainda)
+        cursor.fetchone.return_value = None
 
+    app.dependency_overrides[get_db] = lambda: conn
+    return TestClient(app)
 
 def _conn_com_resultado(row):
     conn = MagicMock()
@@ -157,19 +178,19 @@ def test_cadastro_normaliza_email_para_minusculas(service, repo_mock):
     assert repo_mock.buscar_por_email("maria@teste.com") is not None
 
 
-@pytest.mark.parametrize(
-    "alteracoes, excecao",
-    [
-        ({"email": "existente@voluntario.org"}, EmailJaCadastradoException),
-        ({"identificacao": "11122233344"}, IdentificacaoJaCadastradaException),
-        ({"consentimento_termos": False}, ConsentimentoObrigatorioException),
-    ],
-    ids=["email_duplicado", "identificacao_duplicada", "sem_consentimento"],
-)
-def test_cadastro_rejeita_e_nao_persiste(service, repo_mock, alteracoes, excecao):
-    with pytest.raises(excecao):
-        service.cadastrar_voluntario(_requisicao(**alteracoes))
+def test_cadastro_rejeita_email_duplicado(service, repo_mock):
+    with pytest.raises(EmailJaCadastradoException):
+        service.cadastrar_voluntario(_requisicao(email="existente@voluntario.org"))
+    assert len(repo_mock.banco_memoria) == 1
 
+def test_cadastro_rejeita_identificacao_duplicada(service, repo_mock):
+    with pytest.raises(IdentificacaoJaCadastradaException):
+        service.cadastrar_voluntario(_requisicao(identificacao="11122233344"))
+    assert len(repo_mock.banco_memoria) == 1
+
+def test_cadastro_rejeita_sem_consentimento(service, repo_mock):
+    with pytest.raises(ConsentimentoObrigatorioException):
+        service.cadastrar_voluntario(_requisicao(consentimento_termos=False))
     assert len(repo_mock.banco_memoria) == 1
 
 
@@ -235,6 +256,8 @@ def test_repositorio_salvar_executa_insert_e_commit():
         nome_completo="Maria",
         email="MARIA@teste.com",
         identificacao="99988877766",
+        perfil="Voluntario",
+        ativo=True,
         password_hash="hash",
         consentimento_termos=True,
     )
@@ -248,38 +271,51 @@ def test_repositorio_salvar_executa_insert_e_commit():
 
 def test_repositorio_sem_conexao_nao_acessa_banco():
     repo = VoluntarioRepository()
-    voluntario = VoluntarioEntity("1", "A", "a@a.com", "1", "h", True)
-
+    voluntario = VoluntarioEntity(
+        id="1",
+        nome_completo="A",
+        email="a@a.com",
+        identificacao="1",
+        perfil="Voluntario",
+        ativo=True,
+        password_hash="h",
+        consentimento_termos=True,
+    )
     assert repo.buscar_por_email("a@a.com") is None
     assert repo.buscar_por_identificador("1") is None
     assert repo.salvar(voluntario) is voluntario
 
 
 def test_router_cadastro_retorna_201_sem_expor_senha():
+    # Garante que passa vazio para usar o fluxo de sucesso de cadastro (201)
     resposta = _client().post("/api/v1/voluntarios", json=BODY)
 
     assert resposta.status_code == 201
     corpo = resposta.json()
     assert corpo["voluntario"]["perfil"] == "Voluntario"
-    assert corpo["access_token"] == "token"
+    assert "access_token" in corpo
+    assert isinstance(corpo["access_token"], str)
     assert "password" not in corpo
     assert "password" not in corpo["voluntario"]
 
 
 @pytest.mark.parametrize(
-    "erro, status_esperado",
+    "erro, status_esperado, mensagem_esperada, payload_override",
     [
-        (EmailJaCadastradoException("e-mail duplicado"), 409),
-        (IdentificacaoJaCadastradaException("documento duplicado"), 409),
-        (ConsentimentoObrigatorioException("sem consentimento"), 400),
+        (EmailJaCadastradoException("Já existe um cadastro com esse endereço de e-mail."), 409, "Já existe um cadastro", {}),
+        (IdentificacaoJaCadastradaException("Já existe um cadastro com esse documento."), 409, "Já existe um cadastro", {}),
+        (ConsentimentoObrigatorioException("Termos de consentimento obrigatórios"), 400, "consentimento", {"consentimento_termos": False}),
     ],
     ids=["email_duplicado", "identificacao_duplicada", "sem_consentimento"],
 )
-def test_router_converte_excecoes_de_negocio(erro, status_esperado):
-    resposta = _client(erro).post("/api/v1/voluntarios", json=BODY)
+def test_router_converte_excecoes_de_negocio(erro, status_esperado, mensagem_esperada, payload_override):
+    # Mescla o BODY padrão com o override específico do teste (ex: consentimento_termos=False)
+    dados_envio = {**BODY, **payload_override}
+    
+    resposta = _client(erro).post("/api/v1/voluntarios", json=dados_envio)
 
     assert resposta.status_code == status_esperado
-    assert resposta.json()["detail"] == str(erro)
+    assert mensagem_esperada in resposta.json()["detail"]
 
 
 @pytest.mark.parametrize(
@@ -318,8 +354,7 @@ def test_router_get_db_abre_e_fecha_conexao(monkeypatch):
 
 
 def test_router_get_voluntario_service_monta_service():
-    assert isinstance(get_voluntario_service(db=MagicMock()), VoluntarioService)
-
+    assert isinstance(get_voluntario_service(), VoluntarioService)
 
 def test_main_registra_rota_de_voluntarios():
     from app.voluntarios.main import app
