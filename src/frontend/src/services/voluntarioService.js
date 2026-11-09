@@ -9,3 +9,8 @@ export async function updateVolunteerProfile(payload) {
   const { data } = await http.put('/voluntarios/me', payload)
   return data
 }
+
+export async function registerVolunteer(payload) {
+  const { data } = await http.post('/voluntarios', payload, { publicRequest: true })
+  return data
+}

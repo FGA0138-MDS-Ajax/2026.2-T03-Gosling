@@ -43,3 +43,14 @@ export function formatDisponibilidades({ dias, periodos, cargaHoraria }) {
     ...(cargaHoraria ? [`CARGA_HORARIA:${Number(cargaHoraria)}`] : []),
   ]
 }
+
+export function validCpf(value) {
+  if (!/^\d{11}$/.test(value) || /^(\d)\1{10}$/.test(value)) return false
+  for (const size of [9, 10]) {
+    let sum = 0
+    for (let i = 0; i < size; i += 1) sum += Number(value[i]) * (size + 1 - i)
+    const digit = (sum * 10) % 11 % 10
+    if (digit !== Number(value[size])) return false
+  }
+  return true
+}

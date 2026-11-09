@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDisponibilidades, parseDisponibilidades } from './volunteerProfile'
+import { formatDisponibilidades, parseDisponibilidades, validCpf } from './volunteerProfile'
 
 describe('formato da disponibilidade', () => {
   it('converte a lista da API em dias, períodos e carga horária', () => {
@@ -11,5 +11,14 @@ describe('formato da disponibilidade', () => {
   it('gera a lista em ordem fixa e ignora carga horária vazia', () => {
     expect(formatDisponibilidades({ dias: ['DOMINGO', 'SEGUNDA'], periodos: ['NOITE'], cargaHoraria: '' }))
       .toEqual(['DIA:SEGUNDA', 'DIA:DOMINGO', 'PERIODO:NOITE'])
+  })
+})
+
+describe('validação de CPF', () => {
+  it('aceita CPF válido e recusa inválido', () => {
+    expect(validCpf('52998224725')).toBe(true)
+    expect(validCpf('52998224724')).toBe(false)
+    expect(validCpf('11111111111')).toBe(false)
+    expect(validCpf('123')).toBe(false)
   })
 })

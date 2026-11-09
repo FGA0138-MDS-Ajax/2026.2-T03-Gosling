@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { getVolunteerProfile, updateVolunteerProfile } from '../services/voluntarioService'
 import {
@@ -32,6 +32,7 @@ function alternar(lista, valor) {
 
 export default function VolunteerProfilePage() {
   const { usuario, updateAccount } = useAuth()
+  const aviso = useLocation().state?.aviso
   const [perfil, setPerfil] = useState(null)
   const [values, setValues] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -146,6 +147,7 @@ export default function VolunteerProfilePage() {
       </header>
       <section className={base.card}>
         <h1>Meu perfil de voluntário</h1>
+        {aviso && <p role="status" className={styles.note}>{aviso}</p>}
         {loading && <p role="status">Carregando perfil…</p>}
         {loadError && <>
           <p role="alert">Não foi possível carregar o perfil.</p>
