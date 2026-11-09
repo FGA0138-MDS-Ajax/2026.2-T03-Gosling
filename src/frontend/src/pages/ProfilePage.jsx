@@ -29,6 +29,9 @@ export default function ProfilePage() {
       {usuario.perfil === 'ORGANIZACAO' && (
         <Link to="/organizacao/perfil">Editar perfil institucional</Link>
       )}
+      {usuario.perfil === 'VOLUNTARIO' && (
+        <Link to="/voluntario/perfil">Editar meu perfil</Link>
+      )}
       <h1>Área de {PROFILE_NAMES[usuario.perfil]}</h1>
       <p>Olá, {usuario.nome}.</p>
       {usuario.tipo && (
