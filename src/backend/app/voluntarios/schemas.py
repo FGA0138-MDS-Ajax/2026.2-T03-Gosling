@@ -1,6 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-
-
+from typing import List, Optional
 class CadastroVoluntarioRequest(BaseModel):
     nome_completo: str = Field(
         ...,
@@ -48,3 +47,47 @@ class CadastroVoluntarioResponse(BaseModel):
     access_token: str
     token_type: str = "Bearer"
     expires_in_minutes: int = 60
+
+
+## Schemas da Issue #20
+
+class AtualizaPerfilUsuariosRequest(BaseModel):
+
+
+
+
+   nome_completo: Optional[str] = Field(None,min_length=2,max_length=150)
+   telefone: Optional[str] = Field(None,max_length=20)
+   cidade: Optional[str] = Field(None, max_length=100)
+   estado: Optional[str] = Field(None,min_length=2,max_length=2)
+   biografia: Optional[str] = Field(None,max_length=500)
+   causas: Optional[List[str]] = Field(
+       default_factory = list,
+       description="Lista de causas de interesse (ex: ['Educação'] , ['Meio Ambiente'])"
+
+   )
+   disponibilidades: Optional[List[str]] = Field(
+       default_factory =list,
+       description="Lista de disponibilidades (ex: ['Fins de Semana'], ['Noite'])"
+
+
+   )
+
+class PerfilVoluntarioResponse(BaseModel):
+    """
+    Ja aqui é o retorno dos dados que são permitidos serem alterados
+    no banco de dados pelo usuário.
+
+    """
+    id: str
+    nome_completo: str
+    email: str
+    identificacao: str
+    perfil: str
+    telefone: Optional[str] = None
+    cidade: Optional[str] = None
+    estado: Optional[str] = None
+    biografia: Optional[str] = None
+    causas: List[str] = Field(default_factory = list)
+    disponibilidades: Optional[List[str]] = Field(default_factory = list)
+
