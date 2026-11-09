@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { getProfile } from '../services/authService'
@@ -25,6 +26,9 @@ export default function ProfilePage() {
         <span className={styles.brand}>VolunJá</span>
         <button onClick={() => logout()}>Sair</button>
       </header>
+      {usuario.perfil === 'ORGANIZACAO' && (
+        <Link to="/organizacao/perfil">Editar perfil institucional</Link>
+      )}
       <h1>Área de {PROFILE_NAMES[usuario.perfil]}</h1>
       <p>Olá, {usuario.nome}.</p>
       {usuario.tipo && (
