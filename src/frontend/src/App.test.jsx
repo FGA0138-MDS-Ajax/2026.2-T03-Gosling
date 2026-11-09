@@ -58,7 +58,7 @@ describe('fluxo de autenticação', () => {
     link.focus()
     await user.keyboard('{Enter}')
     expect(screen.getByRole('heading', { name: 'Cadastro de organização' })).toBeVisible()
-    expect(screen.getByText('O cadastro de organizações ainda não está disponível.')).toBeVisible()
+    expect(screen.getByRole('form', { name: 'Cadastrar organização' })).toBeVisible()
     expect(authService.login).not.toHaveBeenCalled()
     await user.click(screen.getByRole('link', { name: 'Entrar na minha conta' }))
     expect(await screen.findByRole('heading', { name: 'Entre no VolunJá' })).toBeVisible()
