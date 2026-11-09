@@ -1,7 +1,12 @@
+from datetime import UTC, datetime, timedelta
+
+import jwt
 import pytest
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 from app.core.security import verify_password
-from app.usuarios.models import Organizacao
+from app.usuarios.models import Organizacao, Usuario
 
 
 @pytest.fixture
@@ -161,3 +166,209 @@ def test_edicao_rejeita_campos_protegidos(client, dados, campo):
         json={**corpo_perfil(dados), campo: "alteracao"},
     )
     assert resposta.status_code == 422
+
+
+@pytest.fixture
+def outra_ong(client, dados):
+    return cadastrar(
+        client,
+        {
+            **dados,
+            "nome": "Outra ONG",
+            "email": "outra@example.com",
+            "cnpj": "11.444.777/0001-61",
+        },
+    )
+def consultar_perfil(client, headers, **kwargs):
+    resposta = client.get(
+        "/api/v1/organizacoes/me", headers=headers, **kwargs
+    )
+    assert resposta.status_code == 200, resposta.text
+    return resposta.json()
+
+def test_fluxo_cadastro_login_edicao_e_novo_login(client, db, dados):
+    cadastro = cadastrar(client, dados)
+    headers = autenticar(client, dados["email"])
+    assert consultar_perfil(client, headers) == cadastro
+
+    alteracoes = {
+        **corpo_perfil(dados),
+        "nome": "Instituto Atualizado",
+        "email": "novo-email@example.com",
+        "descricao": "Descricao atualizada pelo titular.",
+    }
+    resposta = client.put(
+        "/api/v1/organizacoes/me", headers=headers, json=alteracoes
+    )
+    assert resposta.status_code == 200, resposta.text
+    novos_headers = autenticar(client, alteracoes["email"])
+    db.expire_all()
+    perfil = consultar_perfil(client, novos_headers)
+    assert perfil["id"] == cadastro["id"]
+    for campo in ("nome", "email", "descricao"):
+        assert perfil[campo] == alteracoes[campo]
+    assert perfil["perfil"] == "ORGANIZACAO"
+    assert perfil["tipo"] == "ONG"
+    assert perfil["homologada"] is True
+    sessao = client.get("/api/v1/auth/me", headers=novos_headers)
+    assert sessao.status_code == 200, sessao.text
+    assert sessao.json()["usuario"]["nome"] == alteracoes["nome"]
+    assert sessao.json()["usuario"]["email"] == alteracoes["email"]
+    login_antigo = client.post(
+        "/api/v1/auth/login",
+        json={"email": dados["email"], "senha": dados["senha"]},
+    )
+    assert login_antigo.status_code == 401
+    with Session(
+        bind=db.get_bind(), join_transaction_mode="create_savepoint"
+    ) as nova_sessao:
+        salvo = nova_sessao.get(Organizacao, cadastro["id"])
+        assert salvo is not None
+        assert salvo.email == alteracoes["email"]
+        assert salvo.descricao == alteracoes["descricao"]
+
+def test_query_nao_troca_o_titular_do_perfil(client, db, dados, outra_ong):
+    cadastro = cadastrar(client, dados)
+    headers = autenticar(client, dados["email"])
+    headers_outra = autenticar(client, outra_ong["email"])
+    parametros = {"id": outra_ong["id"], "usuario_id": outra_ong["id"]}
+    consulta = consultar_perfil(client, headers, params=parametros)
+    assert consulta["id"] == cadastro["id"]
+    resposta = client.put(
+        "/api/v1/organizacoes/me",
+        headers=headers,
+        params=parametros,
+        json={
+            **corpo_perfil(dados),
+            "descricao": "Alteracao feita pela primeira ONG.",
+        },
+    )
+    assert resposta.status_code == 200, resposta.text
+    assert resposta.json()["id"] == cadastro["id"]
+    db.expire_all()
+    assert consultar_perfil(client, headers)["descricao"] == (
+        "Alteracao feita pela primeira ONG."
+    )
+    assert consultar_perfil(client, headers_outra) == outra_ong
+
+def test_id_de_outra_ong_no_corpo_nao_altera_nenhuma_conta(
+    client, db, dados, outra_ong
+):
+    cadastro = cadastrar(client, dados)
+    headers = autenticar(client, dados["email"])
+    headers_outra = autenticar(client, outra_ong["email"])
+
+    resposta = client.put(
+        "/api/v1/organizacoes/me",
+        headers=headers,
+        json={
+            **corpo_perfil(dados),
+            "id": outra_ong["id"],
+            "descricao": "Tentativa de alterar outra conta.",
+        },
+    )
+    assert resposta.status_code == 422, resposta.text
+    db.expire_all()
+    assert consultar_perfil(client, headers) == cadastro
+    assert consultar_perfil(client, headers_outra) == outra_ong
+
+@pytest.mark.parametrize("campo", ["email", "cnpj"])
+def test_edicao_duplicada_nao_altera_nenhuma_ong(
+    client, db, dados, outra_ong, campo
+):
+    cadastro = cadastrar(client, dados)
+    headers = autenticar(client, dados["email"])
+    headers_outra = autenticar(client, outra_ong["email"])
+    resposta = client.put(
+        "/api/v1/organizacoes/me",
+        headers=headers,
+        json={
+            **corpo_perfil(dados),
+            campo: outra_ong[campo],
+            "descricao": "Esta alteracao deve ser recusada.",
+        },
+    )
+    assert resposta.status_code == 409, resposta.text
+    db.expire_all()
+    assert consultar_perfil(client, headers) == cadastro
+    assert consultar_perfil(client, headers_outra) == outra_ong
+
+@pytest.mark.parametrize(
+    ("campo", "valor"),
+    [
+        ("nome", "   "),
+        ("email", "email-invalido"),
+        ("cnpj", "11222333000182"),
+        ("telefone", "123"),
+        ("razao_social", None),
+        ("cnpj", None),
+    ],
+)
+def test_edicao_invalida_preserva_os_dados(client, db, dados, campo, valor):
+    cadastro = cadastrar(client, dados)
+    headers = autenticar(client, dados["email"])
+    resposta = client.put(
+        "/api/v1/organizacoes/me",
+        headers=headers,
+        json={
+            **corpo_perfil(dados),
+            campo: valor,
+            "descricao": "Esta alteracao deve ser recusada.",
+        },
+    )
+    assert resposta.status_code == 422, resposta.text
+
+    db.expire_all()
+    assert consultar_perfil(client, headers) == cadastro
+
+@pytest.mark.parametrize("metodo", ["GET", "PUT"])
+@pytest.mark.parametrize("problema", ["expirado", "assinatura", "perfil"])
+def test_token_invalido_nao_acessa_nem_altera_ong(
+    client, db, dados, jwt_secret, metodo, problema
+):
+    cadastro = cadastrar(client, dados)
+    headers_validos = autenticar(client, dados["email"])
+    agora = datetime.now(UTC)
+    payload = {
+        "sub": str(cadastro["id"]),
+        "perfil": "ORGANIZACAO",
+        "iat": agora - timedelta(minutes=2),
+        "exp": agora + timedelta(minutes=5),
+    }
+    segredo = jwt_secret
+
+    if problema == "expirado":
+        payload["exp"] = agora - timedelta(minutes=1)
+    elif problema == "assinatura":
+        segredo = "outra-chave-ficticia-exclusiva-dos-testes-123456"
+    else:
+        payload["perfil"] = "ADMINISTRADOR"
+    token = jwt.encode(payload, segredo, algorithm="HS256")
+    resposta = client.request(
+        metodo,
+        "/api/v1/organizacoes/me",
+        headers={"Authorization": f"Bearer {token}"},
+        json=(
+            {
+                **corpo_perfil(dados),
+                "descricao": "Esta alteracao deve ser recusada.",
+            }
+            if metodo == "PUT"
+            else None
+        ),
+    )
+    assert resposta.status_code == 401, resposta.text
+    db.expire_all()
+    assert consultar_perfil(client, headers_validos) == cadastro
+
+@pytest.mark.parametrize("senha", ["", "1234567"])
+def test_senha_curta_nao_cria_conta_parcial(client, db, dados, senha):
+    total_antes = db.scalar(select(func.count()).select_from(Usuario))
+
+    resposta = client.post(
+        "/api/v1/organizacoes", json={**dados, "senha": senha}
+    )
+    assert resposta.status_code == 422, resposta.text
+    db.expire_all()
+    total_depois = db.scalar(select(func.count()).select_from(Usuario))
+    assert total_depois == total_antes
