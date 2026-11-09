@@ -180,10 +180,12 @@ def test_atualizar_meu_perfil_nao_encontrado(service_mock):
 # =====================================================
 
 def test_desserializar_lista_formatos(service_real):
+    esperado = ["Educação", "Saúde"]
+
     assert service_real._desserializar_lista([]) == []
     assert service_real._desserializar_lista(["Educação"]) == ["Educação"]
-    assert service_real._desserializar_lista('["Educação", "Saúde"]') == ["Educação", "Saúde"]
-    assert service_real._desserializar_lista("Educação, Saúde") == ["Educação", "Saúde"] # <-- Correto: separa por vírgula
+    assert service_real._desserializar_lista('["Educação", "Saúde"]') == esperado
+    assert service_real._desserializar_lista("Educação, Saúde") == esperado
     assert service_real._desserializar_lista("invalid_json{") == ["invalid_json{"]
 
 def test_obter_perfil_por_id_service_sucesso(service_real, repository_mock):

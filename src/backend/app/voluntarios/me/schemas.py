@@ -1,6 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import List, Optional
-from pydantic import BaseModel, Field
 class CadastroVoluntarioRequest(BaseModel):
     nome_completo: str = Field(
         ...,

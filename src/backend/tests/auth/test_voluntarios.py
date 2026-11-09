@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock
-
+from fastapi.security import HTTPBearer
 import jwt
 import pytest
 from argon2 import PasswordHasher
@@ -302,14 +302,36 @@ def test_router_cadastro_retorna_201_sem_expor_senha():
 @pytest.mark.parametrize(
     "erro, status_esperado, mensagem_esperada, payload_override",
     [
-        (EmailJaCadastradoException("Já existe um cadastro com esse endereço de e-mail."), 409, "Já existe um cadastro", {}),
-        (IdentificacaoJaCadastradaException("Já existe um cadastro com esse documento."), 409, "Já existe um cadastro", {}),
-        (ConsentimentoObrigatorioException("Termos de consentimento obrigatórios"), 400, "consentimento", {"consentimento_termos": False}),
+        (
+            EmailJaCadastradoException(
+                "Já existe um cadastro com esse endereço de e-mail."
+            ),
+            409,
+            "Já existe um cadastro",
+            {},
+        ),
+        (
+            IdentificacaoJaCadastradaException(
+                "Já existe um cadastro com esse documento."
+            ),
+            409,
+            "Já existe um cadastro",
+            {},
+        ),
+        (
+            ConsentimentoObrigatorioException(
+                "Termos de consentimento obrigatórios"
+            ),
+            400,
+            "consentimento",
+            {"consentimento_termos": False},
+        ),
     ],
     ids=["email_duplicado", "identificacao_duplicada", "sem_consentimento"],
 )
-def test_router_converte_excecoes_de_negocio(erro, status_esperado, mensagem_esperada, payload_override):
-    # Mescla o BODY padrão com o override específico do teste (ex: consentimento_termos=False)
+def test_router_converte_excecoes_de_negocio(
+    erro, status_esperado, mensagem_esperada, payload_override
+):
     dados_envio = {**BODY, **payload_override}
     
     resposta = _client(erro).post("/api/v1/voluntarios", json=dados_envio)

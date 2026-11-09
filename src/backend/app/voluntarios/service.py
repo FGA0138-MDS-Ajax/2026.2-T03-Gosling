@@ -122,8 +122,9 @@ class VoluntarioService:
         self, dados: CadastroVoluntarioRequest
     ) -> CadastroVoluntarioResponse:
         if not dados.consentimento_termos:
-            raise ConsentimentoObrigatorioException(
-                "É obrigatório aceitar os termos de consentimento para realizar o cadastro."
+             raise ConsentimentoObrigatorioException(
+                "É obrigatório aceitar os termos de consentimento "
+                "para realizar o cadastro."
             )
 
         if self.repository.buscar_por_email(dados.email):

@@ -48,7 +48,9 @@ class VoluntarioRepository:
 
         return self._converter_para_entidade(row)
 
-    def buscar_por_identificador(self, identificador: str) -> Optional[VoluntarioEntity]:
+    def buscar_por_identificador(
+        self, identificador: str
+        )-> Optional[VoluntarioEntity]:
         if not self.conn:
             return None
 
@@ -146,10 +148,10 @@ class VoluntarioRepository:
                 valores_sql.append(dados_atualizacao[campo])
 
         for campo_json in ("causas", "disponibilidades"):
-            if campo_json in dados_atualizacao and dados_atualizacao[campo_json] is not None:
+            valor = dados_atualizacao.get(campo_json)
+            if valor is not None:
                 campos_sql.append(f"{campo_json} = %s")
-                valores_sql.append(json.dumps(dados_atualizacao[campo_json]))
-
+                valores_sql.append(json.dumps(valor))
         if not campos_sql:
             return self.buscar_perfil_por_id(voluntario_id)
 
@@ -170,7 +172,7 @@ class VoluntarioRepository:
 
     @staticmethod
     def _carregar_json(valor: Any) -> Any:
-        """Converte string JSON vinda do banco em lista; outros valores passam direto."""
+        """Converte JSON vindo do banco em lista; outros valores passam direto."""
         if isinstance(valor, str):
             try:
                 return json.loads(valor)

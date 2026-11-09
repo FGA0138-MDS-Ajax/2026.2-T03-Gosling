@@ -1,6 +1,7 @@
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Security, status, security
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import APIRouter, Depends, HTTPException, Security, status
+from fastapi.security import HTTPBearer
 
 from app.voluntarios.repository import VoluntarioRepository
 from  app.voluntarios.schemas import (
@@ -15,9 +16,7 @@ VoluntarioService
 )
 import os
 import pymysql
-from fastapi import APIRouter, Depends, HTTPException, status
 
-from  app.voluntarios.repository import VoluntarioRepository
 from  app.voluntarios.schemas import (
     CadastroVoluntarioRequest,
     CadastroVoluntarioResponse,
@@ -26,7 +25,6 @@ from  app.voluntarios.service import (
     ConsentimentoObrigatorioException,
     EmailJaCadastradoException,
     IdentificacaoJaCadastradaException,
-    VoluntarioService,
 )
 
 router = APIRouter(prefix="/api/v1/voluntarios", tags=["Voluntários"])
@@ -61,8 +59,10 @@ def get_voluntario_service(db=Depends(get_db)) -> VoluntarioService:
     response_model=CadastroVoluntarioResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Cadastrar voluntário e iniciar sessão",
-    description="Persiste uma conta de pessoa física como voluntário e retorna a sessão inicial via JWT.",
-)
+    description=(
+        "Persiste uma conta de pessoa física como voluntário e retorna "
+        "a sessão inicial via JWT."
+    ),)
 def cadastrar_voluntario(
     dados: CadastroVoluntarioRequest,
     service: VoluntarioService = Depends(get_voluntario_service),
