@@ -35,7 +35,7 @@ test('nega acesso sem login, trata erros e encaminha os três perfis', async ({ 
   const password = process.env.DEMO_PASSWORD
   expect(password, 'Defina DEMO_PASSWORD para as contas fictícias').toBeTruthy()
 
-  await page.goto('/admin')
+  await page.goto('/voluntario')
   await expect(page).toHaveURL(/\/login$/)
   await page.getByLabel('E-mail').fill('voluntario@example.com')
   await page.getByLabel('Senha', { exact: true }).fill('senha-incorreta')
@@ -47,6 +47,7 @@ test('nega acesso sem login, trata erros e encaminha os três perfis', async ({ 
     ['ong@example.com', 'Organização', '/organizacao'],
     ['admin@example.com', 'Administrador', '/admin'],
   ]) {
+    if (perfil === 'Administrador') await page.goto('/admin/login')
     await page.getByLabel('E-mail').fill(email)
     await page.getByLabel('Senha', { exact: true }).fill(password)
     await page.getByRole('button', { name: 'Entrar', exact: true }).click()
@@ -70,7 +71,7 @@ test('nega acesso sem login, trata erros e encaminha os três perfis', async ({ 
       await expect(page.getByRole('status')).toContainText('Sua sessão expirou')
     } else {
       await page.getByRole('button', { name: 'Sair' }).click()
-      await expect(page).toHaveURL(/\/login$/)
+      await expect(page).toHaveURL(perfil === 'Administrador' ? /\/admin\/login$/ : /\/login$/)
     }
     expect(await page.evaluate(() => sessionStorage.getItem('volunja:session'))).toBeNull()
   }

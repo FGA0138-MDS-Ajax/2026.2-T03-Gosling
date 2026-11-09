@@ -3,7 +3,7 @@ from pwdlib.exceptions import UnknownHashError
 
 from app.auth.schemas import LoginResponse, SessaoResponse
 from app.core.config import ACCESS_TOKEN_EXPIRE_MINUTES
-from app.core.errors import NaoAutenticadoError
+from app.core.errors import AcessoNegadoError, NaoAutenticadoError
 from app.core.security import (
     create_access_token,
     decode_access_token,
@@ -11,6 +11,7 @@ from app.core.security import (
     verify_password,
 )
 from app.usuarios.schemas import UsuarioPublico
+from app.usuarios.enums import Perfil
 from app.usuarios.service import UsuarioService
 
 DUMMY_HASH = hash_password("senha-ficticia-para-verificacao")
@@ -21,7 +22,9 @@ class AuthService:
     def __init__(self, usuarios: UsuarioService):
         self.usuarios = usuarios
 
-    def login(self, email: str, senha: str) -> LoginResponse:
+    def login(
+        self, email: str, senha: str, perfil_exigido: Perfil | None = None
+    ) -> LoginResponse:
         usuario = self.usuarios.buscar_por_email(email)
         senha_hash = usuario.senha_hash if usuario is not None else DUMMY_HASH
         try:
@@ -30,6 +33,8 @@ class AuthService:
             senha_valida = False
         if usuario is None or not senha_valida or not usuario.ativo:
             raise NaoAutenticadoError(INVALID_CREDENTIALS)
+        if perfil_exigido is not None and usuario.perfil != perfil_exigido:
+            raise AcessoNegadoError()
 
         token = create_access_token(usuario.id, usuario.perfil.value)
         payload = decode_access_token(token)

@@ -8,12 +8,15 @@ import ProjetoSocialLoginPage from './pages/ProjetoSocialLoginPage'
 import ProjetoSocialSignupPage from './pages/ProjetoSocialSignupPage'
 import VolunteerSignupPage from './pages/VolunteerSignupPage'
 import VagasPage from './pages/VagasPage'
+import AdminLoginPage from './pages/AdminLoginPage'
+import AdminPage from './pages/AdminPage'
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/vagas" element={<VagasPage />} />
+      <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/login/projeto-social" element={<ProjetoSocialLoginPage />} />
       <Route path="/cadastro/voluntario" element={<VolunteerSignupPage />} />
@@ -25,8 +28,8 @@ export default function App() {
       <Route element={<ProtectedRoute perfil="ORGANIZACAO" />}>
         <Route path="/organizacao" element={<ProfilePage />} />
       </Route>
-      <Route element={<ProtectedRoute perfil="ADMINISTRADOR" />}>
-        <Route path="/admin" element={<ProfilePage />} />
+      <Route element={<ProtectedRoute perfil="ADMINISTRADOR" loginPath="/admin/login" />}>
+        <Route path="/admin" element={<AdminPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

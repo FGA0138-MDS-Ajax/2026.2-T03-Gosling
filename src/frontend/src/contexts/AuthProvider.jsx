@@ -97,10 +97,10 @@ export default function AuthProvider({ children }) {
     }
   }, [expiresAt, logout])
 
-  const login = useCallback(async (email, senha) => {
+  const autenticar = useCallback(async (email, senha, metodo) => {
     const requestRevision = ++revision.current
     setSessionExpired(false)
-    const result = await authService.login(email, senha)
+    const result = await metodo(email, senha)
     if (requestRevision !== revision.current) return
     writeSession(result.access_token, result.expires_at)
     setUsuario(result.usuario)
@@ -109,10 +109,19 @@ export default function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
+  const login = useCallback(
+    (email, senha) => autenticar(email, senha, authService.login),
+    [autenticar],
+  )
+  const loginAdmin = useCallback(
+    (email, senha) => autenticar(email, senha, authService.loginAdmin),
+    [autenticar],
+  )
+
   return (
     <AuthContext.Provider value={{
       usuario, loading, restoreError, sessionExpired,
-      login, logout, refreshSession,
+      login, loginAdmin, logout, refreshSession,
     }}>
       {children}
     </AuthContext.Provider>

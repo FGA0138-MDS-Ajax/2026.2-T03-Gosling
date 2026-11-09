@@ -6,6 +6,7 @@ import App from './App'
 import AuthProvider from './contexts/AuthProvider'
 import * as authService from './services/authService'
 import * as vagasService from './services/vagasService'
+import * as adminService from './services/adminService'
 import {
   clearSession,
   readSession,
@@ -15,17 +16,23 @@ import {
 
 vi.mock('./services/authService', () => ({
   login: vi.fn(),
+  loginAdmin: vi.fn(),
   getSession: vi.fn(),
   getProfile: vi.fn(),
 }))
 vi.mock('./services/vagasService', () => ({
   listarVagas: vi.fn(), publicarVaga: vi.fn(),
 }))
+vi.mock('./services/adminService', () => ({
+  listarCadastros: vi.fn(), consultarCadastro: vi.fn(),
+  criarCadastro: vi.fn(), excluirCadastro: vi.fn(),
+}))
 
 beforeEach(() => {
   vi.resetAllMocks()
   authService.getProfile.mockResolvedValue({})
   vagasService.listarVagas.mockResolvedValue({ itens: [], total: 0, pagina: 1, por_pagina: 20 })
+  adminService.listarCadastros.mockResolvedValue({ itens: [], total: 0, pagina: 1, por_pagina: 20 })
 })
 
 function session(perfil = 'VOLUNTARIO') {
@@ -263,15 +270,17 @@ describe('fluxo de autenticação', () => {
 
   it('protege acesso direto a uma rota sem sessão', async () => {
     open('/admin')
-    expect(await screen.findByRole('heading', { name: 'Entre no VolunJá' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'Acesso administrativo' })).toBeVisible()
   })
 
-  it('restaura a sessão e impede abrir a área de outro perfil', async () => {
+  it('restaura a sessão e exige conta administrativa para abrir o painel', async () => {
     const data = session()
     writeSession(data.access_token, data.expires_at)
     authService.getSession.mockResolvedValue(data)
     open('/admin')
-    expect(await screen.findByRole('heading', { name: 'Área de Voluntário' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'Acesso administrativo' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Trocar conta' })).toBeVisible()
+    expect(adminService.listarCadastros).not.toHaveBeenCalled()
     expect(authService.getSession).toHaveBeenCalled()
   })
 

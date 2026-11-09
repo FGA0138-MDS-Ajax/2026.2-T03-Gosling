@@ -1,4 +1,4 @@
-# VolunJá — autenticação e vagas de voluntariado
+# VolunJá — autenticação, administração e vagas de voluntariado
 
 Implementação da issue #1: API de login, JWT de 60 minutos, controle de acesso por perfil, sessão e logout no cliente, tratamento global de HTTP 401 e limitação de tentativas no Nginx.
 
@@ -46,6 +46,26 @@ Para encerrar sem apagar o banco persistente:
 ```powershell
 docker compose down
 ```
+
+## Administração de cadastros
+
+Abra `/admin` ou `/admin/login` na mesma porta do frontend. Essa entrada tem formulário próprio e aceita somente contas com perfil `ADMINISTRADOR`. Se já estiver conectado como ONG ou voluntário, use **Trocar conta** para entrar como administrador.
+
+Para a demonstração, o comando de criação das contas fictícias acima disponibiliza `admin@example.com`, com a senha informada em `DEMO_PASSWORD`. Não há uma senha administrativa fixa no código nem criação automática de administradores na inicialização.
+
+O painel permite pesquisar por nome ou e-mail, filtrar por perfil e situação, consultar os dados cadastrados e criar contas de voluntário, ONG ou administrador. Contas ativas podem entrar com o e-mail e a senha definidos no formulário. O cadastro administrativo de ONG exige os dados institucionais e permite escolher se ela já pode publicar vagas; ele não registra aceite de termos em nome da organização.
+
+A exclusão exige confirmação e bloqueia a remoção da conta administrativa em uso. Ao excluir uma ONG com vagas, o painel informa a quantidade e exige confirmar também a remoção das vagas e dos encontros vinculados. Os demais cadastros permanecem no banco.
+
+| Endpoint | Acesso e comportamento |
+| --- | --- |
+| `POST /api/v1/admin/login` | Recebe `email` e `senha` e autentica somente administradores. |
+| `GET /api/v1/admin/usuarios` | Lista paginada; aceita `busca`, `perfil`, `ativo`, `pagina` e `por_pagina`. |
+| `GET /api/v1/admin/usuarios/{id}` | Consulta os dados e a quantidade de vagas vinculadas. |
+| `POST /api/v1/admin/usuarios` | Cria uma conta com `perfil=VOLUNTARIO`, `ORGANIZACAO` ou `ADMINISTRADOR`. |
+| `DELETE /api/v1/admin/usuarios/{id}` | Remove a conta; exige `excluir_vagas=true` quando há vagas vinculadas. |
+
+Todas as operações de cadastro exigem JWT de administrador. Senhas e hashes não são retornados nas consultas. Os contratos completos estão no Swagger em `/docs`, na porta da API.
 
 ## Publicação e consulta de vagas
 
@@ -130,6 +150,7 @@ O JWT utiliza HS256, com os campos obrigatórios `sub`, `perfil`, `iat` e `exp`.
 | app/usuarios/models.py e enums.py | Conta comum e especializações Voluntario/Organizacao com tabelas associadas, conforme o DA. |
 | app/usuarios/repository.py e service.py | Consultas ao banco e interface de contas usada pelo módulo auth. |
 | app/auth/schemas.py, service.py, router.py | Contratos JSON, regras de autenticação e endpoints. |
+| app/admin/ e src/frontend/src/pages/AdminPage.jsx | Entrada administrativa e consulta, criação e exclusão de cadastros. |
 | app/dependencies.py | Composição das dependências e autorização por perfil. |
 | migrations/ | Evolução versionada do esquema via Alembic. |
 | src/frontend/src/services/ | Cliente HTTP, API de autenticação e armazenamento da sessão. |
@@ -137,11 +158,11 @@ O JWT utiliza HS256, com os campos obrigatórios `sub`, `perfil`, `iat` e `exp`.
 | infra/nginx/default.conf | Proxy da API, entrega da SPA e limite de tentativas de login. |
 | .github/workflows/backend.yml | Verificações da API, do cliente e do fluxo completo. |
 
-Os cadastros RF01/RF02 devem criar contas nessas mesmas tabelas e gerar `senha_hash` com `hash_password`. O login é único para todos os perfis.
+Os cadastros RF01/RF02 devem criar contas nessas mesmas tabelas e gerar `senha_hash` com `hash_password`. As entradas comum e administrativa usam essas contas e a mesma autenticação JWT.
 
 ## Nginx
 
-O proxy permite uma média de 5 pedidos por minuto e por IP ao endpoint de login, com uma rajada inicial de até 5 pedidos. Excesso retorna 429; o cliente mostra a mensagem correspondente. O acesso local pela porta 8000 chega diretamente à API; o limite de tentativas é aplicado nas requisições que passam pelo Nginx.
+O proxy permite uma média de 5 pedidos por minuto e por IP aos endpoints de login comum e administrativo, com uma rajada inicial de até 5 pedidos. As duas entradas compartilham o mesmo limite. Excesso retorna 429; o cliente mostra a mensagem correspondente. O acesso local pela porta 8000 chega diretamente à API; o limite de tentativas é aplicado nas requisições que passam pelo Nginx.
 
 Cabeçalhos enviados pelo visitante, como `X-Forwarded-For`, não definem a chave do limitador. Ao acrescentar Cloudflare Tunnel, configure `real_ip` somente para o proxy confiável antes de usar o IP encaminhado. O túnel não faz parte deste pacote.
 
