@@ -109,10 +109,16 @@ export default function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
+  const updateAccount = useCallback((account) => {
+    setUsuario((current) => current?.id === account.id
+      ? { ...current, nome: account.nome, email: account.email }
+      : current)
+  }, [])
+
   return (
     <AuthContext.Provider value={{
       usuario, loading, restoreError, sessionExpired,
-      login, logout, refreshSession,
+      login, logout, refreshSession, updateAccount,
     }}>
       {children}
     </AuthContext.Provider>
