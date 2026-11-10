@@ -51,13 +51,6 @@ def atualizar_organizacao_me(
     return service.atualizar(usuario.id, payload)
 
 
-@router.get("/voluntarios/me", response_model=UsuarioPublico)
-def voluntario_me(
-    usuario: Annotated[UsuarioPublico, Depends(require_perfil(Perfil.VOLUNTARIO))],
-) -> UsuarioPublico:
-    return usuario
-
-
 @router.get("/admin/me", response_model=UsuarioPublico)
 def administrador_me(
     usuario: Annotated[UsuarioPublico, Depends(require_perfil(Perfil.ADMINISTRADOR))],

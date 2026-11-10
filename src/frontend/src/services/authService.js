@@ -32,3 +32,8 @@ export async function getProfile(perfil) {
   const { data } = await http.get(paths[perfil])
   return data
 }
+
+export async function cadastrarVoluntario(payload) {
+  const { data } = await http.post('/voluntarios', payload, { publicRequest: true })
+  return data
+}
