@@ -117,11 +117,16 @@ export default function AuthProvider({ children }) {
     (email, senha) => autenticar(email, senha, authService.loginAdmin),
     [autenticar],
   )
+  const updateAccount = useCallback((account) => {
+    setUsuario((current) => current?.id === account.id
+      ? { ...current, nome: account.nome, email: account.email }
+      : current)
+  }, [])
 
   return (
     <AuthContext.Provider value={{
       usuario, loading, restoreError, sessionExpired,
-      login, loginAdmin, logout, refreshSession,
+      login, loginAdmin, logout, refreshSession, updateAccount,
     }}>
       {children}
     </AuthContext.Provider>
