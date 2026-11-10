@@ -1,3 +1,4 @@
+import { registerVolunteer } from '../services/voluntarioService'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as authService from '../services/authService'
 import {
@@ -118,7 +119,7 @@ export default function AuthProvider({ children }) {
     [autenticar],
   )
   const cadastrarVoluntario = useCallback(
-    (payload) => autenticar(authService.cadastrarVoluntario, payload),
+    (payload) => autenticar(registerVolunteer, payload),
     [autenticar],
   )
   const updateAccount = useCallback((account) => {

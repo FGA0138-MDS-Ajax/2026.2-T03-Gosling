@@ -1,3 +1,4 @@
+import { registerVolunteer } from './services/voluntarioService'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -17,10 +18,11 @@ import {
 vi.mock('./services/authService', () => ({
   login: vi.fn(),
   loginAdmin: vi.fn(),
-  cadastrarVoluntario: vi.fn(),
+
   getSession: vi.fn(),
   getProfile: vi.fn(),
 }))
+vi.mock('./services/voluntarioService', () => ({ registerVolunteer: vi.fn() }))
 vi.mock('./services/vagasService', () => ({
   listarVagas: vi.fn(), publicarVaga: vi.fn(),
 }))
@@ -196,7 +198,7 @@ describe('fluxo de autenticação', () => {
     link.focus()
     await user.keyboard('{Enter}')
     expect(screen.getByRole('heading', { name: 'Cadastro de voluntário' })).toBeVisible()
-    expect(screen.getByLabelText('CPF')).toBeVisible()
+    expect(screen.getByRole('form', { name: 'Cadastrar voluntário' })).toBeVisible()
     await user.click(screen.getByRole('link', { name: 'Entrar na minha conta' }))
     expect(await screen.findByRole('heading', { name: 'Entre no VolunJá' })).toBeVisible()
     expect(authService.login).not.toHaveBeenCalled()
@@ -204,22 +206,22 @@ describe('fluxo de autenticação', () => {
 
   it('abre a área do voluntário com a sessão devolvida pelo cadastro', async () => {
     const user = userEvent.setup()
-    authService.cadastrarVoluntario.mockResolvedValue(session())
+    registerVolunteer.mockResolvedValue(session())
     authService.getProfile.mockResolvedValue({ id: 1, cidade: 'Brasília', estado: 'DF' })
     open('/cadastro/voluntario')
     for (const [campo, valor] of [
       ['Nome completo', 'Ana Silva'], ['E-mail', 'ana@example.org'],
       ['CPF', '529.982.247-25'], ['Cidade', 'Brasília'],
-      ['Telefone com DDD', '(61) 99999-0000'], ['Senha', 'SenhaDeTeste123!'],
+      ['Telefone', '(61) 99999-0000'], ['Senha', 'SenhaDeTeste123!'],
     ]) {
       await user.type(screen.getByLabelText(campo), valor)
     }
-    await user.selectOptions(screen.getByRole('combobox', { name: 'UF' }), 'DF')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Estado' }), 'DF')
     await user.click(screen.getByRole('checkbox'))
-    await user.click(screen.getByRole('button', { name: 'Criar conta' }))
+    await user.click(screen.getByRole('button', { name: 'Criar conta de voluntário' }))
     expect(await screen.findByRole('heading', { name: 'Área de Voluntário' })).toBeVisible()
     expect(await screen.findByText('Localização: Brasília / DF')).toBeVisible()
-    expect(authService.cadastrarVoluntario).toHaveBeenCalledWith(expect.objectContaining({
+    expect(registerVolunteer).toHaveBeenCalledWith(expect.objectContaining({
       estado: 'DF', telefone: '61999990000', consentimento_termos: true,
     }))
     expect(readSession().access_token).toBe('token-ficticio-VOLUNTARIO')
