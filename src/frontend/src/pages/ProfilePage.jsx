@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -9,17 +8,18 @@ import styles from './Auth.module.css'
 export default function ProfilePage() {
   const { usuario, logout } = useAuth()
   const [error, setError] = useState('')
-  const [validated, setValidated] = useState(false)
+  const [profile, setProfile] = useState(null)
+  const validated = profile !== null
 
   useEffect(() => {
     let active = true
     getProfile(usuario.perfil)
-      .then(() => { if (active) setValidated(true) })
+      .then((data) => { if (active) setProfile(data) })
       .catch(() => {
         if (active) setError('Não foi possível carregar sua conta. Tente novamente.')
       })
     return () => { active = false }
-  }, [usuario.perfil])
+  }, [usuario.id, usuario.perfil])
 
   return (
     <main className={styles.profile} aria-busy={!validated && !error}>
@@ -30,8 +30,14 @@ export default function ProfilePage() {
       {usuario.perfil === 'ORGANIZACAO' && (
         <Link to="/organizacao/perfil">Editar perfil institucional</Link>
       )}
+      {usuario.perfil === 'VOLUNTARIO' && (
+        <Link to="/voluntario/perfil">Editar meu perfil</Link>
+      )}
       <h1>Área de {PROFILE_NAMES[usuario.perfil]}</h1>
       <p>Olá, {usuario.nome}.</p>
+      {usuario.perfil === 'VOLUNTARIO' && profile?.id === usuario.id && (
+        <p>Localização: {[profile.cidade, profile.estado].filter(Boolean).join(' / ') || 'Não informada'}</p>
+      )}
       {usuario.tipo && (
         <p>Tipo de organização: {usuario.tipo === 'ONG' ? 'ONG' : 'Projeto social'}</p>
       )}

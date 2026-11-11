@@ -7,6 +7,7 @@ import ProfilePage from './pages/ProfilePage'
 import OrganizationSignupPage from './pages/OrganizationSignupPage'
 import ProjetoSocialLoginPage from './pages/ProjetoSocialLoginPage'
 import ProjetoSocialSignupPage from './pages/ProjetoSocialSignupPage'
+import VolunteerProfilePage from './pages/VolunteerProfilePage'
 import VolunteerSignupPage from './pages/VolunteerSignupPage'
 import VagasPage from './pages/VagasPage'
 import AdminLoginPage from './pages/AdminLoginPage'
@@ -25,6 +26,7 @@ export default function App() {
       <Route path="/cadastro/projeto-social" element={<ProjetoSocialSignupPage />} />
       <Route element={<ProtectedRoute perfil="VOLUNTARIO" />}>
         <Route path="/voluntario" element={<ProfilePage />} />
+        <Route path="/voluntario/perfil" element={<VolunteerProfilePage />} />
       </Route>
       <Route element={<ProtectedRoute perfil="ORGANIZACAO" />}>
         <Route path="/organizacao" element={<ProfilePage />} />

@@ -36,14 +36,7 @@ class AuthService:
         if perfil_exigido is not None and usuario.perfil != perfil_exigido:
             raise AcessoNegadoError()
 
-        token = create_access_token(usuario.id, usuario.perfil.value)
-        payload = decode_access_token(token)
-        return LoginResponse(
-            access_token=token,
-            expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            expires_at=payload["exp"],
-            usuario=UsuarioPublico.model_validate(usuario.model_dump()),
-        )
+        return criar_sessao(UsuarioPublico.model_validate(usuario.model_dump()))
 
     def obter_sessao(self, token: str) -> SessaoResponse:
         try:
@@ -64,3 +57,14 @@ class AuthService:
             usuario=UsuarioPublico.model_validate(usuario.model_dump()),
             expires_at=payload["exp"],
         )
+
+
+def criar_sessao(usuario: UsuarioPublico) -> LoginResponse:
+    token = create_access_token(usuario.id, usuario.perfil.value)
+    payload = decode_access_token(token)
+    return LoginResponse(
+        access_token=token,
+        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        expires_at=payload["exp"],
+        usuario=usuario,
+    )

@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     Enum,
@@ -36,9 +37,20 @@ class Usuario(Base):
 
 class Voluntario(Usuario):
     __tablename__ = "voluntarios"
+    __table_args__ = (
+        UniqueConstraint("identificacao", name="uq_voluntarios_identificacao"),
+    )
     id: Mapped[int] = mapped_column(
         ForeignKey("usuarios.id", ondelete="CASCADE"), primary_key=True
     )
+    identificacao: Mapped[str | None] = mapped_column(String(20))
+    consentimento_termos: Mapped[bool] = mapped_column(Boolean, server_default="0")
+    telefone: Mapped[str | None] = mapped_column(String(20))
+    cidade: Mapped[str | None] = mapped_column(String(100))
+    estado: Mapped[str | None] = mapped_column(String(2))
+    biografia: Mapped[str | None] = mapped_column(String(500))
+    causas: Mapped[list[str] | None] = mapped_column(JSON)
+    disponibilidades: Mapped[list[str] | None] = mapped_column(JSON)
     __mapper_args__ = {"polymorphic_identity": Perfil.VOLUNTARIO}
 
 

@@ -140,7 +140,7 @@ O JWT utiliza HS256, com os campos obrigatórios `sub`, `perfil`, `iat` e `exp`.
 - Logout remove o token e a conta do cliente. Conforme a issue #1, esse logout é do cliente; um JWT copiado anteriormente continua sujeito à sua expiração e às verificações da conta no servidor.
 - As rotas `/voluntario`, `/organizacao` e `/admin` têm proteção por perfil. Elas oferecem acesso ao catálogo público de vagas; a área da ONG também oferece publicação. Candidaturas e moderação pertencem às próximas funcionalidades.
 - O login compartilhado atende à entrada do voluntário da #2, com validação, carregamento, bloqueio de envios repetidos, erros e navegação por perfil. O link de cadastro abre `/cadastro/voluntario`, inclusive após uma sessão expirar.
-- **Dependência da #2:** o formulário e a API de cadastro pertencem às issues #9 e #10 e ainda não estão implementados. Por enquanto, a rota de cadastro informa a indisponibilidade e permite voltar ao login. A #2 só deve ser fechada quando esse destino oferecer o cadastro; a conferência visual final com o Figma e a entrada da ONG da #4 também continuam pendentes.
+- O formulário em `/cadastro/voluntario` envia os dados a `POST /api/v1/voluntarios`. O cadastro retorna a sessão inicial e abre a área do voluntário. A API permite consultar e editar os dados do titular em `GET` e `PUT /api/v1/voluntarios/me`.
 
 ## Organização do código
 
