@@ -124,3 +124,67 @@ def test_revalida_conta_desativada_e_nao_expoe_segredos(client, db, contas):
     assert client.put(URL, headers=headers, json={"cidade": "Gama"}).status_code == 401
     assert client.get(URL).status_code == 401
     assert client.put(URL, json={}).status_code == 401
+
+
+@pytest.mark.parametrize("preferencia", [
+    "DIA:FERIADO", "DIA:segunda", "DIA:", "DIA", "DIA:SABADO:MANHA",
+    "PERIODO:MADRUGADA", "PERIODO:manha", "PERIODO:", "PERIODO",
+    "CARGA_HORARIA:999", "CARGA_HORARIA:61", "CARGA_HORARIA:0",
+    "CARGA_HORARIA:-1", "CARGA_HORARIA:1.5", "CARGA_HORARIA:abc",
+    "CARGA_HORARIA:", "CARGA_HORARIA", "CARGA_HORARIA: 4",
+    "CARGA_HORARIA:４", "CARGA_HORARIA:4:6",
+])
+def test_rejeita_disponibilidade_invalida_sem_salvar_biografia(
+    client, db, contas, preferencia
+):
+    titular = contas["voluntario"]
+    titular.biografia = "Biografia anterior."
+    titular.disponibilidades = ["DIA:SABADO", "PERIODO:MANHA", "CARGA_HORARIA:4"]
+    db.flush()
+    headers = autorizar(titular)
+    antes = client.get(URL, headers=headers).json()
+
+    resposta = client.put(URL, headers=headers, json={
+        "biografia": "Não deve ser salva.",
+        "disponibilidades": ["DIA:SABADO", preferencia],
+    })
+
+    assert resposta.status_code == 422, resposta.text
+    assert resposta.json()["detail"][0]["loc"] == ["body", "disponibilidades", 1]
+    db.expire_all()
+    assert client.get(URL, headers=headers).json() == antes
+
+
+@pytest.mark.parametrize("horas", [1, 4, 60])
+def test_aceita_dias_periodos_e_limites_da_carga_semanal(
+    client, db, contas, horas
+):
+    titular = contas["voluntario"]
+    headers = autorizar(titular)
+    preferencias = [
+        "DIA:SEGUNDA", "DIA:TERCA", "DIA:QUARTA", "DIA:QUINTA", "DIA:SEXTA",
+        "DIA:SABADO", "DIA:DOMINGO", "PERIODO:MANHA", "PERIODO:TARDE",
+        "PERIODO:NOITE", f"CARGA_HORARIA:{horas}", "Fins de Semana",
+    ]
+    resposta = client.put(URL, headers=headers, json={"disponibilidades": preferencias})
+    assert resposta.status_code == 200, resposta.text
+    db.expire_all()
+    assert client.get(URL, headers=headers).json()["disponibilidades"] == preferencias
+
+    # Editar somente a bio não exige reenviar ou apagar as preferências.
+    resposta = client.put(URL, headers=headers, json={"biografia": "Nova biografia."})
+    assert resposta.status_code == 200, resposta.text
+    assert resposta.json()["biografia"] == "Nova biografia."
+    assert resposta.json()["disponibilidades"] == preferencias
+
+
+def test_rejeita_cargas_semanais_ambiguas(client, db, contas):
+    headers = autorizar(contas["voluntario"])
+    antes = client.get(URL, headers=headers).json()
+    resposta = client.put(URL, headers=headers, json={
+        "disponibilidades": ["CARGA_HORARIA:4", "CARGA_HORARIA:6"],
+    })
+    assert resposta.status_code == 422, resposta.text
+    assert resposta.json()["detail"][0]["loc"] == ["body", "disponibilidades"]
+    db.expire_all()
+    assert client.get(URL, headers=headers).json() == antes

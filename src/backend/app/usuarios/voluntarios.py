@@ -1,7 +1,9 @@
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import (
+    AfterValidator, BaseModel, ConfigDict, EmailStr, Field, field_validator,
+)
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -97,6 +99,29 @@ class Cadastro(BaseModel):
 
 
 ItemPerfil = Annotated[str, Field(min_length=1, max_length=100)]
+DIAS_DISPONIVEIS = {
+    "SEGUNDA", "TERCA", "QUARTA", "QUINTA", "SEXTA", "SABADO", "DOMINGO",
+}
+PERIODOS_DISPONIVEIS = {"MANHA", "TARDE", "NOITE"}
+
+
+def validar_disponibilidade(valor: str) -> str:
+    tipo, _, preferencia = valor.partition(":")
+    if tipo == "DIA" and preferencia not in DIAS_DISPONIVEIS:
+        raise ValueError("Informe um dia da semana válido.")
+    if tipo == "PERIODO" and preferencia not in PERIODOS_DISPONIVEIS:
+        raise ValueError("Informe um período válido: MANHA, TARDE ou NOITE.")
+    if tipo == "CARGA_HORARIA" and (
+        not preferencia.isascii()
+        or not preferencia.isdigit()
+        or not 1 <= int(preferencia) <= 60
+    ):
+        raise ValueError("Informe um número inteiro de horas entre 1 e 60.")
+    # Textos anteriores ao formato com prefixos continuam compatíveis.
+    return valor
+
+
+Disponibilidade = Annotated[ItemPerfil, AfterValidator(validar_disponibilidade)]
 
 
 class Edicao(BaseModel):
@@ -107,7 +132,14 @@ class Edicao(BaseModel):
     estado: UF | None = None
     biografia: str | None = Field(default=None, max_length=500)
     causas: list[ItemPerfil] | None = Field(default=None, max_length=100)
-    disponibilidades: list[ItemPerfil] | None = Field(default=None, max_length=100)
+    disponibilidades: list[Disponibilidade] | None = Field(default=None, max_length=100)
+
+    @field_validator("disponibilidades")
+    @classmethod
+    def carga_horaria_unica(cls, valor):
+        if valor and sum(item.startswith("CARGA_HORARIA:") for item in valor) > 1:
+            raise ValueError("Informe apenas uma carga horária semanal.")
+        return valor
 
     @field_validator("telefone", mode="before")
     @classmethod
