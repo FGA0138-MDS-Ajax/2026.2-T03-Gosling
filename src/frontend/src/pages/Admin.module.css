@@ -68,3 +68,4 @@
   .dialogActions { flex-direction: column-reverse; align-items: stretch; }
   .sectionHeading { align-items: flex-start; gap: 10px; flex-direction: column; }
 }
+.passwordField { display: flex; flex-direction: column; gap: 8px; min-width: 0; }

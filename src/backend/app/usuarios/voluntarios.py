@@ -1,7 +1,7 @@
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -14,6 +14,8 @@ from app.dependencies import require_perfil
 from app.usuarios.enums import Perfil
 from app.usuarios.models import Usuario, Voluntario
 from app.usuarios.schemas import UsuarioPublico
+from app.usuarios.validacoes import PADRAO_TELEFONE, SenhaCadastro
+from app.usuarios.validacoes import normalizar_telefone as normalizar_numero_telefone
 
 router = APIRouter(prefix="/voluntarios", tags=["Voluntários"])
 Banco = Annotated[Session, Depends(get_db)]
@@ -57,10 +59,10 @@ class Cadastro(BaseModel):
     nome_completo: str = Field(min_length=3, max_length=150)
     email: EmailStr = Field(max_length=254)
     identificacao: str = Field(min_length=11, max_length=20)
-    telefone: str | None = Field(default=None, pattern=r"^[0-9]{10,15}$")
+    telefone: str | None = Field(default=None, pattern=PADRAO_TELEFONE)
     cidade: str | None = Field(default=None, min_length=2, max_length=100)
     estado: UF | None = None
-    password: SecretStr = Field(min_length=8, max_length=1024)
+    password: SenhaCadastro
     consentimento_termos: bool = Field(strict=True)
 
     @field_validator("nome_completo", "cidade", "email", mode="before")
@@ -72,7 +74,7 @@ class Cadastro(BaseModel):
     @classmethod
     def normalizar_telefone(cls, valor):
         if isinstance(valor, str):
-            return valor.strip().translate(str.maketrans("", "", "()+- ")) or None
+            return normalizar_numero_telefone(valor) or None
         return valor
 
     @field_validator("identificacao")
@@ -100,7 +102,7 @@ ItemPerfil = Annotated[str, Field(min_length=1, max_length=100)]
 class Edicao(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     nome_completo: str | None = Field(default=None, min_length=2, max_length=150)
-    telefone: str | None = Field(default=None, pattern=r"^[0-9]{10,15}$")
+    telefone: str | None = Field(default=None, pattern=PADRAO_TELEFONE)
     cidade: str | None = Field(default=None, max_length=100)
     estado: UF | None = None
     biografia: str | None = Field(default=None, max_length=500)

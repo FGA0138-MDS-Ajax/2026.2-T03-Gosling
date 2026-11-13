@@ -28,7 +28,7 @@ def test_edicao_parcial_limpeza_e_persistencia_em_outra_sessao(client, db, conta
     assert resposta.status_code == 200, resposta.text
     perfil = resposta.json()
     assert perfil["nome"] == "Ana Atualizada"
-    assert perfil["telefone"] == "5561999990000"
+    assert perfil["telefone"] == "61999990000"
     assert perfil["cidade"] == "Brasília"
     assert perfil["biografia"] == "Quero apoiar a comunidade."
     assert perfil["causas"] == ["Educação", "Causa anterior"]
@@ -37,7 +37,7 @@ def test_edicao_parcial_limpeza_e_persistencia_em_outra_sessao(client, db, conta
     with Session(bind=db.get_bind(), join_transaction_mode="create_savepoint") as outra:
         salvo = outra.get(Voluntario, titular.id)
         assert salvo.nome == "Ana Atualizada"
-        assert salvo.telefone == "5561999990000"
+        assert salvo.telefone == "61999990000"
 
     limpar = dict.fromkeys(("telefone", "cidade", "estado", "biografia"))
     limpar.update(causas=[], disponibilidades=[])

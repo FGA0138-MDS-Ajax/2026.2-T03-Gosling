@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import PhoneInput from '../components/PhoneInput'
 import { useAuth } from '../hooks/useAuth'
 import { getOrganization, updateOrganization } from '../services/organizationService'
 import { organizationFields, validCnpj } from '../utils/organizationFields'
+import { PHONE_ERROR, phoneDigits, validPhone } from '../utils/accountFields'
 import styles from './OrganizationSignup.module.css'
 
 const fields = organizationFields.filter((field) => field.name !== 'senha')
@@ -54,7 +56,7 @@ export default function OrganizationProfilePage() {
     if (submitting.current) return
     const payload = Object.fromEntries(fields.map(({ name }) => [name, (values[name] ?? '').trim()]))
     payload.cnpj = payload.cnpj.toUpperCase().replace(/[./-]/g, '')
-    payload.telefone = payload.telefone.replace(/[()+\- ]/g, '')
+    payload.telefone = phoneDigits(payload.telefone)
     payload.email = payload.email.toLowerCase()
     payload.descricao = (values.descricao ?? '').trim()
     const invalid = {}
@@ -68,7 +70,7 @@ export default function OrganizationProfilePage() {
     }
     if (payload.cnpj && !validCnpj(payload.cnpj)) invalid.cnpj = 'Informe um CNPJ válido.'
     if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) invalid.email = 'Informe um e-mail válido.'
-    if (payload.telefone && !/^[0-9]{10,15}$/.test(payload.telefone)) invalid.telefone = 'Informe de 10 a 15 dígitos, incluindo DDD.'
+    if (payload.telefone && !validPhone(payload.telefone)) invalid.telefone = PHONE_ERROR
     if (payload.descricao.length > 5000) invalid.descricao = 'Use até 5000 caracteres.'
     setErrors(invalid)
     setMessage('')
@@ -134,9 +136,12 @@ export default function OrganizationProfilePage() {
                   const required = organization.tipo === 'ONG' || !['cnpj', 'razao_social'].includes(name)
                   return <div className={styles.field} key={name}>
                     <label htmlFor={name}>{label}{!required && ' (opcional)'}</label>
+                    {name === 'telefone' ? <PhoneInput {...props} id={name} name={name} required={required} value={values[name] ?? ''}
+                      onValueChange={(value) => change(name, value)} aria-invalid={Boolean(errors[name])}
+                      aria-describedby={[`${name}-hint`, errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ')} /> :
                     <input {...props} id={name} name={name} required={required} value={values[name] ?? ''}
                       onChange={(event) => change(name, event.target.value)} aria-invalid={Boolean(errors[name])}
-                      aria-describedby={[hint ? `${name}-hint` : '', errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ') || undefined} />
+                      aria-describedby={[hint ? `${name}-hint` : '', errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ') || undefined} />}
                     {hint && <small id={`${name}-hint`}>{hint}</small>}
                     {errors[name] && <span className={styles.error} id={`${name}-error`}>{errors[name]}</span>}
                   </div>

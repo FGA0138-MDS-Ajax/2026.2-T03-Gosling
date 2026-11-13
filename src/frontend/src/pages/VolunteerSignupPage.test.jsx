@@ -80,7 +80,7 @@ describe('cadastro de voluntário — RF01', () => {
     await enviar(user)
     expect(screen.getByText('Informe um CPF válido.')).toBeVisible()
     expect(screen.getByText('Informe um e-mail válido.')).toBeVisible()
-    expect(screen.getByText('Use pelo menos 8 caracteres.')).toBeVisible()
+    expect(screen.getByText('Use pelo menos 8 caracteres, uma letra maiúscula, um número e um símbolo, sem espaços.')).toBeVisible()
     expect(screen.getByText('Selecione o estado.')).toBeVisible()
     expect(screen.getByText('Confirme o consentimento para continuar.')).toBeVisible()
     expect(screen.getByLabelText('Nome completo')).toHaveFocus()

@@ -1,3 +1,5 @@
+import { PHONE_HINT } from './accountFields'
+
 export const organizationFields = [
   { name: 'nome', label: 'Nome da organização', minLength: 3, maxLength: 150 },
   { name: 'razao_social', label: 'Razão social', minLength: 3, maxLength: 200 },
@@ -6,7 +8,7 @@ export const organizationFields = [
   { name: 'endereco', label: 'Endereço', minLength: 5, maxLength: 500 },
   { name: 'responsavel', label: 'Responsável', minLength: 3, maxLength: 150 },
   { name: 'email', label: 'E-mail', type: 'email', autoComplete: 'email', maxLength: 254 },
-  { name: 'telefone', label: 'Telefone', type: 'tel', autoComplete: 'tel', hint: 'Inclua DDD e, se necessário, código do país.' },
+  { name: 'telefone', label: 'Telefone', type: 'tel', autoComplete: 'tel', maxLength: 15, hint: PHONE_HINT },
   { name: 'senha', label: 'Senha', type: 'password', autoComplete: 'new-password', minLength: 8, maxLength: 1024 },
 ]
 
@@ -20,4 +22,3 @@ export function validCnpj(value) {
   }
   return base === value
 }
-

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import PhoneInput from '../components/PhoneInput'
 import { useAuth } from '../hooks/useAuth'
 import { getVolunteerProfile, updateVolunteerProfile } from '../services/voluntarioService'
+import { PHONE_ERROR, PHONE_HINT, phoneDigits, validPhone } from '../utils/accountFields'
 import {
   CAUSAS, DIAS, ESTADOS, NOMES_ESTADOS, PERIODOS, formatDisponibilidades, parseDisponibilidades,
 } from '../utils/volunteerProfile'
@@ -10,7 +12,7 @@ import styles from './VolunteerProfile.module.css'
 
 const CAMPOS_TEXTO = [
   { name: 'nome_completo', label: 'Nome completo', autoComplete: 'name', minLength: 2, maxLength: 150, required: true },
-  { name: 'telefone', label: 'Telefone (opcional)', type: 'tel', autoComplete: 'tel', maxLength: 20, hint: 'Inclua o DDD.' },
+  { name: 'telefone', label: 'Telefone (opcional)', type: 'tel', autoComplete: 'tel', maxLength: 15, hint: PHONE_HINT },
   { name: 'cidade', label: 'Cidade (opcional)', autoComplete: 'address-level2', maxLength: 100 },
 ]
 
@@ -78,8 +80,8 @@ export default function VolunteerProfilePage() {
     const invalid = {}
     if (payload.nome_completo.length < 2) invalid.nome_completo = 'Informe seu nome completo.'
     else if (payload.nome_completo.length > 150) invalid.nome_completo = 'Use até 150 caracteres.'
-    if (payload.telefone && !/^[0-9]{10,15}$/.test(payload.telefone)) {
-      invalid.telefone = 'Informe de 10 a 15 dígitos, incluindo DDD.'
+    if (payload.telefone && !validPhone(payload.telefone)) {
+      invalid.telefone = PHONE_ERROR
     }
     if (payload.cidade && payload.cidade.length > 100) invalid.cidade = 'Use até 100 caracteres.'
     if (payload.biografia && payload.biografia.length > 500) invalid.biografia = 'Use até 500 caracteres.'
@@ -95,7 +97,7 @@ export default function VolunteerProfilePage() {
     if (submitting.current) return
     const payload = {
       nome_completo: values.nome_completo.trim(),
-      telefone: values.telefone.replace(/[()+\- ]/g, '') || null,
+      telefone: phoneDigits(values.telefone) || null,
       cidade: values.cidade.trim() || null,
       estado: values.estado || null,
       biografia: values.biografia.trim() || null,
@@ -171,10 +173,14 @@ export default function VolunteerProfilePage() {
                   {CAMPOS_TEXTO.map(({ name, label, hint, required, ...props }) => (
                     <div className={base.field} key={name}>
                       <label htmlFor={name}>{label}</label>
+                      {name === 'telefone' ? <PhoneInput {...props} id={name} name={name} required={required} value={values[name]}
+                        onValueChange={(value) => change(name, value)}
+                        aria-invalid={Boolean(errors[name])}
+                        aria-describedby={[`${name}-hint`, errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ')} /> :
                       <input {...props} id={name} name={name} required={required} value={values[name]}
                         onChange={(event) => change(name, event.target.value)}
                         aria-invalid={Boolean(errors[name])}
-                        aria-describedby={[hint ? `${name}-hint` : '', errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ') || undefined} />
+                        aria-describedby={[hint ? `${name}-hint` : '', errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ') || undefined} />}
                       {hint && <small id={`${name}-hint`}>{hint}</small>}
                       {erro(name)}
                     </div>

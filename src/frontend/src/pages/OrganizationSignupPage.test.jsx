@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -40,6 +40,15 @@ describe('cadastro da ONG — RF02', () => {
     expect(http.post).not.toHaveBeenCalled()
   })
 
+  it('mantém o foco enquanto o usuário corrige um campo após a validação', async () => {
+    const user = userEvent.setup()
+    open()
+    await user.click(screen.getByRole('button', { name: 'Cadastrar organização' }))
+    await user.type(screen.getByLabelText('Nome da organização'), 'Nome corrigido')
+    expect(screen.getByLabelText('Nome da organização')).toHaveValue('Nome corrigido')
+    expect(screen.getByLabelText('Nome da organização')).toHaveFocus()
+  })
+
   it('envia contrato normalizado, usa pedido público e exibe aprovação automática', async () => {
     const user = userEvent.setup()
     open()
@@ -74,6 +83,46 @@ describe('cadastro da ONG — RF02', () => {
     await user.click(screen.getByRole('button', { name: 'Cadastrar organização' }))
     expect(await screen.findByRole('heading', { name: 'Cadastro concluído' })).toBeVisible()
     expect(requests[0][1].cnpj).toBe('12ABC34501DE35')
+  })
+
+  it('atualiza os requisitos da senha ao digitar e volta a indicar o requisito removido', async () => {
+    const user = userEvent.setup()
+    open()
+    const checklist = screen.getByRole('list', { name: 'Requisitos da senha' })
+    expect(within(checklist).getAllByRole('listitem').every((item) => item.textContent.includes('Pendente:'))).toBe(true)
+    const senha = screen.getByLabelText('Senha', { exact: true })
+    await user.type(senha, 'abcdefgh')
+    expect(within(checklist).getByText('Pelo menos 8 caracteres')).toHaveTextContent('Atendido:')
+    expect(within(checklist).getByText('Uma letra maiúscula')).toHaveTextContent('Pendente:')
+    await user.type(senha, 'A1!')
+    expect(within(checklist).getAllByRole('listitem').every((item) => item.textContent.includes('Atendido:'))).toBe(true)
+    expect(senha).toHaveAccessibleDescription(/Pelo menos 8 caracteres/)
+    await user.type(senha, ' ')
+    expect(within(checklist).getByText('Sem espaços')).toHaveTextContent('Pendente:')
+    await user.keyboard('{Backspace}{Backspace}')
+    expect(within(checklist).getByText('Um símbolo ou caractere especial')).toHaveTextContent('Pendente:')
+  })
+
+  it.each(['abcdefgh1!', 'Abcdefgh!', 'Abcdefgh1', 'Abc1!def '])('bloqueia senha que não atende a todos os requisitos: %s', async (senha) => {
+    const user = userEvent.setup()
+    open()
+    await fill(user)
+    fireEvent.change(screen.getByLabelText('Senha', { exact: true }), { target: { value: senha } })
+    await user.click(screen.getByRole('button', { name: 'Cadastrar organização' }))
+    expect(screen.getByLabelText('Senha', { exact: true })).toHaveAttribute('aria-invalid', 'true')
+    expect(http.post).not.toHaveBeenCalled()
+  })
+
+  it('envia apenas os dígitos depois de aplicar máscara e limitar a colagem', async () => {
+    const user = userEvent.setup()
+    open()
+    await fill(user)
+    const telefone = screen.getByLabelText('Telefone', { exact: true })
+    await user.clear(telefone)
+    await user.paste('6199999000099999')
+    expect(telefone).toHaveValue('(61) 99999-0000')
+    await user.click(screen.getByRole('button', { name: 'Cadastrar organização' }))
+    expect(requests[0][1].telefone).toBe('61999990000')
   })
 
   it.each(['E-mail já cadastrado.', 'CNPJ já cadastrado.'])('apresenta conflito — %s', async (detail) => {

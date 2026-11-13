@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
+import PasswordChecklist from '../components/PasswordChecklist'
+import PhoneInput from '../components/PhoneInput'
 import { useAuth } from '../hooks/useAuth'
 import { ESTADOS, NOMES_ESTADOS, validCpf } from '../utils/volunteerProfile'
+import { PASSWORD_ERROR, PHONE_ERROR, PHONE_HINT, phoneDigits, validPassword, validPhone } from '../utils/accountFields'
 import base from './OrganizationSignup.module.css'
 import styles from './VolunteerProfile.module.css'
 
@@ -9,9 +12,9 @@ const CAMPOS = [
   { name: 'nome_completo', label: 'Nome completo', autoComplete: 'name', minLength: 3, maxLength: 150 },
   { name: 'identificacao', label: 'CPF', inputMode: 'numeric', autoComplete: 'off', maxLength: 14, hint: 'Somente os 11 números, com ou sem pontuação.' },
   { name: 'email', label: 'E-mail', type: 'email', autoComplete: 'email', maxLength: 254 },
-  { name: 'telefone', label: 'Telefone', type: 'tel', autoComplete: 'tel', maxLength: 20, hint: 'Inclua o DDD.' },
+  { name: 'telefone', label: 'Telefone', type: 'tel', autoComplete: 'tel', maxLength: 15, hint: PHONE_HINT },
   { name: 'cidade', label: 'Cidade', autoComplete: 'address-level2', minLength: 2, maxLength: 100 },
-  { name: 'senha', label: 'Senha', type: 'password', autoComplete: 'new-password', minLength: 8, maxLength: 1024, hint: 'Pelo menos 8 caracteres.' },
+  { name: 'senha', label: 'Senha', type: 'password', autoComplete: 'new-password', minLength: 8, maxLength: 1024 },
 ]
 
 export default function VolunteerSignupPage() {
@@ -22,16 +25,25 @@ export default function VolunteerSignupPage() {
   const [pending, setPending] = useState(false)
   const submitting = useRef(false)
   const formRef = useRef(null)
+  const focusErrors = useRef(false)
 
   useEffect(() => {
     const first = Object.keys(errors)[0]
-    if (!pending && first) formRef.current?.elements.namedItem(first)?.focus()
+    if (!pending && focusErrors.current) {
+      formRef.current?.elements.namedItem(first)?.focus()
+      focusErrors.current = false
+    }
   }, [errors, pending])
 
   if (usuario) return <Navigate to="/voluntario" replace />
 
   function change(name, value) {
     setValues((current) => ({ ...current, [name]: value }))
+    setErrors((current) => {
+      const next = { ...current }
+      delete next[name]
+      return next
+    })
   }
 
   function validar(dados) {
@@ -44,7 +56,8 @@ export default function VolunteerSignupPage() {
     }
     if (dados.identificacao && !validCpf(dados.identificacao)) invalid.identificacao = 'Informe um CPF válido.'
     if (dados.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dados.email)) invalid.email = 'Informe um e-mail válido.'
-    if (dados.telefone && !/^[0-9]{10,15}$/.test(dados.telefone)) invalid.telefone = 'Informe de 10 a 15 dígitos, incluindo DDD.'
+    if (dados.telefone && !validPhone(dados.telefone)) invalid.telefone = PHONE_ERROR
+    if (dados.senha && !validPassword(dados.senha)) invalid.senha = PASSWORD_ERROR
     if (!dados.estado) invalid.estado = 'Selecione o estado.'
     if (!dados.consentimento_termos) invalid.consentimento_termos = 'Confirme o consentimento para continuar.'
     return invalid
@@ -57,13 +70,14 @@ export default function VolunteerSignupPage() {
       nome_completo: (values.nome_completo ?? '').trim(),
       identificacao: (values.identificacao ?? '').replace(/[.\- ]/g, ''),
       email: (values.email ?? '').trim().toLowerCase(),
-      telefone: (values.telefone ?? '').replace(/[()+\- ]/g, ''),
+      telefone: phoneDigits(values.telefone),
       cidade: (values.cidade ?? '').trim(),
       estado: values.estado ?? '',
       senha: values.senha ?? '',
       consentimento_termos: Boolean(values.consentimento_termos),
     }
     const invalid = validar(dados)
+    focusErrors.current = Object.keys(invalid).length > 0
     setErrors(invalid)
     setMessage('')
     if (Object.keys(invalid).length) return
@@ -95,6 +109,7 @@ export default function VolunteerSignupPage() {
           const name = nomes[issue.loc?.[1]] ?? issue.loc?.[1]
           if (name) serverErrors[name] = issue.msg
         }
+        focusErrors.current = true
         setErrors(serverErrors)
         setMessage('Confira os campos indicados e tente novamente.')
       } else {
@@ -111,10 +126,14 @@ export default function VolunteerSignupPage() {
     return (
       <div className={base.field} key={name}>
         <label htmlFor={name}>{label}</label>
+        {name === 'telefone' ? <PhoneInput {...props} id={name} name={name} required value={values[name] ?? ''}
+          onValueChange={(value) => change(name, value)}
+          aria-invalid={Boolean(errors[name])} aria-describedby={descricao(name, hint)} /> :
         <input {...props} id={name} name={name} required value={values[name] ?? ''}
           onChange={(event) => change(name, event.target.value)}
-          aria-invalid={Boolean(errors[name])} aria-describedby={descricao(name, hint)} />
+          aria-invalid={Boolean(errors[name])} aria-describedby={[descricao(name, hint), name === 'senha' ? 'senha-requisitos' : ''].filter(Boolean).join(' ') || undefined} />}
         {hint && <small id={`${name}-hint`}>{hint}</small>}
+        {name === 'senha' && <PasswordChecklist id="senha-requisitos" value={values.senha ?? ''} />}
         {errors[name] && <span className={base.error} id={`${name}-error`}>{errors[name]}</span>}
       </div>
     )

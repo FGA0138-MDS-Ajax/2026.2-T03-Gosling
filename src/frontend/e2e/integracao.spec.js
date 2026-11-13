@@ -51,6 +51,28 @@ async function captura(page, nome) {
   await test.info().attach(nome, { path, contentType: 'image/png' })
 }
 
+test('cadastro de ONG mascara telefone e atualiza a checklist da senha ao digitar', async ({ page }) => {
+  await page.goto('/cadastro/organizacao')
+  const telefone = page.getByLabel('Telefone', { exact: true })
+  await telefone.pressSequentially('6199999000012345')
+  await expect(telefone).toHaveValue('(61) 99999-0000')
+  await telefone.press('ControlOrMeta+A')
+  await telefone.press('Backspace')
+  await telefone.pressSequentially('6133334444')
+  await expect(telefone).toHaveValue('(61) 3333-4444')
+  const senha = page.getByLabel('Senha', { exact: true })
+  const regras = page.getByRole('list', { name: 'Requisitos da senha' }).getByRole('listitem')
+  await senha.fill('abcdefgh')
+  await expect(regras.filter({ hasText: 'Pendente:' })).toHaveCount(3)
+  await senha.pressSequentially('A1!')
+  await expect(regras.filter({ hasText: 'Atendido:' })).toHaveCount(5)
+  await senha.pressSequentially(' ')
+  await expect(regras.filter({ hasText: 'Sem espaços' })).toContainText('Pendente:')
+  await senha.press('Backspace')
+  await expect(regras.filter({ hasText: 'Atendido:' })).toHaveCount(5)
+  expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([])
+})
+
 test('cadastro e perfil persistem no MySQL e isolam dois voluntários', async ({ page, request, ambiente }) => {
   const email = `voluntario-${randomUUID()}@example.com`
   await page.setViewportSize({ width: 1280, height: 900 })

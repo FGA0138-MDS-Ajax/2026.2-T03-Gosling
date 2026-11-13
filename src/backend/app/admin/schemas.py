@@ -5,12 +5,12 @@ from pydantic import (
     ConfigDict,
     EmailStr,
     Field,
-    SecretStr,
     field_validator,
 )
 
 from app.usuarios.enums import Perfil, TipoOrganizacao
 from app.usuarios.schemas import AtualizarOrganizacaoRequest
+from app.usuarios.validacoes import SenhaCadastro
 
 
 class DadosContaAdmin(BaseModel):
@@ -18,7 +18,7 @@ class DadosContaAdmin(BaseModel):
 
     nome: str = Field(min_length=3, max_length=150)
     email: EmailStr = Field(max_length=254)
-    senha: SecretStr = Field(min_length=8, max_length=1024)
+    senha: SenhaCadastro
     ativo: bool = Field(default=True, strict=True)
 
     @field_validator("nome", "email", mode="before")
@@ -42,7 +42,7 @@ class CriarAdministradorAdmin(DadosContaAdmin):
 
 class CriarOngAdmin(AtualizarOrganizacaoRequest):
     perfil: Literal[Perfil.ORGANIZACAO]
-    senha: SecretStr = Field(min_length=8, max_length=1024)
+    senha: SenhaCadastro
     razao_social: str = Field(min_length=3, max_length=200)
     cnpj: str
     ativo: bool = Field(default=True, strict=True)
