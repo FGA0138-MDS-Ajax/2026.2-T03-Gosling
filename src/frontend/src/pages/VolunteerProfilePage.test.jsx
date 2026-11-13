@@ -158,6 +158,50 @@ describe('perfil do voluntário — RF06', () => {
     expect(await loaded()).toHaveValue('Maria da Silva')
   })
 
+  it('mostra e permite focar erros de causas, estado e disponibilidade retornados pela API', async () => {
+    const user = userEvent.setup()
+    service.updateVolunteerProfile.mockRejectedValue({ response: { status: 422, data: { detail: [
+      { loc: ['body', 'causas', 0], msg: 'Causa inválida.' },
+      { loc: ['body', 'estado'], msg: 'Estado inválido.' },
+      { loc: ['body', 'disponibilidades', 0], msg: 'Disponibilidade inválida.' },
+    ] } } })
+    open()
+    await loaded()
+    await save(user)
+    expect(await screen.findByText('Causa inválida.')).toBeVisible()
+    expect(screen.getByRole('group', { name: 'Escolha as causas que você quer apoiar' })).toHaveAccessibleDescription('Causa inválida.')
+    expect(screen.getByLabelText('Estado (opcional)')).toHaveFocus()
+    expect(screen.getByLabelText('Estado (opcional)')).toHaveAccessibleDescription('Estado inválido.')
+    expect(screen.getByText('Disponibilidade inválida.')).toBeVisible()
+  })
+
+  it('foca o grupo de causas quando a API recusa somente essa lista', async () => {
+    const user = userEvent.setup()
+    service.updateVolunteerProfile.mockRejectedValue({ response: { status: 422, data: { detail: [
+      { loc: ['body', 'causas', 0], msg: 'Causa inválida.' },
+    ] } } })
+    open()
+    await loaded()
+    await save(user)
+    await screen.findByText('Causa inválida.')
+    expect(screen.getByRole('group', { name: 'Escolha as causas que você quer apoiar' })).toHaveFocus()
+  })
+
+  it('bloqueia envios repetidos e mantém as alterações quando a gravação falha', async () => {
+    let rejeitar
+    service.updateVolunteerProfile.mockReturnValue(new Promise((_, reject) => { rejeitar = reject }))
+    open()
+    fireEvent.change(await loaded(), { target: { value: 'Maria Alterada' } })
+    const formulario = screen.getByRole('form', { name: 'Editar perfil de voluntário' })
+    fireEvent.submit(formulario)
+    fireEvent.submit(formulario)
+    expect(service.updateVolunteerProfile).toHaveBeenCalledTimes(1)
+    rejeitar(new Error('Sem conexão'))
+    await screen.findByRole('alert')
+    expect(await loaded()).toHaveValue('Maria Alterada')
+    expect(screen.getByRole('button', { name: 'Salvar alterações' })).toBeEnabled()
+  })
+
   it('impede que uma organização abra o perfil de voluntário', async () => {
     const org = { ...usuario, perfil: 'ORGANIZACAO', tipo: 'ONG' }
     auth.getSession.mockResolvedValue({ usuario: org, expires_at: Math.floor(Date.now() / 1000) + 3600 })

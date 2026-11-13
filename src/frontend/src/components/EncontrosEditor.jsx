@@ -14,7 +14,7 @@ export default function EncontrosEditor({ encontros, onChange, erro }) {
   }
 
   return (
-    <fieldset className={styles.schedule}>
+    <fieldset className={styles.schedule} aria-describedby={erro ? 'encontros-erro' : undefined}>
       <legend>Datas e horários dos encontros</legend>
       <p className={styles.scheduleHelp}>
         Selecione cada dia pelo calendário e informe início e fim.
@@ -74,7 +74,7 @@ export default function EncontrosEditor({ encontros, onChange, erro }) {
           </div>
         </div>
       ))}
-      {erro && <p className={styles.error} role="alert">{erro}</p>}
+      {erro && <p id="encontros-erro" className={styles.error} role="alert">{erro}</p>}
       <button
         className={styles.secondaryButton}
         type="button"

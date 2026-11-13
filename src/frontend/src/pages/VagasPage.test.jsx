@@ -125,7 +125,10 @@ describe('página pública de vagas', () => {
     await user.click(screen.getByRole('button', { name: 'Publicar vaga', exact: true }))
     fireEvent.change(screen.getByLabelText('Título da vaga'), { target: { value: '   ' } })
     fireEvent.submit(screen.getByRole('form', { name: 'Publicar vaga' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('Confira o título')
+    expect(screen.getByText('Confira os campos indicados e tente novamente.')).toBeVisible()
+    expect(screen.getByLabelText(/Título da vaga/)).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText(/Título da vaga/)).toHaveAccessibleDescription('Use pelo menos 3 caracteres.')
+    expect(screen.getByLabelText(/Título da vaga/)).toHaveFocus()
     expect(vagasService.publicarVaga).not.toHaveBeenCalled()
   })
 
@@ -158,6 +161,55 @@ describe('página pública de vagas', () => {
     expect(screen.getByRole('dialog')).toBeVisible()
     expect(screen.getByLabelText('Título da vaga')).toHaveValue('Oficina de leitura')
     expect(screen.getAllByRole('article')).toHaveLength(3)
+  })
+
+  it.each(['0.01', '1.25', '99999.99'])('publica carga %s e local com 500 caracteres', async (carga) => {
+    const user = userEvent.setup()
+    abrir(ONG)
+    await screen.findAllByRole('article')
+    await preencherFormulario(user)
+    const local = 'L'.repeat(500)
+    fireEvent.change(screen.getByLabelText('Local ou atividade remota'), { target: { value: local } })
+    fireEvent.change(screen.getByLabelText('Carga horária (horas)'), { target: { value: carga } })
+    expect(screen.getByLabelText('Local ou atividade remota')).toHaveAttribute('maxlength', '500')
+    expect(screen.getByLabelText('Carga horária (horas)')).toHaveAttribute('step', '0.01')
+    await user.click(botaoEnviar())
+    await screen.findByRole('heading', { name: 'Oficina de leitura' })
+    expect(vagasService.publicarVaga).toHaveBeenCalledWith(expect.objectContaining({
+      local, carga_horaria: Number(carga),
+    }))
+  })
+
+  it.each(['0', '-1', '1.001', '100000'])('recusa a carga inválida %s e aponta o campo', async (carga) => {
+    const user = userEvent.setup()
+    abrir(ONG)
+    await screen.findAllByRole('article')
+    await preencherFormulario(user)
+    fireEvent.change(screen.getByLabelText('Carga horária (horas)'), { target: { value: carga } })
+    await user.click(botaoEnviar())
+    expect(screen.getByLabelText(/Carga horária \(horas\)/)).toHaveAccessibleDescription(/até duas casas decimais/)
+    expect(screen.getByLabelText(/Carga horária \(horas\)/)).toHaveFocus()
+    expect(vagasService.publicarVaga).not.toHaveBeenCalled()
+  })
+
+  it('associa os erros 422 aos campos e indica o encontro recusado sem apagar os dados', async () => {
+    const user = userEvent.setup()
+    vagasService.publicarVaga.mockRejectedValue({ response: { status: 422, data: { detail: [
+      { loc: ['body', 'local'], type: 'string_too_long', msg: 'String should have at most 500 characters' },
+      { loc: ['body', 'carga_horaria'], msg: 'Carga horária inválida.' },
+      { loc: ['body', 'ocorrencias', 0, 'fim'], msg: 'O término deve ser posterior ao início.' },
+    ] } } })
+    abrir(ONG)
+    await screen.findAllByRole('article')
+    await preencherFormulario(user)
+    await user.click(botaoEnviar())
+    expect(await screen.findByText('Confira os campos indicados e tente novamente.')).toBeVisible()
+    expect(screen.getByLabelText(/Local ou atividade remota/)).toHaveAccessibleDescription('Use até 500 caracteres.')
+    expect(screen.getByLabelText(/Local ou atividade remota/)).toHaveFocus()
+    expect(screen.getByLabelText(/Carga horária \(horas\)/)).toHaveAccessibleDescription('Carga horária inválida.')
+    expect(screen.getByText('Encontro 1: O término deve ser posterior ao início.')).toBeVisible()
+    expect(screen.getByLabelText('Título da vaga')).toHaveValue('Oficina de leitura')
+    expect(screen.getByRole('dialog')).toBeVisible()
   })
 
   it('oferece nova tentativa quando a listagem falha', async () => {

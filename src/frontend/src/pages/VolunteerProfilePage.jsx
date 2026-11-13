@@ -63,8 +63,9 @@ export default function VolunteerProfilePage() {
   }, [attempt])
 
   useEffect(() => {
-    const first = Object.keys(errors)[0]
-    if (!pending && first) formRef.current?.elements.namedItem(first)?.focus()
+    if (!pending && Object.keys(errors).length) {
+      formRef.current?.querySelector('[aria-invalid="true"]')?.focus()
+    }
   }, [errors, pending])
 
   function change(name, value) {
@@ -181,10 +182,13 @@ export default function VolunteerProfilePage() {
                   <div className={`${base.field} ${styles.field}`}>
                     <label htmlFor="estado">Estado (opcional)</label>
                     <select id="estado" name="estado" value={values.estado} autoComplete="address-level1"
-                      onChange={(event) => change('estado', event.target.value)}>
+                      onChange={(event) => change('estado', event.target.value)}
+                      aria-invalid={Boolean(errors.estado)}
+                      aria-describedby={errors.estado ? 'estado-error' : undefined}>
                       <option value="">Selecione</option>
                       {ESTADOS.map((uf) => <option key={uf} value={uf}>{NOMES_ESTADOS[uf]} ({uf})</option>)}
                     </select>
+                    {erro('estado')}
                   </div>
                 </div>
                 <div className={base.field}>
@@ -199,7 +203,9 @@ export default function VolunteerProfilePage() {
 
               <div className={styles.section}>
                 <h2>Causas de interesse</h2>
-                <fieldset className={styles.options}>
+                <fieldset className={styles.options} tabIndex={-1}
+                  aria-invalid={Boolean(errors.causas)}
+                  aria-describedby={errors.causas ? 'causas-error' : undefined}>
                   <legend>Escolha as causas que você quer apoiar</legend>
                   {CAUSAS.map((causa) => (
                     <label className={styles.option} key={causa}>
@@ -209,9 +215,12 @@ export default function VolunteerProfilePage() {
                     </label>
                   ))}
                 </fieldset>
+                {erro('causas')}
               </div>
 
-              <div className={styles.section} aria-labelledby="disponibilidade-titulo">
+              <div className={styles.section} aria-labelledby="disponibilidade-titulo" tabIndex={-1}
+                aria-invalid={Boolean(errors.disponibilidades)}
+                aria-describedby={errors.disponibilidades ? 'disponibilidades-error' : undefined}>
                 <h2 id="disponibilidade-titulo">Preferências de disponibilidade</h2>
                 <p className={styles.note}>
                   Estas são as suas preferências para receber oportunidades. Elas não são compromissos:
@@ -245,6 +254,7 @@ export default function VolunteerProfilePage() {
                     aria-describedby={errors.cargaHoraria ? 'cargaHoraria-error' : undefined} />
                   {erro('cargaHoraria')}
                 </div>
+                {erro('disponibilidades')}
               </div>
 
               {message && <p role="alert" className={base.error}>{message}</p>}

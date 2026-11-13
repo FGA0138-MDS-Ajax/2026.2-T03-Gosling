@@ -99,6 +99,9 @@ def test_publicacao_sem_token_e_negada(client, dados_vaga):
         ("numero_vagas", 0),
         ("numero_vagas", 1.5),
         ("carga_horaria", 0),
+        ("carga_horaria", 1.001),
+        ("carga_horaria", 100000),
+        ("local", "x" * 501),
         ("modalidade", "INVALIDA"),
         ("ocorrencias", []),
         ("organizacao_id", 999),
@@ -116,6 +119,15 @@ def test_entrada_invalida_nao_deixa_vaga_parcial(
     assert quantidade(db, Vaga) == 0
     assert quantidade(db, OcorrenciaVaga) == 0
     assert quantidade(db, Causa) == 0
+
+
+@pytest.mark.parametrize("carga", ["0.01", "1.25", "99999.99"])
+def test_limites_de_local_e_carga_horaria(client, contas, dados_vaga, carga):
+    headers = autenticar(client, contas)
+    dados = {**dados_vaga, "local": "L" * 500, "carga_horaria": carga}
+    resultado = publicar(client, headers, dados)
+    assert resultado["local"] == dados["local"]
+    assert resultado["carga_horaria"] == carga
 
 
 @pytest.mark.parametrize(

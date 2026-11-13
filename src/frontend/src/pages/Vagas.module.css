@@ -81,13 +81,16 @@
 .dialog::backdrop { background: rgb(20 84 82 / 35%); }
 .dialogHeader h2 { margin: 0; font-size: 25px; }
 .formGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 24px; }
-.formGrid label { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 14px; font-weight: 650; }
+.formField { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 14px; }
+.formField label { font-weight: 650; }
 .fullWidth { grid-column: 1 / -1; }
 .formGrid input, .formGrid select, .formGrid textarea { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--ink); font: inherit; font-weight: 400; }
 .formGrid textarea { resize: vertical; }
 .formGrid select:focus-visible, .formGrid textarea:focus-visible { outline: 3px solid var(--action); outline-offset: 4px; }
 .formActions { justify-content: flex-end; flex-wrap: wrap; margin-top: 28px; }
 .error { color: var(--error); line-height: 1.5; }
+.fieldError { color: var(--error); line-height: 1.5; font-weight: 400; }
+.formGrid [aria-invalid='true'] { border-color: var(--error); }
 .skipLink { position: absolute; top: -100px; left: 16px; z-index: 2; padding: 12px; background: var(--surface); }
 .skipLink:focus { top: 12px; }
 .publicationFields { margin: 0; padding: 0; border: 0; min-width: 0; }

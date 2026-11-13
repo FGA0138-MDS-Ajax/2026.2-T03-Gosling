@@ -63,10 +63,17 @@ class Cadastro(BaseModel):
     password: SecretStr = Field(min_length=8, max_length=1024)
     consentimento_termos: bool = Field(strict=True)
 
-    @field_validator("nome_completo", "cidade", mode="before")
+    @field_validator("nome_completo", "cidade", "email", mode="before")
     @classmethod
     def limpar(cls, valor):
         return valor.strip() if isinstance(valor, str) else valor
+
+    @field_validator("telefone", mode="before")
+    @classmethod
+    def normalizar_telefone(cls, valor):
+        if isinstance(valor, str):
+            return valor.strip().translate(str.maketrans("", "", "()+- ")) or None
+        return valor
 
     @field_validator("identificacao")
     @classmethod
@@ -93,12 +100,17 @@ ItemPerfil = Annotated[str, Field(min_length=1, max_length=100)]
 class Edicao(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     nome_completo: str | None = Field(default=None, min_length=2, max_length=150)
-    telefone: str | None = Field(default=None, max_length=20)
+    telefone: str | None = Field(default=None, pattern=r"^[0-9]{10,15}$")
     cidade: str | None = Field(default=None, max_length=100)
     estado: UF | None = None
     biografia: str | None = Field(default=None, max_length=500)
     causas: list[ItemPerfil] | None = Field(default=None, max_length=100)
     disponibilidades: list[ItemPerfil] | None = Field(default=None, max_length=100)
+
+    @field_validator("telefone", mode="before")
+    @classmethod
+    def normalizar_telefone(cls, valor):
+        return Cadastro.normalizar_telefone(valor)
 
 
 class PerfilVoluntario(UsuarioPublico):
