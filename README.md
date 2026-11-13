@@ -1,6 +1,8 @@
-# VolunJá — autenticação de usuários (CN01-RF04)
+# VolunJá — autenticação, administração e vagas de voluntariado
 
 Implementação da issue #1: API de login, JWT de 60 minutos, controle de acesso por perfil, sessão e logout no cliente, tratamento global de HTTP 401 e limitação de tentativas no Nginx.
+
+A página pública `/vagas` consulta vagas salvas no MySQL. Contas do tipo ONG podem publicar atividades com uma ou mais datas e horários. As publicações permanecem disponíveis após recarregar a página.
 
 ## Iniciar o sistema completo
 
@@ -45,6 +47,60 @@ Para encerrar sem apagar o banco persistente:
 docker compose down
 ```
 
+## Administração de cadastros
+
+Abra `/admin` ou `/admin/login` na mesma porta do frontend. Essa entrada tem formulário próprio e aceita somente contas com perfil `ADMINISTRADOR`. Se já estiver conectado como ONG ou voluntário, use **Trocar conta** para entrar como administrador.
+
+Para a demonstração, o comando de criação das contas fictícias acima disponibiliza `admin@example.com`, com a senha informada em `DEMO_PASSWORD`. Não há uma senha administrativa fixa no código nem criação automática de administradores na inicialização.
+
+O painel permite pesquisar por nome ou e-mail, filtrar por perfil e situação, consultar os dados cadastrados e criar contas de voluntário, ONG ou administrador. Contas ativas podem entrar com o e-mail e a senha definidos no formulário. O cadastro administrativo de ONG exige os dados institucionais e permite escolher se ela já pode publicar vagas; ele não registra aceite de termos em nome da organização.
+
+A exclusão exige confirmação e bloqueia a remoção da conta administrativa em uso. Ao excluir uma ONG com vagas, o painel informa a quantidade e exige confirmar também a remoção das vagas e dos encontros vinculados. Os demais cadastros permanecem no banco.
+
+| Endpoint | Acesso e comportamento |
+| --- | --- |
+| `POST /api/v1/admin/login` | Recebe `email` e `senha` e autentica somente administradores. |
+| `GET /api/v1/admin/usuarios` | Lista paginada; aceita `busca`, `perfil`, `ativo`, `pagina` e `por_pagina`. |
+| `GET /api/v1/admin/usuarios/{id}` | Consulta os dados e a quantidade de vagas vinculadas. |
+| `POST /api/v1/admin/usuarios` | Cria uma conta com `perfil=VOLUNTARIO`, `ORGANIZACAO` ou `ADMINISTRADOR`. |
+| `DELETE /api/v1/admin/usuarios/{id}` | Remove a conta; exige `excluir_vagas=true` quando há vagas vinculadas. |
+
+Todas as operações de cadastro exigem JWT de administrador. Senhas e hashes não são retornados nas consultas. Os contratos completos estão no Swagger em `/docs`, na porta da API.
+
+## Publicação e consulta de vagas
+
+Na página `/vagas`, use **Entrar** para autenticar e retornar ao catálogo. A área da organização também oferece **Publicar vaga**, que abre o formulário diretamente.
+
+- `GET /api/v1/vagas?pagina=1&por_pagina=20` é público e retorna `itens`, `total`, `pagina` e `por_pagina`. A listagem inclui vagas abertas de organizações ativas e homologadas, com dados públicos e todos os encontros.
+- `POST /api/v1/vagas` exige JWT de uma ONG. A organização proprietária vem da sessão. O servidor retorna HTTP 201 depois de confirmar a gravação da vaga e dos encontros na mesma transação.
+- O formulário usa seletores de calendário e horário para cada encontro. Datas e horários são informados em Brasília, enviados e armazenados em UTC e exibidos novamente no horário de Brasília.
+- Todo encontro deve terminar após seu início. Encontros sobrepostos dentro da mesma vaga são recusados; intervalos consecutivos e atividades que atravessam a meia-noite são permitidos.
+- A verificação de conflitos com compromissos de voluntários depende das candidaturas e será integrada em RF26/RF27. Vagas distintas podem ocupar os mesmos horários.
+
+Exemplo de corpo para publicação:
+
+```json
+{
+  "titulo": "Oficina de leitura",
+  "descricao": "Leitura compartilhada com a comunidade.",
+  "atividades": "Organizar livros e apoiar as atividades de leitura.",
+  "causa": "Educação",
+  "modalidade": "PRESENCIAL",
+  "local": "Brasília, DF",
+  "periodo": "MANHA",
+  "carga_horaria": 3,
+  "numero_vagas": 10,
+  "ocorrencias": [
+    {
+      "inicio": "2026-11-16T09:00:00-03:00",
+      "fim": "2026-11-16T12:00:00-03:00"
+    }
+  ]
+}
+```
+
+Ao atualizar o sistema, `docker compose up --build -d --wait` aplica a migração de vagas na inicialização da API. As publicações usam o volume persistente já configurado para o MySQL.
+
 ## Contrato de autenticação
 
 O backend usa a porta 8000: abra <http://localhost:8000/docs> para consultar e testar as rotas no Swagger. O ReDoc está em <http://localhost:8000/redoc> e o esquema OpenAPI em <http://localhost:8000/openapi.json>. O frontend usa uma porta separada, definida em `WEB_PORT`.
@@ -82,9 +138,9 @@ O JWT utiliza HS256, com os campos obrigatórios `sub`, `perfil`, `iat` e `exp`.
 - O token e sua expiração ficam em `sessionStorage`. A senha não é armazenada.
 - O provedor restaura a conta pela API após recarregar a página, encerra a sessão na expiração e confere novamente o prazo ao retornar à janela.
 - Logout remove o token e a conta do cliente. Conforme a issue #1, esse logout é do cliente; um JWT copiado anteriormente continua sujeito à sua expiração e às verificações da conta no servidor.
-- As rotas `/voluntario`, `/organizacao` e `/admin` têm proteção por perfil. Elas exibem a entrada de cada fluxo; vagas, candidaturas e moderação pertencem às demais funcionalidades.
+- As rotas `/voluntario`, `/organizacao` e `/admin` têm proteção por perfil. Elas oferecem acesso ao catálogo público de vagas; a área da ONG também oferece publicação. Candidaturas e moderação pertencem às próximas funcionalidades.
 - O login compartilhado atende à entrada do voluntário da #2, com validação, carregamento, bloqueio de envios repetidos, erros e navegação por perfil. O link de cadastro abre `/cadastro/voluntario`, inclusive após uma sessão expirar.
-- **Dependência da #2:** o formulário e a API de cadastro pertencem às issues #9 e #10 e ainda não estão implementados. Por enquanto, a rota de cadastro informa a indisponibilidade e permite voltar ao login. A #2 só deve ser fechada quando esse destino oferecer o cadastro; a conferência visual final com o Figma e a entrada da ONG da #4 também continuam pendentes.
+- O formulário em `/cadastro/voluntario` envia os dados a `POST /api/v1/voluntarios`. O cadastro retorna a sessão inicial e abre a área do voluntário. A API permite consultar e editar os dados do titular em `GET` e `PUT /api/v1/voluntarios/me`.
 
 ## Organização do código
 
@@ -94,6 +150,7 @@ O JWT utiliza HS256, com os campos obrigatórios `sub`, `perfil`, `iat` e `exp`.
 | app/usuarios/models.py e enums.py | Conta comum e especializações Voluntario/Organizacao com tabelas associadas, conforme o DA. |
 | app/usuarios/repository.py e service.py | Consultas ao banco e interface de contas usada pelo módulo auth. |
 | app/auth/schemas.py, service.py, router.py | Contratos JSON, regras de autenticação e endpoints. |
+| app/admin/ e src/frontend/src/pages/AdminPage.jsx | Entrada administrativa e consulta, criação e exclusão de cadastros. |
 | app/dependencies.py | Composição das dependências e autorização por perfil. |
 | migrations/ | Evolução versionada do esquema via Alembic. |
 | src/frontend/src/services/ | Cliente HTTP, API de autenticação e armazenamento da sessão. |
@@ -101,11 +158,11 @@ O JWT utiliza HS256, com os campos obrigatórios `sub`, `perfil`, `iat` e `exp`.
 | infra/nginx/default.conf | Proxy da API, entrega da SPA e limite de tentativas de login. |
 | .github/workflows/backend.yml | Verificações da API, do cliente e do fluxo completo. |
 
-Os cadastros RF01/RF02 devem criar contas nessas mesmas tabelas e gerar `senha_hash` com `hash_password`. O login é único para todos os perfis.
+Os cadastros RF01/RF02 devem criar contas nessas mesmas tabelas e gerar `senha_hash` com `hash_password`. As entradas comum e administrativa usam essas contas e a mesma autenticação JWT.
 
 ## Nginx
 
-O proxy permite uma média de 5 pedidos por minuto e por IP ao endpoint de login, com uma rajada inicial de até 5 pedidos. Excesso retorna 429; o cliente mostra a mensagem correspondente. O acesso local pela porta 8000 chega diretamente à API; o limite de tentativas é aplicado nas requisições que passam pelo Nginx.
+O proxy permite uma média de 5 pedidos por minuto e por IP aos endpoints de login comum e administrativo, com uma rajada inicial de até 5 pedidos. As duas entradas compartilham o mesmo limite. Excesso retorna 429; o cliente mostra a mensagem correspondente. O acesso local pela porta 8000 chega diretamente à API; o limite de tentativas é aplicado nas requisições que passam pelo Nginx.
 
 Cabeçalhos enviados pelo visitante, como `X-Forwarded-For`, não definem a chave do limitador. Ao acrescentar Cloudflare Tunnel, configure `real_ip` somente para o proxy confiável antes de usar o IP encaminhado. O túnel não faz parte deste pacote.
 

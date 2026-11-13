@@ -1,3 +1,4 @@
+import { registerVolunteer } from './services/voluntarioService'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -5,6 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import AuthProvider from './contexts/AuthProvider'
 import * as authService from './services/authService'
+import * as vagasService from './services/vagasService'
+import * as adminService from './services/adminService'
 import {
   clearSession,
   readSession,
@@ -14,13 +17,25 @@ import {
 
 vi.mock('./services/authService', () => ({
   login: vi.fn(),
+  loginAdmin: vi.fn(),
+
   getSession: vi.fn(),
   getProfile: vi.fn(),
+}))
+vi.mock('./services/voluntarioService', () => ({ registerVolunteer: vi.fn() }))
+vi.mock('./services/vagasService', () => ({
+  listarVagas: vi.fn(), publicarVaga: vi.fn(),
+}))
+vi.mock('./services/adminService', () => ({
+  listarCadastros: vi.fn(), consultarCadastro: vi.fn(),
+  criarCadastro: vi.fn(), excluirCadastro: vi.fn(),
 }))
 
 beforeEach(() => {
   vi.resetAllMocks()
   authService.getProfile.mockResolvedValue({})
+  vagasService.listarVagas.mockResolvedValue({ itens: [], total: 0, pagina: 1, por_pagina: 20 })
+  adminService.listarCadastros.mockResolvedValue({ itens: [], total: 0, pagina: 1, por_pagina: 20 })
 })
 
 function session(perfil = 'VOLUNTARIO') {
@@ -50,6 +65,44 @@ async function fillAndSubmit(user) {
 }
 
 describe('fluxo de autenticação', () => {
+  it.each(['VOLUNTARIO', 'ORGANIZACAO'])(
+    'retorna às vagas depois do login do perfil %s iniciado pelo catálogo',
+    async (perfil) => {
+      const user = userEvent.setup()
+      authService.login.mockResolvedValue(session(perfil))
+      open('/vagas')
+      await user.click(screen.getByRole('link', { name: 'Entrar', exact: true }))
+      await screen.findByRole('heading', { name: 'Entre no VolunJá' })
+      await fillAndSubmit(user)
+
+      expect(await screen.findByRole('heading', { name: 'Vagas de voluntariado' })).toBeVisible()
+      const publicar = screen.queryByRole('button', { name: 'Publicar vaga', exact: true })
+      if (perfil === 'ORGANIZACAO') expect(publicar).toBeVisible()
+      else expect(publicar).not.toBeInTheDocument()
+    },
+  )
+
+  it('abre o formulário de publicação a partir da área da ONG', async () => {
+    const originalShowModal = HTMLDialogElement.prototype.showModal
+    HTMLDialogElement.prototype.showModal = function () {
+      this.setAttribute('open', '')
+    }
+    try {
+      const user = userEvent.setup()
+      const data = session('ORGANIZACAO')
+      writeSession(data.access_token, data.expires_at)
+      authService.getSession.mockResolvedValue(data)
+      open('/organizacao')
+      await screen.findByRole('heading', { name: 'Área de Organização' })
+      await user.click(screen.getByRole('link', { name: 'Publicar vaga' }))
+
+      expect(await screen.findByRole('dialog', { name: 'Publicar vaga' })).toBeVisible()
+      expect(screen.getByRole('heading', { name: 'Vagas de voluntariado' })).toBeVisible()
+    } finally {
+      HTMLDialogElement.prototype.showModal = originalShowModal
+    }
+  })
+
   it('abre o acesso público ao cadastro da organização pelo teclado', async () => {
     const user = userEvent.setup()
     open()
@@ -145,10 +198,33 @@ describe('fluxo de autenticação', () => {
     link.focus()
     await user.keyboard('{Enter}')
     expect(screen.getByRole('heading', { name: 'Cadastro de voluntário' })).toBeVisible()
-    expect(screen.getByText('O cadastro de novas contas ainda não está disponível.')).toBeVisible()
+    expect(screen.getByRole('form', { name: 'Cadastrar voluntário' })).toBeVisible()
     await user.click(screen.getByRole('link', { name: 'Entrar na minha conta' }))
     expect(await screen.findByRole('heading', { name: 'Entre no VolunJá' })).toBeVisible()
     expect(authService.login).not.toHaveBeenCalled()
+  })
+
+  it('abre a área do voluntário com a sessão devolvida pelo cadastro', async () => {
+    const user = userEvent.setup()
+    registerVolunteer.mockResolvedValue(session())
+    authService.getProfile.mockResolvedValue({ id: 1, cidade: 'Brasília', estado: 'DF' })
+    open('/cadastro/voluntario')
+    for (const [campo, valor] of [
+      ['Nome completo', 'Ana Silva'], ['E-mail', 'ana@example.org'],
+      ['CPF', '529.982.247-25'], ['Cidade', 'Brasília'],
+      ['Telefone', '(61) 99999-0000'], ['Senha', 'SenhaDeTeste123!'],
+    ]) {
+      await user.type(screen.getByLabelText(campo), valor)
+    }
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Estado' }), 'DF')
+    await user.click(screen.getByRole('checkbox'))
+    await user.click(screen.getByRole('button', { name: 'Criar conta de voluntário' }))
+    expect(await screen.findByRole('heading', { name: 'Área de Voluntário' })).toBeVisible()
+    expect(await screen.findByText('Localização: Brasília / DF')).toBeVisible()
+    expect(registerVolunteer).toHaveBeenCalledWith(expect.objectContaining({
+      estado: 'DF', telefone: '61999990000', consentimento_termos: true,
+    }))
+    expect(readSession().access_token).toBe('token-ficticio-VOLUNTARIO')
   })
 
   it('mantém o acesso ao cadastro público após a sessão expirar', async () => {
@@ -220,15 +296,17 @@ describe('fluxo de autenticação', () => {
 
   it('protege acesso direto a uma rota sem sessão', async () => {
     open('/admin')
-    expect(await screen.findByRole('heading', { name: 'Entre no VolunJá' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'Acesso administrativo' })).toBeVisible()
   })
 
-  it('restaura a sessão e impede abrir a área de outro perfil', async () => {
+  it('restaura a sessão e exige conta administrativa para abrir o painel', async () => {
     const data = session()
     writeSession(data.access_token, data.expires_at)
     authService.getSession.mockResolvedValue(data)
     open('/admin')
-    expect(await screen.findByRole('heading', { name: 'Área de Voluntário' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'Acesso administrativo' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Trocar conta' })).toBeVisible()
+    expect(adminService.listarCadastros).not.toHaveBeenCalled()
     expect(authService.getSession).toHaveBeenCalled()
   })
 

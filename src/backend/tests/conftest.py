@@ -3,7 +3,7 @@ from collections.abc import Iterator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
@@ -36,6 +36,10 @@ def db() -> Iterator[Session]:
     )
     engine = create_engine(database_url, **options)
     if engine.dialect.name == "sqlite":
+        @event.listens_for(engine, "connect")
+        def habilitar_chaves_estrangeiras(connection, record):
+            connection.execute("PRAGMA foreign_keys=ON")
+
         Base.metadata.create_all(engine)
     with engine.connect() as connection:
         transaction = connection.begin()

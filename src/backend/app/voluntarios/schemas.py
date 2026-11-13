@@ -1,5 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import List, Optional
+
+
 class CadastroVoluntarioRequest(BaseModel):
     nome_completo: str = Field(
         ...,
@@ -51,27 +53,22 @@ class CadastroVoluntarioResponse(BaseModel):
 
 ## Schemas da Issue #20
 
+
 class AtualizaPerfilUsuariosRequest(BaseModel):
+    nome_completo: Optional[str] = Field(None, min_length=2, max_length=150)
+    telefone: Optional[str] = Field(None, max_length=20)
+    cidade: Optional[str] = Field(None, max_length=100)
+    estado: Optional[str] = Field(None, min_length=2, max_length=2)
+    biografia: Optional[str] = Field(None, max_length=500)
+    causas: Optional[List[str]] = Field(
+        default_factory=list,
+        description="Causas de interesse, como educação e meio ambiente.",
+    )
+    disponibilidades: Optional[List[str]] = Field(
+        default_factory=list,
+        description="Lista de disponibilidades (ex: ['Fins de Semana'], ['Noite'])",
+    )
 
-
-
-
-   nome_completo: Optional[str] = Field(None,min_length=2,max_length=150)
-   telefone: Optional[str] = Field(None,max_length=20)
-   cidade: Optional[str] = Field(None, max_length=100)
-   estado: Optional[str] = Field(None,min_length=2,max_length=2)
-   biografia: Optional[str] = Field(None,max_length=500)
-   causas: Optional[List[str]] = Field(
-       default_factory = list,
-       description="Lista de causas de interesse (ex: ['Educação'] , ['Meio Ambiente'])"
-
-   )
-   disponibilidades: Optional[List[str]] = Field(
-       default_factory =list,
-       description="Lista de disponibilidades (ex: ['Fins de Semana'], ['Noite'])"
-
-
-   )
 
 class PerfilVoluntarioResponse(BaseModel):
     """
@@ -79,6 +76,7 @@ class PerfilVoluntarioResponse(BaseModel):
     no banco de dados pelo usuário.
 
     """
+
     id: str
     nome_completo: str
     email: str
@@ -88,6 +86,5 @@ class PerfilVoluntarioResponse(BaseModel):
     cidade: Optional[str] = None
     estado: Optional[str] = None
     biografia: Optional[str] = None
-    causas: List[str] = Field(default_factory = list)
-    disponibilidades: Optional[List[str]] = Field(default_factory = list)
-
+    causas: List[str] = Field(default_factory=list)
+    disponibilidades: Optional[List[str]] = Field(default_factory=list)

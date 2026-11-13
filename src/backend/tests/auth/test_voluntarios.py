@@ -1,12 +1,11 @@
 from unittest.mock import MagicMock
-from fastapi.security import HTTPBearer
 import jwt
 import pytest
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
- 
+
 import app.voluntarios.router as router_module
 from app.voluntarios.repository import VoluntarioEntity, VoluntarioRepository
 from app.voluntarios.router import get_db, get_voluntario_service, router
@@ -88,11 +87,12 @@ class ServiceFake:
                 nome_completo=dados.nome_completo,
                 email=dados.email,
                 identificacao=dados.identificacao,
-                perfil="Voluntario"
+                perfil="Voluntario",
             ),
             access_token="token_jwt_valido",
         )
-    
+
+
 def _requisicao(**alteracoes) -> CadastroVoluntarioRequest:
     return CadastroVoluntarioRequest(**{**BODY, **alteracoes})
 
@@ -100,13 +100,13 @@ def _requisicao(**alteracoes) -> CadastroVoluntarioRequest:
 def _client(erro=None) -> TestClient:
     app = FastAPI()
     app.include_router(router)
-    
+
     # Configura o mock do banco
     conn = MagicMock()
     cursor = conn.cursor.return_value.__enter__.return_value
-    
+
     if erro is not None:
-        # Se o teste espera um erro de duplicidade, faz o banco retornar um registro 
+        # Se o teste espera um erro de duplicidade, faz o banco retornar um registro
         # existente no fetchone() para a rota disparar o status 409 Conflict.
         cursor.fetchone.return_value = {
             "id": 99,
@@ -124,6 +124,7 @@ def _client(erro=None) -> TestClient:
 
     app.dependency_overrides[get_db] = lambda: conn
     return TestClient(app)
+
 
 def _conn_com_resultado(row):
     conn = MagicMock()
@@ -183,10 +184,12 @@ def test_cadastro_rejeita_email_duplicado(service, repo_mock):
         service.cadastrar_voluntario(_requisicao(email="existente@voluntario.org"))
     assert len(repo_mock.banco_memoria) == 1
 
+
 def test_cadastro_rejeita_identificacao_duplicada(service, repo_mock):
     with pytest.raises(IdentificacaoJaCadastradaException):
         service.cadastrar_voluntario(_requisicao(identificacao="11122233344"))
     assert len(repo_mock.banco_memoria) == 1
+
 
 def test_cadastro_rejeita_sem_consentimento(service, repo_mock):
     with pytest.raises(ConsentimentoObrigatorioException):
@@ -319,9 +322,7 @@ def test_router_cadastro_retorna_201_sem_expor_senha():
             {},
         ),
         (
-            ConsentimentoObrigatorioException(
-                "Termos de consentimento obrigatórios"
-            ),
+            ConsentimentoObrigatorioException("Termos de consentimento obrigatórios"),
             400,
             "consentimento",
             {"consentimento_termos": False},
@@ -333,7 +334,7 @@ def test_router_converte_excecoes_de_negocio(
     erro, status_esperado, mensagem_esperada, payload_override
 ):
     dados_envio = {**BODY, **payload_override}
-    
+
     resposta = _client(erro).post("/api/v1/voluntarios", json=dados_envio)
 
     assert resposta.status_code == status_esperado
@@ -376,7 +377,13 @@ def test_router_get_db_abre_e_fecha_conexao(monkeypatch):
 
 
 def test_router_get_voluntario_service_monta_service():
-    assert isinstance(get_voluntario_service(), VoluntarioService)
+    conexao = MagicMock()
+
+    service = get_voluntario_service(db=conexao)
+
+    assert isinstance(service, VoluntarioService)
+    assert service.repository.conn is conexao
+
 
 def test_main_registra_rota_de_voluntarios():
     from app.voluntarios.main import app

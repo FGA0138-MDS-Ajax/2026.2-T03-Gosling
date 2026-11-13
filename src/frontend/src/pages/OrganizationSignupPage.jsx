@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import PasswordChecklist from '../components/PasswordChecklist'
+import PhoneInput from '../components/PhoneInput'
 import { registerOrganization } from '../services/organizationService'
 import styles from './OrganizationSignup.module.css'
 import { organizationFields as fields, validCnpj } from '../utils/organizationFields'
+import { PASSWORD_ERROR, PHONE_ERROR, phoneDigits, validPassword, validPhone } from '../utils/accountFields'
 
 export default function OrganizationSignupPage() {
   const [values, setValues] = useState({})
@@ -12,10 +15,23 @@ export default function OrganizationSignupPage() {
   const [created, setCreated] = useState(null)
   const submitting = useRef(false)
   const formRef = useRef(null)
+  const focusErrors = useRef(false)
+
+  function change(name, value) {
+    setValues((current) => ({ ...current, [name]: value }))
+    setErrors((current) => {
+      const next = { ...current }
+      delete next[name]
+      return next
+    })
+  }
 
   useEffect(() => {
     const firstError = Object.keys(errors)[0]
-    if (!pending && firstError) formRef.current?.elements.namedItem(firstError)?.focus()
+    if (!pending && focusErrors.current) {
+      formRef.current?.elements.namedItem(firstError)?.focus()
+      focusErrors.current = false
+    }
   }, [errors, pending])
 
   async function submit(event) {
@@ -23,7 +39,7 @@ export default function OrganizationSignupPage() {
     if (submitting.current) return
     const payload = Object.fromEntries(fields.map(({ name }) => [name, name === 'senha' ? values[name] ?? '' : (values[name] ?? '').trim()]))
     payload.cnpj = payload.cnpj.toUpperCase().replace(/[./-]/g, '')
-    payload.telefone = payload.telefone.replace(/[()+\- ]/g, '')
+    payload.telefone = phoneDigits(payload.telefone)
     payload.email = payload.email.toLowerCase()
     payload.descricao = (values.descricao ?? '').trim()
     payload.consentimento_termos = Boolean(values.consentimento_termos)
@@ -36,9 +52,11 @@ export default function OrganizationSignupPage() {
     }
     if (payload.cnpj && !validCnpj(payload.cnpj)) invalid.cnpj = 'Informe um CNPJ válido.'
     if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) invalid.email = 'Informe um e-mail válido.'
-    if (payload.telefone && !/^[0-9]{10,15}$/.test(payload.telefone)) invalid.telefone = 'Informe de 10 a 15 dígitos, incluindo DDD.'
+    if (payload.telefone && !validPhone(payload.telefone)) invalid.telefone = PHONE_ERROR
+    if (payload.senha && !validPassword(payload.senha)) invalid.senha = PASSWORD_ERROR
     if (!payload.consentimento_termos) invalid.consentimento_termos = 'Confirme o consentimento para continuar.'
     if (payload.descricao.length > 5000) invalid.descricao = 'Use até 5000 caracteres.'
+    focusErrors.current = Object.keys(invalid).length > 0
     setErrors(invalid)
     setMessage('')
     if (Object.keys(invalid).length) {
@@ -58,6 +76,7 @@ export default function OrganizationSignupPage() {
           const name = issue.loc?.[1]
           if (fields.some((field) => field.name === name) || ['descricao', 'consentimento_termos'].includes(name)) serverErrors[name] = issue.msg
         }
+        focusErrors.current = true
         setErrors(serverErrors)
         setMessage('Confira os campos indicados e tente novamente.')
       } else {
@@ -93,11 +112,16 @@ export default function OrganizationSignupPage() {
                 {fields.map(({ name, label, hint, ...inputProps }) => (
                   <div className={styles.field} key={name}>
                     <label htmlFor={name}>{label}</label>
-                    <input {...inputProps} id={name} name={name} required value={values[name] ?? ''}
-                      onChange={(event) => setValues({ ...values, [name]: event.target.value })}
+                    {name === 'telefone' ? <PhoneInput {...inputProps} id={name} name={name} required value={values[name] ?? ''}
+                      onValueChange={(value) => change(name, value)}
                       aria-invalid={Boolean(errors[name])}
-                      aria-describedby={[hint ? `${name}-hint` : '', errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ') || undefined} />
+                      aria-describedby={[`${name}-hint`, errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ')} /> :
+                    <input {...inputProps} id={name} name={name} required value={values[name] ?? ''}
+                      onChange={(event) => change(name, event.target.value)}
+                      aria-invalid={Boolean(errors[name])}
+                      aria-describedby={[hint ? `${name}-hint` : '', name === 'senha' ? 'senha-requisitos' : '', errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ') || undefined} />}
                     {hint && <small id={`${name}-hint`}>{hint}</small>}
+                    {name === 'senha' && <PasswordChecklist id="senha-requisitos" value={values.senha ?? ''} />}
                     {errors[name] && <span className={styles.error} id={`${name}-error`}>{errors[name]}</span>}
                   </div>
                 ))}

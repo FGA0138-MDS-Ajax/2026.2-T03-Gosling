@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import SessionStatus from '../components/SessionStatus'
 import { useAuth } from '../hooks/useAuth'
 import { profileRoute } from '../utils/profileRoutes'
@@ -15,8 +15,12 @@ export default function LoginPage({
   titulo = 'Entre no VolunJá',
   subtitulo = 'Acesse sua conta para continuar.',
   cadastros = CADASTROS_PADRAO,
+  autenticar,
+  introducaoTitulo = 'Seu tempo pode fazer a diferença.',
+  introducaoTexto = 'Encontre uma causa para apoiar e as pessoas certas para ajudar sua organização.',
 }) {
   const { usuario, loading, restoreError, sessionExpired, login } = useAuth()
+  const location = useLocation()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -28,7 +32,12 @@ export default function LoginPage({
   const passwordInput = useRef(null)
 
   if (loading || restoreError) return <SessionStatus />
-  if (usuario) return <Navigate to={profileRoute(usuario.perfil)} replace />
+  if (usuario) {
+    const destino = location.state?.from === '/vagas'
+      ? '/vagas'
+      : profileRoute(usuario.perfil)
+    return <Navigate to={destino} replace />
+  }
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -49,11 +58,12 @@ export default function LoginPage({
     pending.current = true
     setSubmitting(true)
     try {
-      await login(email, senha)
+      await (autenticar ?? login)(email, senha)
     } catch (failure) {
       const status = failure.response?.status
       const messages = {
         401: 'E-mail ou senha inválidos. Confira os dados e tente novamente.',
+        403: 'Esta entrada é exclusiva para administradores.',
         429: 'Muitas tentativas de entrada. Aguarde um pouco e tente novamente.',
         422: 'Confira o e-mail e a senha informados.',
       }
@@ -72,8 +82,8 @@ export default function LoginPage({
       </header>
       <main className={styles.card}>
         <section className={styles.intro} aria-label="Sobre o VolunJá">
-          <h2>Seu tempo pode fazer a diferença.</h2>
-          <p>Encontre uma causa para apoiar e as pessoas certas para ajudar sua organização.</p>
+          <h2>{introducaoTitulo}</h2>
+          <p>{introducaoTexto}</p>
           <p className={styles.signature}>Pessoas e causas, mais próximas.</p>
         </section>
         <section className={styles.formPanel}>

@@ -1,3 +1,4 @@
+import { registerVolunteer } from '../services/voluntarioService'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as authService from '../services/authService'
 import {
@@ -97,10 +98,10 @@ export default function AuthProvider({ children }) {
     }
   }, [expiresAt, logout])
 
-  const login = useCallback(async (email, senha) => {
+  const autenticar = useCallback(async (metodo, ...args) => {
     const requestRevision = ++revision.current
     setSessionExpired(false)
-    const result = await authService.login(email, senha)
+    const result = await metodo(...args)
     if (requestRevision !== revision.current) return
     writeSession(result.access_token, result.expires_at)
     setUsuario(result.usuario)
@@ -109,6 +110,18 @@ export default function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
+  const login = useCallback(
+    (email, senha) => autenticar(authService.login, email, senha),
+    [autenticar],
+  )
+  const loginAdmin = useCallback(
+    (email, senha) => autenticar(authService.loginAdmin, email, senha),
+    [autenticar],
+  )
+  const cadastrarVoluntario = useCallback(
+    (payload) => autenticar(registerVolunteer, payload),
+    [autenticar],
+  )
   const updateAccount = useCallback((account) => {
     setUsuario((current) => current?.id === account.id
       ? { ...current, nome: account.nome, email: account.email }
@@ -118,7 +131,7 @@ export default function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{
       usuario, loading, restoreError, sessionExpired,
-      login, logout, refreshSession, updateAccount,
+      login, loginAdmin, logout, refreshSession, updateAccount, cadastrarVoluntario,
     }}>
       {children}
     </AuthContext.Provider>

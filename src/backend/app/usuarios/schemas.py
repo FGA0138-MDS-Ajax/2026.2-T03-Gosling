@@ -5,11 +5,12 @@ from pydantic import (
     ConfigDict,
     EmailStr,
     Field,
-    SecretStr,
     field_validator,
 )
 
 from app.usuarios.enums import Perfil, TipoOrganizacao
+from app.usuarios.validacoes import PADRAO_TELEFONE, SenhaCadastro
+from app.usuarios.validacoes import normalizar_telefone as normalizar_numero_telefone
 
 
 class UsuarioPublico(BaseModel):
@@ -37,7 +38,7 @@ class AtualizarOrganizacaoRequest(BaseModel):
     endereco: str = Field(min_length=5, max_length=500)
     responsavel: str = Field(min_length=3, max_length=150)
     descricao: str = Field(default="", max_length=5000)
-    telefone: str = Field(pattern=r"^[0-9]{10,15}$")
+    telefone: str = Field(pattern=PADRAO_TELEFONE)
 
     @field_validator(
         "nome",
@@ -61,9 +62,7 @@ class AtualizarOrganizacaoRequest(BaseModel):
     @field_validator("telefone", mode="before")
     @classmethod
     def normalizar_telefone(cls, valor: object) -> object:
-        if isinstance(valor, str):
-            return valor.strip().translate(str.maketrans("", "", "()+- "))
-        return valor
+        return normalizar_numero_telefone(valor)
 
     @field_validator("cnpj")
     @classmethod
@@ -95,7 +94,7 @@ class AtualizarOrganizacaoRequest(BaseModel):
 class CadastroOrganizacaoRequest(AtualizarOrganizacaoRequest):
     razao_social: str = Field(min_length=3, max_length=200)
     cnpj: str = Field(...)
-    senha: SecretStr = Field(min_length=8, max_length=1024)
+    senha: SenhaCadastro
     consentimento_termos: bool = Field(strict=True)
 
     @field_validator("consentimento_termos")
