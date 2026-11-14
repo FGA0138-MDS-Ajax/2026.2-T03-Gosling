@@ -1,7 +1,6 @@
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, Security, status, security
 from fastapi import APIRouter, Depends, HTTPException, Security, status
-from fastapi.security import HTTPBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.voluntarios.repository import VoluntarioRepository
 from  app.voluntarios.schemas import (

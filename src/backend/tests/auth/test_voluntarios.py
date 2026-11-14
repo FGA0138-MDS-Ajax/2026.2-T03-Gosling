@@ -1,5 +1,4 @@
 from unittest.mock import MagicMock
-from fastapi.security import HTTPBearer
 import jwt
 import pytest
 from argon2 import PasswordHasher
