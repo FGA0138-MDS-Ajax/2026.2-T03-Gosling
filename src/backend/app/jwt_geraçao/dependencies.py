@@ -13,6 +13,8 @@ from app.usuarios.enums import Perfil
 from app.usuarios.repository import UsuarioRepository
 from app.usuarios.schemas import UsuarioPublico
 from app.usuarios.service import UsuarioService
+from app.voluntarios.me.vagas.repository import VagaRepository
+from app.voluntarios.me.vagas.service import VagaService
 
 bearer = HTTPBearer(auto_error=False)
 
@@ -44,3 +46,16 @@ def require_perfil(
         return sessao.usuario
 
     return authorize
+
+
+organizacao_logada = require_perfil(Perfil.ORGANIZACAO)
+
+
+def get_organizacao_logada(
+    usuario: Annotated[UsuarioPublico, Depends(organizacao_logada)],
+) -> int:
+    return usuario.id
+
+
+def get_vaga_service(session: Annotated[Session, Depends(get_db)]) -> VagaService:
+    return VagaService(VagaRepository(session))
