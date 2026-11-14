@@ -13,50 +13,10 @@ from app.usuarios.enums import Perfil
 from app.usuarios.repository import UsuarioRepository
 from app.usuarios.schemas import UsuarioPublico
 from app.usuarios.service import UsuarioService
-
-bearer = HTTPBearer(auto_error=False)
-
 from app.voluntarios.me.vagas.repository import VagaRepository
 from app.voluntarios.me.vagas.service import VagaService
 
-
-def require_perfil(
-    perfil: Perfil,
-) -> Callable[..., UsuarioPublico]:
-    def authorize(
-        sessao: Annotated[SessaoResponse, Depends(get_sessao)],
-    ) -> UsuarioPublico:
-        if sessao.usuario.perfil != perfil:
-            raise AcessoNegadoError()
-        return sessao.usuario
-
-    return authorize
-
-
-organizacao_logada = require_perfil(Perfil.ORGANIZACAO)
-
-
-def get_organizacao_logada(
-    usuario: Annotated[UsuarioPublico, Depends(organizacao_logada)],
-) -> int:
-    return usuario.id
-
-
-def get_vaga_service(session: Annotated[Session, Depends(get_db)]) -> VagaService:
-    return VagaService(VagaRepository(session))
-
-
-organizacao_logada = require_perfil(Perfil.ORGANIZACAO)
-
-
-def get_organizacao_logada(
-    usuario: Annotated[UsuarioPublico, Depends(organizacao_logada)],
-) -> int:
-    return usuario.id
-
-
-def get_vaga_service(session: Annotated[Session, Depends(get_db)]) -> VagaService:
-    return VagaService(VagaRepository(session))
+bearer = HTTPBearer(auto_error=False)
 
 
 def get_auth_service(session: Annotated[Session, Depends(get_db)]) -> AuthService:
@@ -88,3 +48,14 @@ def require_perfil(
     return authorize
 
 
+organizacao_logada = require_perfil(Perfil.ORGANIZACAO)
+
+
+def get_organizacao_logada(
+    usuario: Annotated[UsuarioPublico, Depends(organizacao_logada)],
+) -> int:
+    return usuario.id
+
+
+def get_vaga_service(session: Annotated[Session, Depends(get_db)]) -> VagaService:
+    return VagaService(VagaRepository(session))
