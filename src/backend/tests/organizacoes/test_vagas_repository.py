@@ -41,7 +41,8 @@ def inserir_vaga(
     db.execute(
         text(
             "INSERT INTO vagas "
-            "(id, organizacao_id, titulo, estado_vaga, cidade, estado_uf, data_criacao) "
+            "(id, organizacao_id, titulo, estado_vaga, cidade, "
+            "estado_uf, data_criacao) "
             "VALUES (:id, :org, :titulo, :estado, :cidade, :uf, :data)"
         ),
         {
