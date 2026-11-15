@@ -14,6 +14,15 @@ export async function getSession() {
   return data
 }
 
+export async function loginAdmin(email, senha) {
+  const { data } = await http.post(
+    '/admin/login',
+    { email: email.trim(), senha },
+    { publicRequest: true },
+  )
+  return data
+}
+
 export async function getProfile(perfil) {
   const paths = {
     VOLUNTARIO: '/voluntarios/me',

@@ -2,23 +2,38 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import OrganizationProfilePage from './pages/OrganizationProfilePage'
 import ProfilePage from './pages/ProfilePage'
+import OrganizationSignupPage from './pages/OrganizationSignupPage'
+import ProjetoSocialLoginPage from './pages/ProjetoSocialLoginPage'
+import ProjetoSocialSignupPage from './pages/ProjetoSocialSignupPage'
+import VolunteerProfilePage from './pages/VolunteerProfilePage'
 import VolunteerSignupPage from './pages/VolunteerSignupPage'
+import VagasPage from './pages/VagasPage'
+import AdminLoginPage from './pages/AdminLoginPage'
+import AdminPage from './pages/AdminPage'
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/vagas" element={<VagasPage />} />
+      <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/login/projeto-social" element={<ProjetoSocialLoginPage />} />
       <Route path="/cadastro/voluntario" element={<VolunteerSignupPage />} />
+      <Route path="/cadastro/organizacao" element={<OrganizationSignupPage />} />
+      <Route path="/cadastro/projeto-social" element={<ProjetoSocialSignupPage />} />
       <Route element={<ProtectedRoute perfil="VOLUNTARIO" />}>
         <Route path="/voluntario" element={<ProfilePage />} />
+        <Route path="/voluntario/perfil" element={<VolunteerProfilePage />} />
       </Route>
       <Route element={<ProtectedRoute perfil="ORGANIZACAO" />}>
         <Route path="/organizacao" element={<ProfilePage />} />
+        <Route path="/organizacao/perfil" element={<OrganizationProfilePage />} />
       </Route>
-      <Route element={<ProtectedRoute perfil="ADMINISTRADOR" />}>
-        <Route path="/admin" element={<ProfilePage />} />
+      <Route element={<ProtectedRoute perfil="ADMINISTRADOR" loginPath="/admin/login" />}>
+        <Route path="/admin" element={<AdminPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
