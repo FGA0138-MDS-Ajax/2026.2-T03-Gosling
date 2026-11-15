@@ -13,8 +13,8 @@ from app.usuarios.enums import Perfil
 from app.usuarios.repository import UsuarioRepository
 from app.usuarios.schemas import UsuarioPublico
 from app.usuarios.service import UsuarioService
-from app.voluntarios.me.vagas.repository import VagaRepository
-from app.voluntarios.me.vagas.service import VagaService
+from app.vagas.repository import VagaRepository
+from app.vagas.service import VagaService
 
 bearer = HTTPBearer(auto_error=False)
 

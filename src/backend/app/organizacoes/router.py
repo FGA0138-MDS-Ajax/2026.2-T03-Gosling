@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Query, status
 
 from app.jwt_geraçao.dependencies import get_organizacao_logada, get_vaga_service
-from app.voluntarios.me.vagas.schemas import PaginatedResponseVagas
-from app.voluntarios.me.vagas.service import VagaService
+from app.vagas.schemas import PaginatedResponseVagas
+from app.vagas.service import VagaService
 
 router = APIRouter(prefix="/organizacoes", tags=["Organizações"])
 

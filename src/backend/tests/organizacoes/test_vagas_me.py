@@ -5,7 +5,7 @@ import pytest
 from fastapi import status
 
 from app.jwt_geraçao.dependencies import get_vaga_service
-from app.voluntarios.me.vagas.schemas import (
+from app.vagas.schemas import (
     PaginatedResponseVagas,
     VagaResumoResponse,
 )

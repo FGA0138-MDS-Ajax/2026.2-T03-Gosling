@@ -2,7 +2,7 @@ import math
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
-from app.voluntarios.me.vagas.service import VagaService
+from app.vagas.service import VagaService
 
 
 def vaga_bruta(id=1, titulo="Vaga A", candidaturas=2):
