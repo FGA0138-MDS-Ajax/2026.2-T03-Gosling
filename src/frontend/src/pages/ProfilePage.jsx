@@ -43,6 +43,9 @@ export default function ProfilePage() {
       )}
       <nav className={styles.profileNavigation} aria-label="Navegação da conta">
         <Link to="/vagas">Explorar vagas</Link>
+        {usuario.perfil === 'ORGANIZACAO' && (
+          <Link to="/organizacao/vagas">Minhas vagas</Link>
+        )}
         {usuario.perfil === 'ORGANIZACAO' && usuario.tipo === 'ONG' && (
           <Link
             className={styles.primaryLink}

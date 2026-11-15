@@ -14,3 +14,11 @@ export async function updateOrganization(payload) {
   const { data } = await http.put('/organizacoes/me', payload)
   return data
 }
+
+export async function listOrganizationVagas({ pagina, signal }) {
+  const { data } = await http.get('/organizacoes/me/vagas', {
+    params: { pagina, tamanho_pagina: 10 },
+    signal,
+  })
+  return data
+}
