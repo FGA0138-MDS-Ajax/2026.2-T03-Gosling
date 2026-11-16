@@ -1,8 +1,10 @@
+
 import unicodedata
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+
 from app.usuarios.catalogos import Causa
 from app.usuarios.models import Organizacao
 from app.vagas.enums import StatusVaga
@@ -13,39 +15,116 @@ class VagaRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def buscar_organizacao(self, usuario_id: int) -> Organizacao | None:
+    # ========================================================
+    # ORGANIZAÇÕES
+    # ========================================================
+
+    def buscar_organizacao(
+        self,
+        usuario_id: int,
+    ) -> Organizacao | None:
         return self.session.get(Organizacao, usuario_id)
 
+ 
+
     def obter_ou_criar_causa(self, nome: str) -> Causa:
-        normalizado = unicodedata.normalize("NFKC", nome).casefold()
-        consulta = select(Causa).where(Causa.nome_normalizado == normalizado)
+        normalizado = unicodedata.normalize(
+            "NFKC",
+            nome,
+        ).casefold()
+
+        consulta = select(Causa).where(
+            Causa.nome_normalizado == normalizado
+        )
+
         causa = self.session.scalar(consulta)
+
         if causa is not None:
             return causa
+
         try:
             with self.session.begin_nested():
-                causa = Causa(nome=nome, nome_normalizado=normalizado)
+                causa = Causa(
+                    nome=nome,
+                    nome_normalizado=normalizado,
+                )
+
                 self.session.add(causa)
                 self.session.flush()
+
         except IntegrityError:
-            causa = self.session.scalar(consulta.with_for_update())
+            causa = self.session.scalar(
+                consulta.with_for_update()
+            )
+
             if causa is None:
                 raise
+
         return causa
+
+ 
 
     def adicionar(self, vaga: Vaga) -> None:
         self.session.add(vaga)
         self.session.flush()
 
-    def listar_publicas(self, pagina: int, por_pagina: int):
+    def buscar_por_id(self, vaga_id: int) -> Vaga | None:
+        return self.session.get(Vaga, vaga_id)
+
+    def atualizar_vaga(
+        self,
+        vaga: Vaga,
+        dados_atualizacao: dict,
+    ) -> Vaga:
+        for campo, valor in dados_atualizacao.items():
+            setattr(vaga, campo, valor)
+
+        self.session.flush()
+
+        return vaga
+
+ 
+
+    def tem_candidaturas_ativas(self, vaga_id: int) -> bool:
+        from app.candidaturas.enums import StatusCandidatura
+        from app.candidaturas.models import Candidatura
+
+        consulta = select(
+            func.count(Candidatura.id)
+        ).where(
+            Candidatura.vaga_id == vaga_id,
+            Candidatura.status.in_(
+                [
+                    StatusCandidatura.PENDENTE,
+                    StatusCandidatura.ACEITA,
+                ]
+            ),
+        )
+
+        total = self.session.scalar(consulta)
+
+        return bool(total)
+
+ 
+
+    def listar_publicas(
+        self,
+        pagina: int,
+        por_pagina: int,
+    ) -> tuple[list[Vaga], int]:
+
         filtros = (
             Vaga.status == StatusVaga.ABERTA,
             Organizacao.ativo.is_(True),
             Organizacao.homologada.is_(True),
         )
+
         total = self.session.scalar(
-            select(func.count(Vaga.id)).join(Vaga.organizacao).where(*filtros)
-        )
+            select(func.count(Vaga.id))
+            .join(Vaga.organizacao)
+            .where(*filtros)
+        ) or 0
+
         vagas = self.session.scalars(
             select(Vaga)
             .join(Vaga.organizacao)
@@ -54,7 +133,54 @@ class VagaRepository:
             .offset((pagina - 1) * por_pagina)
             .limit(por_pagina)
         ).all()
+
         return vagas, total
+
+  
+
+    def listar_vagas_por_organizacao(
+        self,
+        organizacao_id: int,
+        pagina: int = 1,
+        tamanho_pagina: int = 10,
+    ) -> tuple[list[tuple[Vaga, int]], int]:
+
+        from app.candidaturas.models import Candidatura
+
+        total = self.session.scalar(
+            select(func.count(Vaga.id)).where(
+                Vaga.organizacao_id == organizacao_id
+            )
+        ) or 0
+
+        consulta = (
+            select(
+                Vaga,
+                func.count(Candidatura.id).label(
+                    "total_candidaturas"
+                ),
+            )
+            .outerjoin(
+                Candidatura,
+                Candidatura.vaga_id == Vaga.id,
+            )
+            .where(
+                Vaga.organizacao_id == organizacao_id
+            )
+            .group_by(Vaga.id)
+            .order_by(Vaga.id.desc())
+            .offset((pagina - 1) * tamanho_pagina)
+            .limit(tamanho_pagina)
+        )
+
+        resultados = self.session.execute(consulta).all()
+
+        return [
+            (vaga, total_candidaturas)
+            for vaga, total_candidaturas in resultados
+        ], total
+
+    
 
     def confirmar(self) -> None:
         self.session.commit()
