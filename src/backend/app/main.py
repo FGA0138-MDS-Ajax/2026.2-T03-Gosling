@@ -16,7 +16,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(usuarios_router, prefix="/api/v1")
 app.include_router(voluntarios_router, prefix="/api/v1")
 app.include_router(vagas_router, prefix="/api/v1")
-app.include_router(organizacoes_router, prefix="/api/v1")
+app.include_router(organizacoes_router)
 
 @app.get("/api/v1/health")
 def health() -> dict[str, str]:

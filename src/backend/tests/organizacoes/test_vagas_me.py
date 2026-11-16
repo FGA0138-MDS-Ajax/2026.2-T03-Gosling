@@ -1,25 +1,46 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
-
+from collections.abc import Generator
+import jwt
 import pytest
 from fastapi import status
+from fastapi.testclient import TestClient
 
 from app.jwt_geraçao.dependencies import get_vaga_service
+from app.main import app
 from app.vagas.schemas import (
     PaginatedResponseVagas,
     VagaResumoResponse,
 )
+from app.voluntarios.service import ALGORITHM, SECRET_KEY
 
 URL = "/api/v1/organizacoes/me/vagas"
 SENHA = "SenhaDeTeste123!"
 
+client = TestClient(app)
 
-def autenticar(client, email: str) -> dict[str, str]:
-    resposta = client.post(
+
+def autenticar(test_client, email: str) -> dict[str, str]:
+    resposta = test_client.post(
         "/api/v1/auth/login", json={"email": email, "senha": SENHA}
     )
     assert resposta.status_code == status.HTTP_200_OK
     return {"Authorization": f"Bearer {resposta.json()['access_token']}"}
+
+
+def gerar_token_teste(
+    sub: str = "org-uuid-123",
+    perfil: str = "Organizacao",
+    expirado: bool = False,
+) -> str:
+    delta = timedelta(hours=-1) if expirado else timedelta(hours=2)
+    payload = {
+        "sub": sub,
+        "perfil": perfil,
+        "exp": datetime.now(timezone.utc) + delta,
+        "iat": datetime.now(timezone.utc),
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def resposta_paginada() -> PaginatedResponseVagas:
@@ -52,12 +73,12 @@ def resposta_paginada() -> PaginatedResponseVagas:
 
 
 @pytest.fixture
-def service_mock(client) -> MagicMock:
+def service_mock(client) -> Generator[MagicMock, None, None]:
     mock = MagicMock()
     mock.listar_vagas_da_organizacao.return_value = resposta_paginada()
     client.app.dependency_overrides[get_vaga_service] = lambda: mock
-    return mock
-
+    yield mock
+    client.app.dependency_overrides.clear()
 
 def test_listar_vagas_retorna_dados_da_organizacao_autenticada(
     client, contas, service_mock
@@ -79,6 +100,7 @@ def test_listar_vagas_retorna_dados_da_organizacao_autenticada(
     assert primeira["total_candidaturas"] == 12
 
 
+
 def test_listar_vagas_usa_o_id_da_organizacao_do_jwt(
     client, contas, service_mock
 ):
@@ -87,7 +109,7 @@ def test_listar_vagas_usa_o_id_da_organizacao_do_jwt(
     client.get(URL, headers=headers)
 
     service_mock.listar_vagas_da_organizacao.assert_called_once_with(
-        organizacao_id=contas["organizacao"].id,
+        organizacao_id=str(contas["organizacao"].id),
         pagina=1,
         tamanho_pagina=10,
     )
@@ -102,7 +124,7 @@ def test_listar_vagas_repassa_parametros_de_paginacao(
 
     assert resposta.status_code == status.HTTP_200_OK
     service_mock.listar_vagas_da_organizacao.assert_called_once_with(
-        organizacao_id=contas["organizacao"].id,
+        organizacao_id=str(contas["organizacao"].id),
         pagina=2,
         tamanho_pagina=5,
     )
