@@ -6,7 +6,6 @@ from app.vagas.service import VagaService
 
 router = APIRouter(prefix="/organizacoes", tags=["Organizações"])
 
-
 @router.get(
     "/me/vagas",
     response_model=PaginatedResponseVagas,
