@@ -1,5 +1,6 @@
 from fastapi import HTTPException
-
+from typing import Any,Dict
+from app.vagas.schemas import AtualizarVagaRequest
 from app.usuarios.enums import TipoOrganizacao
 from app.vagas.enums import StatusVaga
 from app.vagas.models import OcorrenciaVaga, Vaga
@@ -10,6 +11,15 @@ from app.vagas.schemas import (
     VagaPublica,
 )
 
+class VagaNaoEncontradaException(Exception):
+    pass
+
+
+class AcessoNegadoVagaException(Exception):
+    pass
+
+class AlteracaoHorarioNaoPermitidaException (Exception):
+    pass
 
 class VagaService:
     def __init__(self, repository: VagaRepository):
@@ -56,3 +66,40 @@ class VagaService:
             pagina=pagina,
             por_pagina=por_pagina,
         )
+
+    def atualizar_vaga(
+            self,vaga_id: str, organizacao_id: str, dados: AtualizarVagaRequest
+    ) -> Dict[str, Any]:
+
+        vaga = self.vaga_repository.buscar_por_id(vaga_id)
+
+        if not vaga:
+            raise VagaNaoEncontradaException("Vaga não encontrada.")
+
+        if str(vaga["organizacao_id"]) != str(organizacao_id):
+            raise AcessoNegadoVagaException(
+                 "Acesso negado: Você não tem permissão para alterar esta vaga."
+            )
+
+        payload = dados.model_dump(exclude_unset=True)
+
+        if not payload:
+            return vaga
+
+        alterou_data_inicio = (
+            "data_inicio" in payload and payload["data_inicio"] != vaga.get("data_inicio")
+        )
+
+        alterou_data_fim = (
+            "data_fim" in payload and payload["data_fim"] != vaga.get("data_fim")
+        )
+
+        if alterou_data_inicio or alterou_data_fim:
+            if self.vaga_repository.tem_candidaturas_ativas(vaga_id):
+                raise AlteracaoHorarioNaoPermitidaException(
+                    "Não é permitido alterar os horários da vaga pois existe"
+                    "candidaturas pendentes ou aceitas vinculadas a ela"
+                )
+        self.vaga_repository.atualizar_vaga(vaga_id,payload)
+        return self.vaga_repository.buscar_por_id(vaga_id)
+

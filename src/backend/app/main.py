@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.admin.router import router as admin_router
-
+from app.organizacoes.router import router as organizacoes_router
 from app.auth.router import router as auth_router
 from app.core.errors import register_error_handlers
 from app.usuarios.router import router as usuarios_router
@@ -14,7 +14,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(usuarios_router, prefix="/api/v1")
 app.include_router(voluntarios_router, prefix="/api/v1")
 app.include_router(vagas_router, prefix="/api/v1")
-
+app.include_router(organizacoes_router)
 
 @app.get("/api/v1/health")
 def health() -> dict[str, str]:

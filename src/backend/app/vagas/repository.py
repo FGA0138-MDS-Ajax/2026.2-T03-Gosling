@@ -7,6 +7,8 @@ from app.usuarios.catalogos import Causa
 from app.usuarios.models import Organizacao
 from app.vagas.enums import StatusVaga
 from app.vagas.models import Vaga
+from typing import Any,Dict, Optional
+
 
 
 class VagaRepository:
@@ -61,3 +63,41 @@ class VagaRepository:
 
     def desfazer(self) -> None:
         self.session.rollback()
+
+    def buscar_por_id(self,vaga_id: str) -> Optional[Dict[str,Any]]:
+        if not self.conn:
+            return None
+
+        with self.conn.cursor() as cursor:
+            sql = "SELECT * FROM vagas WHERE id = %s"
+            cursor.execute(sql, (vaga_id))
+            return cursor.fetchone()
+
+    def tem_candidaturas_ativas(self,vaga_id:str)-> bool:
+        if not self.conn:
+            return False
+        with self.conn.cursor() as cursor:
+            sql = (
+                "SELECT COUNT(*) AS total FROM candidaturas"
+                "WHERE vaga_id = %s AND status IN ('PENDENTE' , 'ACEITA')"
+            )
+            cursor.execute(sql,(vaga_id))
+            resultado = cursor.fetchone()
+            return resultado["total"] > 0
+
+    def atualizar_vaga(self,vaga_id: str, dados_atualizacao: Dict[str,Any]) -> bool:
+        if not self.conn or not dados_atualizacao:
+            return False
+
+        campos_set = [f"{chave} = %s" for chave in dados_atualizacao.keys()]
+        valores = list(dados_atualizacao.values())
+        valores.append(vaga_id)
+
+        sql = f"UPDATE vaga SET {','.join(campos_set)}WHERE id = %s"
+
+        with self.conn.cursor() as cursor:
+            cursor.execute(sql, tuple(valores))
+            self.conn.commit()
+            return cursor.rowcount > 0
+
+
