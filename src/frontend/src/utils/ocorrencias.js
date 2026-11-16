@@ -74,6 +74,30 @@ export function prepararOcorrencias(encontros) {
   return ocorrencias.map(({ inicio, fim }) => ({ inicio, fim }))
 }
 
+const diaCurto = new Intl.DateTimeFormat('pt-BR', { timeZone: FUSO, weekday: 'short' })
+const mesCurto = new Intl.DateTimeFormat('pt-BR', { timeZone: FUSO, month: 'short' })
+const diaDoMes = new Intl.DateTimeFormat('pt-BR', { timeZone: FUSO, day: '2-digit' })
+const semPonto = (texto) => texto.replace('.', '')
+
+export function proximoEncontro(ocorrencias = [], agora = Date.now()) {
+  return [...ocorrencias]
+    .sort((a, b) => new Date(a.inicio) - new Date(b.inicio))
+    .find((item) => new Date(item.fim).getTime() > agora)
+}
+
+export function resumoEncontro(item) {
+  const inicio = new Date(item.inicio)
+  const dia = semPonto(diaCurto.format(inicio))
+  return `${dia.charAt(0).toUpperCase()}${dia.slice(1)}, ${diaDoMes.format(inicio)} ${semPonto(mesCurto.format(inicio))} · ${horarioDoEncontro(item)}`
+}
+
+export function horarioDoEncontro({ inicio, fim }) {
+  const inicioDate = new Date(inicio)
+  const fimDate = new Date(fim)
+  if (dataBrasilia.format(inicioDate) !== dataBrasilia.format(fimDate)) return formatarOcorrencia({ inicio, fim })
+  return `${horaBrasilia.format(inicioDate)} – ${horaBrasilia.format(fimDate)}`
+}
+
 export function formatarOcorrencia({ inicio, fim }) {
   const inicioDate = new Date(inicio)
   const fimDate = new Date(fim)

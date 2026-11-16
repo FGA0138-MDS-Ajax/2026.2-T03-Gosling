@@ -29,6 +29,9 @@ services:
     environment:
       DATABASE_URL: mysql+pymysql://volunja:${MYSQL_PASSWORD:?Defina MYSQL_PASSWORD}@db:3306/volunja
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Defina JWT_SECRET_KEY no arquivo .env da raiz}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - media_data:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -50,3 +53,4 @@ services:
 
 volumes:
   mysql_data:
+  media_data:

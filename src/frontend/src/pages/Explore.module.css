@@ -1,0 +1,52 @@
+.page { min-height: 100dvh; display: flex; flex-direction: column; background: #f5f5f7; color: #1d1d1f; }
+.intro { background: white; border-bottom: 1px solid #efeff4; }
+.introInner { max-width: 1600px; margin: 0 auto; padding: 56px 64px 36px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.intro h1 { margin: 0; font-size: 56px; line-height: 1.05; letter-spacing: -2px; font-weight: 700; }
+.intro p { margin: 10px 0 0; color: #6e6e73; font-size: 19px; }
+.session { max-width: 1600px; margin: 0 auto; padding: 0 64px 24px; font-size: 14px; }
+.intro .session { margin-top: -12px; }
+.publish { flex: none; min-height: 52px; padding: 0 28px; border: 0; border-radius: 999px; background: #0f766e; color: white; font-size: 17px; font-weight: 600; }
+.publish:hover { background: #115e59; }
+.publish:disabled { background: #e8e8ed; color: #6e6e73; }
+.feedback { max-width: 1600px; margin: 0 auto; padding: 0 64px; color: #1e7b34; font-weight: 600; }
+.feedback:not(:empty) { padding-top: 20px; }
+.layout { width: 100%; max-width: 1600px; margin: 0 auto; padding: 32px 64px 88px; display: grid; grid-template-columns: 272px minmax(0, 1fr); gap: 32px; align-items: start; }
+.results { min-width: 0; }
+.filters { position: sticky; top: 24px; background: white; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 1px 2px #0000000a, 0 8px 28px #0000000f; }
+.filtersHead { display: flex; align-items: center; justify-content: space-between; }
+.filtersHead h2 { margin: 0; font-size: 17px; }
+.filtersHead button { border: 0; background: none; color: #0f766e; font-size: 14px; font-weight: 600; padding: 4px 0; }
+.filters fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.filters legend { padding: 0; margin-bottom: 12px; color: #6e6e73; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.options { display: flex; flex-wrap: wrap; gap: 8px; }
+.options button { min-height: 36px; padding: 0 14px; border: 1px solid #d2d2d7; border-radius: 999px; background: white; color: #1d1d1f; font-size: 14px; font-weight: 500; }
+.options button:hover { border-color: #0f766e; }
+.options button[aria-pressed=true] { background: #0f766e; border-color: #0f766e; color: white; }
+.segmented { display: flex; padding: 2px; border-radius: 10px; background: #e8e8ed; }
+.segmented button { flex: 1; min-height: 32px; border: 0; border-radius: 8px; background: transparent; color: #1d1d1f; font-size: 13px; font-weight: 500; }
+.segmented button[aria-pressed=true] { background: white; font-weight: 600; box-shadow: 0 1px 3px #0000001f, 0 0 0 .5px #0000000a; }
+.active { list-style: none; margin: -4px 0 20px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.active button { height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; background: #e3f4f1; color: #0f766e; font-size: 13px; font-weight: 600; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.sectionHeading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.sectionHeading h2 { margin: 0; font-size: 28px; letter-spacing: -.6px; }
+.sectionHeading span { color: #6e6e73; font-size: 14px; }
+.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; }
+.grid > li { display: flex; }
+.grid > li > article { flex: 1; }
+.state { margin: 0; padding: 28px; border-radius: 24px; background: white; color: #6e6e73; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.state p { margin: 0; }
+.retry { min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: #e3f4f1; color: #0f766e; font-weight: 600; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 32px; color: #6e6e73; font-size: 14px; }
+.pagination button { min-height: 44px; padding: 0 20px; border-radius: 999px; border: 1px solid #d2d2d7; background: white; color: #1d1d1f; font-weight: 600; }
+.pagination button:disabled { color: #6e6e73; background: #f5f5f7; }
+@media (max-width: 1050px) { .layout { grid-template-columns: 240px minmax(0, 1fr); padding-left: 32px; padding-right: 32px; } .grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); } }
+@media (max-width: 760px) {
+  .introInner { padding: 32px 20px 24px; flex-direction: column; align-items: stretch; }
+  .intro h1 { font-size: 34px; letter-spacing: -1px; }
+  .intro p { font-size: 17px; }
+  .session, .feedback { padding-left: 20px; padding-right: 20px; }
+  .layout { grid-template-columns: 1fr; padding: 20px 16px 104px; gap: 20px; }
+  .filters { position: static; padding: 18px; gap: 18px; }
+  .grid { grid-template-columns: 1fr; gap: 16px; }
+}

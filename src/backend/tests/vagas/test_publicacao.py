@@ -57,6 +57,7 @@ def test_publica_e_consulta_sem_autenticacao_apos_nova_sessao(
     resultado = publicar(client, headers, dados_vaga)
     assert resultado["organizacao"] == {
         "id": contas["organizacao"].id, "nome": contas["organizacao"].nome,
+        "homologada": True, "descricao": None,
     }
     assert resultado["status"] == "ABERTA"
     assert resultado["ocorrencias"][0]["inicio"] == "2026-11-16T12:00:00Z"
@@ -212,6 +213,34 @@ def test_catalogo_paginado_e_causa_compartilhada(client, db, contas, dados_vaga)
     assert resposta.json()["itens"][0]["id"] == primeira["id"]
     assert len(resposta.json()["itens"]) == 1
     assert client.get("/api/v1/vagas?pagina=0").status_code == 422
+
+
+def test_catalogo_filtra_por_causa_modalidade_e_periodo(client, contas, dados_vaga):
+    headers = autenticar(client, contas)
+    leitura = publicar(client, headers, dados_vaga)
+    remota = publicar(
+        client,
+        headers,
+        {
+            **dados_vaga,
+            "titulo": "Mentoria",
+            "modalidade": "REMOTO",
+            "periodo": "NOITE",
+        },
+    )
+    horta = publicar(client, headers, {**dados_vaga, "causa": "Meio ambiente"})
+
+    def ids(consulta):
+        resposta = client.get(f"/api/v1/vagas?{consulta}")
+        assert resposta.status_code == 200, resposta.text
+        return {item["id"] for item in resposta.json()["itens"]}
+
+    assert ids("causa=EDUCAÇÃO") == {leitura["id"], remota["id"]}
+    assert ids("causa=meio%20ambiente") == {horta["id"]}
+    assert ids("causa=Educação&modalidade=REMOTO") == {remota["id"]}
+    assert ids("periodo=MANHA") == {leitura["id"], horta["id"]}
+    assert ids("causa=Cultura") == set()
+    assert client.get("/api/v1/vagas?modalidade=VOANDO").status_code == 422
 
 
 def test_falha_ao_confirmar_nao_deixa_publicacao_parcial(

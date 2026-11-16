@@ -43,11 +43,11 @@ beforeEach(() => {
   })
 })
 
-function abrir(usuario = null, extra = {}) {
+function abrir(usuario = null, extra = {}, rota = '/vagas') {
   useAuth.mockReturnValue({
     usuario, loading: false, restoreError: '', logout: vi.fn(), ...extra,
   })
-  return render(<MemoryRouter><VagasPage /></MemoryRouter>)
+  return render(<MemoryRouter initialEntries={[rota]}><VagasPage /></MemoryRouter>)
 }
 
 function preencherEncontro(indice, data, inicio, fim, dataFim = data) {
@@ -219,5 +219,31 @@ describe('página pública de vagas', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível carregar')
     await user.click(screen.getByRole('button', { name: 'Tentar novamente' }))
     expect(await screen.findAllByRole('article')).toHaveLength(3)
+  })
+
+  it('aplica os filtros da URL e dos controles na consulta à API', async () => {
+    const user = userEvent.setup()
+    abrir(null, {}, '/vagas?causa=Educação&modalidade=VOANDO')
+    await screen.findByRole('heading', { name: 'Resultado da busca' })
+    expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ causa: 'Educação', modalidade: '', periodo: '' }))
+    const filtros = within(screen.getByRole('complementary', { name: 'Filtros' }))
+    expect(filtros.getByRole('button', { name: 'Educação' })).toHaveAttribute('aria-pressed', 'true')
+    await user.click(filtros.getByRole('button', { name: 'Remoto' }))
+    await user.click(filtros.getByRole('button', { name: 'Noite' }))
+    expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ pagina: 1, causa: 'Educação', modalidade: 'REMOTO', periodo: 'NOITE' }))
+    const ativos = within(screen.getByRole('list', { name: 'Filtros ativos' }))
+    await user.click(ativos.getByRole('button', { name: /Educação/ }))
+    expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ causa: '', modalidade: 'REMOTO', periodo: 'NOITE' }))
+    await user.click(filtros.getByRole('button', { name: 'Limpar' }))
+    expect(await screen.findByRole('heading', { name: 'Vagas publicadas' })).toBeVisible()
+  })
+
+  it('explica quando nenhum resultado combina com os filtros', async () => {
+    const user = userEvent.setup()
+    vagasService.listarVagas.mockResolvedValue({ itens: [], total: 0, pagina: 1, por_pagina: 20 })
+    abrir(null, {}, '/vagas?periodo=MADRUGADA')
+    expect(await screen.findByText('Nenhuma vaga aberta com esses filtros.')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Limpar filtros' }))
+    expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ periodo: '' }))
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatarOcorrencia, horarioBrasiliaParaUTC, prepararOcorrencias } from './ocorrencias'
+import { formatarOcorrencia, horarioBrasiliaParaUTC, horarioDoEncontro, prepararOcorrencias } from './ocorrencias'
 
 function encontro(dataInicio, horaInicio, horaFim, dataFim = dataInicio) {
   return { dataInicio, horaInicio, dataFim, horaFim }
@@ -36,6 +36,12 @@ describe('datas e horários de Brasília', () => {
   })
   it('mostra a data e hora de Brasília nas ocorrências UTC', () => {
     expect(formatarOcorrencia({
+      inicio: '2026-11-17T02:30:00Z', fim: '2026-11-17T03:30:00Z',
+    })).toBe('16/11/2026 às 23:30 até 17/11/2026 às 00:30')
+  })
+  it('resume só o horário de Brasília quando o encontro acaba no mesmo dia', () => {
+    expect(horarioDoEncontro({ inicio: '2026-11-21T11:00:00Z', fim: '2026-11-21T15:00:00Z' })).toBe('08:00 – 12:00')
+    expect(horarioDoEncontro({
       inicio: '2026-11-17T02:30:00Z', fim: '2026-11-17T03:30:00Z',
     })).toBe('16/11/2026 às 23:30 até 17/11/2026 às 00:30')
   })

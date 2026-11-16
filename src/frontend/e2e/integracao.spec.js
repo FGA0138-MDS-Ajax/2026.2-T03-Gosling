@@ -51,6 +51,20 @@ async function captura(page, nome) {
   await test.info().attach(nome, { path, contentType: 'image/png' })
 }
 
+async function cargaSemanal(page, horas) {
+  const slider = page.getByRole('slider', { name: /Carga horária semanal/ })
+  await slider.focus()
+  await slider.press('Home')
+  for (let hora = 1; hora < horas; hora += 1) await slider.press('ArrowRight')
+}
+
+async function editarCampo(page, botao, campo, valor) {
+  await page.getByRole('button', { name: botao }).click()
+  const dialogo = page.getByRole('dialog')
+  await dialogo.getByLabel(campo, { exact: true }).fill(valor)
+  await dialogo.getByRole('button', { name: 'Confirmar', exact: true }).click()
+}
+
 test('cadastro de ONG mascara telefone e atualiza a checklist da senha ao digitar', async ({ page }) => {
   await page.goto('/cadastro/organizacao')
   const telefone = page.getByLabel('Telefone', { exact: true })
@@ -85,7 +99,17 @@ test('cadastro e perfil persistem no MySQL e isolam dois voluntários', async ({
   await page.getByLabel('Estado', { exact: true }).selectOption('DF')
   await page.getByLabel('Senha', { exact: true }).fill(ambiente.senha)
   await page.getByRole('checkbox').check()
-  await captura(page, 'cadastro-voluntario.png')
+  await captura(page, 'cadastro-voluntario-dados.png')
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'O que move você?' })).toBeVisible()
+  await page.getByRole('checkbox', { name: 'Educação', exact: true }).click()
+  await captura(page, 'cadastro-voluntario-interesses.png')
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Quando você pode ajudar?' })).toBeVisible()
+  await page.getByRole('checkbox', { name: 'Segunda, Manhã', exact: true }).click()
+  await page.getByRole('checkbox', { name: 'Sábado, Tarde', exact: true }).click()
+  await cargaSemanal(page, 6)
+  await captura(page, 'cadastro-voluntario-disponibilidade.png')
   const cadastro = page.waitForResponse((response) => response.url().endsWith('/api/v1/voluntarios') && response.request().method() === 'POST')
   await page.getByRole('button', { name: 'Criar conta de voluntário' }).click()
   const resposta = await cadastro
@@ -95,23 +119,24 @@ test('cadastro e perfil persistem no MySQL e isolam dois voluntários', async ({
   await expect(page).toHaveURL(/\/voluntario$/)
   await expect(page.getByText('Localização: Brasília / DF')).toBeVisible()
   await page.getByRole('link', { name: 'Editar meu perfil' }).click()
-  await expect(page.getByLabel('Nome completo')).toHaveValue('Ana Teste de Integração')
-  await page.getByLabel('Nome completo').fill('Ana Silva Teste')
-  await page.getByLabel('Telefone (opcional)').fill('(61) 98888-0000')
-  await page.getByLabel('Cidade (opcional)').fill('Gama')
-  await page.getByLabel('Sobre você (opcional)').fill('Quero apoiar atividades de educação e cuidado com o meio ambiente.')
-  await page.getByRole('checkbox', { name: 'Educação', exact: true }).check()
-  await page.getByRole('checkbox', { name: 'Meio Ambiente', exact: true }).check()
-  await page.getByRole('checkbox', { name: 'Sábado', exact: true }).check()
-  await page.getByRole('checkbox', { name: 'Manhã', exact: true }).check()
-  await page.getByLabel(/Carga horária semanal/).fill('4')
+  await expect(page.getByRole('heading', { name: 'Ana Teste de Integração', exact: true })).toBeVisible()
+  await editarCampo(page, /^Editar Nome:/, 'Nome completo', 'Ana Silva Teste')
+  await editarCampo(page, /^Editar Telefone:/, 'Telefone (opcional)', '(61) 98888-0000')
+  await editarCampo(page, /^Editar Onde mora:/, 'Cidade (opcional)', 'Gama')
+  await editarCampo(page, 'Adicionar biografia', 'Biografia (opcional)', 'Quero apoiar atividades de educação e cuidado com o meio ambiente.')
+  await expect(page.getByRole('checkbox', { name: 'Educação', exact: true })).toBeChecked()
+  await page.getByRole('checkbox', { name: 'Meio ambiente', exact: true }).click()
+  await expect(page.getByRole('checkbox', { name: 'Segunda, Manhã', exact: true })).toBeChecked()
+  await expect(page.getByRole('checkbox', { name: 'Sábado, Tarde', exact: true })).toBeChecked()
+  await cargaSemanal(page, 4)
   await page.getByRole('button', { name: 'Salvar alterações' }).click()
   await expect(page.getByText('Perfil atualizado com sucesso.')).toBeVisible()
   await captura(page, 'perfil-voluntario-salvo.png')
   await page.reload()
-  await expect(page.getByLabel('Nome completo')).toHaveValue('Ana Silva Teste')
-  await expect(page.getByLabel('Cidade (opcional)')).toHaveValue('Gama')
-  await expect(page.getByRole('checkbox', { name: 'Sábado', exact: true })).toBeChecked()
+  await expect(page.getByRole('heading', { name: 'Ana Silva Teste', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Editar Onde mora: Gama, DF', exact: true })).toBeVisible()
+  await expect(page.getByRole('checkbox', { name: 'Sábado, Tarde', exact: true })).toBeChecked()
+  await expect(page.getByRole('checkbox', { name: 'Segunda, Tarde', exact: true })).not.toBeChecked()
   const acessibilidade = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()
   expect(acessibilidade.violations).toEqual([])
   await page.setViewportSize({ width: 360, height: 900 })
@@ -130,7 +155,19 @@ test('cadastro e perfil persistem no MySQL e isolam dois voluntários', async ({
   const perfil = await consulta.json()
   expect(perfil.id).toBe(sessao.usuario.id)
   expect(perfil.telefone).toBe('61988880000')
-  expect(perfil.disponibilidades).toEqual(['DIA:SABADO', 'PERIODO:MANHA', 'CARGA_HORARIA:4'])
+  expect(perfil.disponibilidades).toEqual(['DIA:SEGUNDA', 'DIA:SABADO', 'PERIODO:MANHA', 'PERIODO:TARDE', 'CARGA_HORARIA:4'])
+  const faixas = [{ dia: 'SEGUNDA', periodo: 'MANHA' }, { dia: 'SABADO', periodo: 'TARDE' }]
+  expect(perfil.disponibilidade_semanal).toEqual(faixas)
+  const legado = await request.put(`${api}/api/v1/voluntarios/me`, {
+    headers, data: { biografia: 'Atualização pelo cliente antigo.', disponibilidades: perfil.disponibilidades },
+  })
+  expect(legado.status()).toBe(200)
+  expect((await legado.json()).disponibilidade_semanal).toEqual(faixas)
+  const invalida = await request.put(`${api}/api/v1/voluntarios/me`, {
+    headers, data: { biografia: 'Não salvar.', disponibilidades: ['CARGA_HORARIA:999', 'DIA:FERIADO'] },
+  })
+  expect(invalida.status()).toBe(422)
+  expect((await (await request.get(`${api}/api/v1/voluntarios/me`, { headers })).json()).biografia).toBe('Atualização pelo cliente antigo.')
   expect(perfil).not.toHaveProperty('senha_hash')
   const atualizacao = await request.put(`${api}/api/v1/voluntarios/me?id=${outraSessao.usuario.id}`, {
     headers, data: { cidade: 'Gama' },
@@ -142,11 +179,75 @@ test('cadastro e perfil persistem no MySQL e isolam dois voluntários', async ({
   expect((await outroPerfil.json()).cidade).toBeNull()
   expect((await request.get(`${api}/api/v1/voluntarios/me`)).status()).toBe(401)
   expect((await request.put(`${api}/api/v1/voluntarios/me`, { headers: ambiente.headers, data: {} })).status()).toBe(403)
+  await page.setViewportSize({ width: 1280, height: 900 })
   await page.getByRole('link', { name: 'Voltar para minha área' }).click()
   await expect(page.getByText('Olá, Ana Silva Teste.')).toBeVisible()
   await page.getByRole('button', { name: 'Sair' }).click()
   await expect(page).toHaveURL(/\/login$/)
   expect(await page.evaluate(() => sessionStorage.getItem('volunja:session'))).toBeNull()
+})
+
+test('contas persistentes em duas abas mantêm a identidade ao editar, restaurar e sair', async ({ page, context, request, ambiente }) => {
+  const contas = []
+  for (const nome of ['Conta Ana Teste', 'Conta Bruno Teste']) {
+    const resposta = await request.post(`${api}/api/v1/voluntarios`, { data: {
+      nome_completo: nome, email: `abas-${randomUUID()}@example.com`,
+      identificacao: cpfFicticio(), password: ambiente.senha, consentimento_termos: true,
+    } })
+    expect(resposta.status()).toBe(201)
+    const sessao = await resposta.json()
+    contas.push(sessao)
+    ambiente.criados.push(sessao.usuario.id)
+  }
+  // Este cenário exercita sessões. O limite do proxy tem seu próprio teste.
+  await context.route('**/api/v1/auth/login', async route => {
+    const resposta = await route.fetch({ url: `${api}/api/v1/auth/login` })
+    await route.fulfill({ response: resposta })
+  })
+  async function entrar(aba, conta) {
+    await aba.goto('/login')
+    await aba.getByLabel('E-mail', { exact: true }).fill(conta.usuario.email)
+    await aba.getByLabel('Senha', { exact: true }).fill(ambiente.senha)
+    await aba.getByRole('checkbox', { name: 'Manter conectado' }).check()
+    await aba.getByRole('button', { name: 'Entrar', exact: true }).click()
+    await expect(aba.getByText(`Olá, ${conta.usuario.nome}.`, { exact: true })).toBeVisible()
+  }
+
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await entrar(page, contas[0])
+  const outra = await context.newPage()
+  await outra.setViewportSize({ width: 1280, height: 900 })
+  await outra.goto('/voluntario')
+  await expect(outra.getByText('Olá, Conta Ana Teste.', { exact: true })).toBeVisible()
+  await outra.getByRole('button', { name: 'Sair', exact: true }).click()
+  await entrar(outra, contas[1])
+
+  await expect(page.getByRole('link', { name: 'Minha conta', exact: true })).toHaveText('CA')
+  await page.getByRole('link', { name: 'Editar meu perfil', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Conta Ana Teste', exact: true })).toBeVisible()
+  await editarCampo(page, /^Editar Nome:/, 'Nome completo', 'Ana Atualizada Teste')
+  await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click()
+  await expect(page.getByText('Perfil atualizado com sucesso.')).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Ana Atualizada Teste', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Minha conta', exact: true })).toHaveText('AA')
+  const atualizada = await request.get(`${api}/api/v1/voluntarios/me`, {
+    headers: { Authorization: `Bearer ${contas[0].access_token}` },
+  })
+  expect((await atualizada.json()).nome).toBe('Ana Atualizada Teste')
+  const preservada = await request.get(`${api}/api/v1/voluntarios/me`, {
+    headers: { Authorization: `Bearer ${contas[1].access_token}` },
+  })
+  expect((await preservada.json()).nome).toBe('Conta Bruno Teste')
+
+  await page.getByRole('button', { name: 'Sair', exact: true }).click()
+  await page.reload()
+  await expect(page).toHaveURL(/\/login$/)
+  await outra.reload()
+  await expect(outra.getByText('Olá, Conta Bruno Teste.', { exact: true })).toBeVisible()
+  await outra.getByRole('button', { name: 'Sair', exact: true }).click()
+  expect(await outra.evaluate(() => localStorage.getItem('volunja:session'))).toBeNull()
+  await outra.close()
 })
 
 test('publicação mostra erros por campo e salva local longo, carga decimal e encontros', async ({ page, request, ambiente, browser }) => {
@@ -202,10 +303,17 @@ test('publicação mostra erros por campo e salva local longo, carga decimal e e
   await expect(page.getByRole('heading', { name: titulo })).toBeVisible()
   await page.reload()
   const vaga = page.getByRole('article').filter({ has: page.getByRole('heading', { name: titulo }) })
-  await expect(vaga).toContainText('1.25 h')
   await expect(vaga).toContainText(local)
-  await expect(vaga).toContainText('16/11/2026, das 09:00 às 10:15')
-  await expect(vaga).toContainText('17/11/2026, das 09:00 às 10:15')
+  await vaga.getByRole('link', { name: titulo, exact: true }).click()
+  await expect(page.getByRole('heading', { name: titulo, exact: true })).toBeVisible()
+  await expect(page.getByText('1,25 h por encontro', { exact: true })).toBeVisible()
+  const encontros = page.getByRole('list', { name: 'Encontros da vaga' }).getByRole('listitem')
+  await expect(encontros).toHaveCount(2)
+  await expect(encontros.nth(0).locator('time')).toHaveAttribute('datetime', /2026-11-16T12:00:00/)
+  await expect(encontros.nth(1).locator('time')).toHaveAttribute('datetime', /2026-11-17T12:00:00/)
+  await expect(encontros.nth(0)).toContainText('09:00')
+  await expect(encontros.nth(0)).toContainText('10:15')
+  await expect(encontros.nth(1)).toContainText('10:15')
   await captura(page, 'vaga-publicada.png')
   const publico = await browser.newContext()
   try {

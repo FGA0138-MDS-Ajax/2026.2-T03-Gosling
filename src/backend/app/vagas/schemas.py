@@ -1,5 +1,6 @@
 from datetime import UTC
 from decimal import Decimal
+from typing import Annotated
 
 from pydantic import (
     AwareDatetime,
@@ -8,6 +9,7 @@ from pydantic import (
     Field,
     field_validator,
     model_validator,
+    HttpUrl,
 )
 
 from app.vagas.enums import Modalidade, Periodo, StatusVaga
@@ -28,6 +30,30 @@ class OcorrenciaRequest(BaseModel):
         return self
 
 
+def validar_url_publica(valor: str) -> str:
+    import re
+
+    if re.fullmatch(r"/api/v1/midia/[a-f0-9]{32}\.webp", valor):
+        return valor
+    from pydantic import TypeAdapter
+
+    url = TypeAdapter(HttpUrl).validate_python(valor)
+    if url.scheme != "https":
+        raise ValueError("Use uma URL HTTPS para arquivos externos.")
+    return str(url)
+
+
+class DocumentoExigido(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    nome: str = Field(min_length=2, max_length=150)
+    modelo_url: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("modelo_url")
+    @classmethod
+    def url_segura(cls, valor):
+        return validar_url_publica(valor) if valor else None
+
+
 class CadastroVagaRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -41,6 +67,17 @@ class CadastroVagaRequest(BaseModel):
     carga_horaria: Decimal = Field(gt=0, max_digits=7, decimal_places=2)
     numero_vagas: int = Field(gt=0, strict=True)
     ocorrencias: list[OcorrenciaRequest] = Field(min_length=1, max_length=100)
+    fotos: list[Annotated[str, Field(max_length=2000)]] = Field(
+        default_factory=list, max_length=10
+    )
+    documentos_exigidos: list[DocumentoExigido] = Field(
+        default_factory=list, max_length=20
+    )
+
+    @field_validator("fotos")
+    @classmethod
+    def urls_seguras(cls, valor):
+        return [validar_url_publica(url) for url in valor]
 
     @field_validator(
         "titulo", "descricao", "atividades", "causa", "local", mode="before"
@@ -68,6 +105,8 @@ class OrganizacaoResumo(BaseModel):
 
     id: int
     nome: str
+    homologada: bool = False
+    descricao: str | None = None
 
 
 class CausaPublica(BaseModel):
@@ -99,6 +138,14 @@ class VagaPublica(BaseModel):
     numero_vagas: int
     status: StatusVaga
     ocorrencias: list[OcorrenciaPublica]
+    fotos: list[str] = Field(default_factory=list)
+    documentos_exigidos: list[DocumentoExigido] = Field(default_factory=list)
+    candidaturas_disponiveis: bool = False
+
+    @field_validator("fotos", "documentos_exigidos", mode="before")
+    @classmethod
+    def listas_existentes(cls, valor):
+        return [] if valor is None else valor
 
 
 class ListaVagasResponse(BaseModel):

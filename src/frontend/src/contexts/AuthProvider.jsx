@@ -5,6 +5,7 @@ import {
   clearSession,
   readSession,
   SESSION_EXPIRED_EVENT,
+  updateSessionExpiry,
   writeSession,
 } from '../services/sessionStore'
 import { AuthContext } from './authContext'
@@ -36,7 +37,7 @@ export default function AuthProvider({ children }) {
     try {
       const result = await authService.getSession()
       if (requestRevision !== revision.current) return
-      writeSession(saved.access_token, result.expires_at)
+      updateSessionExpiry(saved.access_token, result.expires_at)
       setUsuario(result.usuario)
       setExpiresAt(result.expires_at)
       setSessionExpired(false)
@@ -98,12 +99,12 @@ export default function AuthProvider({ children }) {
     }
   }, [expiresAt, logout])
 
-  const autenticar = useCallback(async (metodo, ...args) => {
+  const autenticar = useCallback(async (metodo, args, persistent = false) => {
     const requestRevision = ++revision.current
     setSessionExpired(false)
     const result = await metodo(...args)
     if (requestRevision !== revision.current) return
-    writeSession(result.access_token, result.expires_at)
+    writeSession(result.access_token, result.expires_at, persistent)
     setUsuario(result.usuario)
     setExpiresAt(result.expires_at)
     setRestoreError('')
@@ -111,15 +112,15 @@ export default function AuthProvider({ children }) {
   }, [])
 
   const login = useCallback(
-    (email, senha) => autenticar(authService.login, email, senha),
+    (email, senha, persistent = false) => autenticar(authService.login, [email, senha], persistent),
     [autenticar],
   )
   const loginAdmin = useCallback(
-    (email, senha) => autenticar(authService.loginAdmin, email, senha),
+    (email, senha, persistent = false) => autenticar(authService.loginAdmin, [email, senha], persistent),
     [autenticar],
   )
   const cadastrarVoluntario = useCallback(
-    (payload) => autenticar(registerVolunteer, payload),
+    (payload) => autenticar(registerVolunteer, [payload]),
     [autenticar],
   )
   const updateAccount = useCallback((account) => {

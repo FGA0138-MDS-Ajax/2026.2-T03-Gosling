@@ -15,7 +15,7 @@ class VagaService:
     def __init__(self, repository: VagaRepository):
         self.repository = repository
 
-    def publicar(self, usuario_id: int, dados: CadastroVagaRequest) -> VagaPublica:
+    def validar_publicador(self, usuario_id: int):
         organizacao = self.repository.buscar_organizacao(usuario_id)
         if (
             organizacao is None
@@ -27,6 +27,10 @@ class VagaService:
                 status_code=403,
                 detail="Somente uma ONG com acesso liberado pode publicar vagas.",
             )
+        return organizacao
+
+    def publicar(self, usuario_id: int, dados: CadastroVagaRequest) -> VagaPublica:
+        organizacao = self.validar_publicador(usuario_id)
 
         try:
             causa = self.repository.obter_ou_criar_causa(dados.causa)
@@ -48,11 +52,17 @@ class VagaService:
             self.repository.desfazer()
             raise
 
-    def listar(self, pagina: int, por_pagina: int) -> ListaVagasResponse:
-        vagas, total = self.repository.listar_publicas(pagina, por_pagina)
+    def listar(self, pagina: int, por_pagina: int, **filtros) -> ListaVagasResponse:
+        vagas, total = self.repository.listar_publicas(pagina, por_pagina, **filtros)
         return ListaVagasResponse(
             itens=[VagaPublica.model_validate(vaga) for vaga in vagas],
             total=total,
             pagina=pagina,
             por_pagina=por_pagina,
         )
+
+    def detalhar(self, vaga_id: int) -> VagaPublica:
+        vaga = self.repository.buscar_publica(vaga_id)
+        if vaga is None:
+            raise HTTPException(404, "Vaga não encontrada ou indisponível.")
+        return VagaPublica.model_validate(vaga)
