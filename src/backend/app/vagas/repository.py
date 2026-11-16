@@ -71,15 +71,12 @@ class VagaRepository:
         linhas = (
             self.session.execute(
                 text(
-                    "SELECT v.id, v.titulo, v.estado_vaga, v.cidade, v.estado_uf, "
-                    "v.data_criacao, COUNT(c.id) AS total_candidaturas "
-                    "FROM vagas v "
-                    "LEFT JOIN candidaturas c ON c.vaga_id = v.id "
-                    "WHERE v.organizacao_id = :organizacao_id "
-                    "GROUP BY v.id, v.titulo, v.estado_vaga, v.cidade, "
-                    "v.estado_uf, v.data_criacao "
-                    "ORDER BY v.data_criacao DESC, v.id DESC "
-                    "LIMIT :limite OFFSET :offset"
+                  "SELECT v.id, v.titulo, v.status, v.local, v.carga_horaria, "
+                  "v.numero_vagas, v.data_criacao "
+                  "FROM vagas v "
+                  "WHERE v.organizacao_id = :organizacao_id "
+                  "ORDER BY v.id DESC "
+                  "LIMIT :limite OFFSET :offset" 
                 ),
                 {
                     "organizacao_id": organizacao_id,

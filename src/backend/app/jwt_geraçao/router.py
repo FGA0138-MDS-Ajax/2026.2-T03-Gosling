@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 import pymysql
-
+from app.jwt_geraçao.dependencies import require_perfil
 from app.jwt_geraçao.repository import UsuarioRepository
 from app.jwt_geraçao.schemas import LoginRequest, LoginResponse
 from app.jwt_geraçao.service import (
@@ -9,7 +9,7 @@ from app.jwt_geraçao.service import (
     ContaSemAcessoException,
 )
 
-router = APIRouter(prefix="/api/v1/auth", tags=["Autenticação"])
+router = APIRouter(prefix="/auth", tags=["Autenticação"])
 
 
 def get_db_connection():
