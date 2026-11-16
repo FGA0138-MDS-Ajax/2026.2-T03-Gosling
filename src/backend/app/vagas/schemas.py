@@ -1,12 +1,12 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Optional
+from typing import List
+from pydantic import BaseModel, Field
 
 from pydantic import (
     AwareDatetime,
-    BaseModel,
     ConfigDict,
-    Field,
     field_validator,
     model_validator,
 )
@@ -109,7 +109,27 @@ class ListaVagasResponse(BaseModel):
     por_pagina: int
 
 
+
+
+
+
+
+class AtualizarVagaRequest(BaseModel):
+   
+    titulo: Optional[str] = Field(None, min_length=3, max_length=100)
+    descricao: Optional[str] = Field(None, min_length=10)
+    cidade: Optional[str] = None
+    estado_uf: Optional[str] = Field(None, min_length=2, max_length=2)
+    data_inicio: Optional[datetime] = None
+    data_fim: Optional[datetime] = None
+    estado_vaga: Optional[str] = Field(
+        None,
+        description="Estado da vaga: ABERTA, ENCERRADA ou RASCUNHO",
+    )
+
+
 class VagaResumoResponse(BaseModel):
+    
     id: str
     titulo: str
     estado_vaga: str
@@ -117,12 +137,14 @@ class VagaResumoResponse(BaseModel):
     estado_uf: Optional[str] = None
     data_criacao: datetime
     total_candidaturas: int = Field(
-        default=0, description="Contagem acumulada de inscritos na vaga"
+        default=0,
+        description="Contagem acumulada de inscritos na vaga"
     )
 
 
 class PaginatedResponseVagas(BaseModel):
-    itens: list[VagaResumoResponse]
+   
+    itens: List[VagaResumoResponse]
     pagina: int
     tamanho_pagina: int
     total_itens: int
