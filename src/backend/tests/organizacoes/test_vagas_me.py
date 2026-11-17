@@ -256,5 +256,7 @@ def test_listar_minhas_vagas_erro_no_banco_retorna_500(
         "Erro de conexão com o banco MySQL"
     )
 
-    response = client.get(URL, headers=headers)
+    with TestClient(client.app, raise_server_exceptions=False) as client_500:
+        response = client_500.get(URL, headers=headers)
+
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
