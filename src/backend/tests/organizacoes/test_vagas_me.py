@@ -75,21 +75,23 @@ def service_mock(client) -> MagicMock:
 
 
 def test_listar_minhas_vagas_confirma_dados_contagem_e_paginacao(
-    client, service_mock
+    client, contas, service_mock
 ):
-    token = gerar_token_teste(sub="org-uuid-123", perfil="Organizacao")
+    headers = autenticar(client, "ong@example.com")
 
-    service_mock.listar_vagas_da_organizacao.return_value = PaginatedResponseVagas(
-        itens=[resposta_padrao_paginada().itens[0]],
-        pagina=1,
-        tamanho_pagina=10,
-        total_itens=1,
-        total_paginas=1,
+    service_mock.listar_vagas_da_organizacao.return_value = (
+        PaginatedResponseVagas(
+            itens=[resposta_padrao_paginada().itens[0]],
+            pagina=1,
+            tamanho_pagina=10,
+            total_itens=1,
+            total_paginas=1,
+        )
     )
 
     response = client.get(
-        f"{URL}?pagina=1&por_pagina=10",
-        headers={"Authorization": f"Bearer {token}"},
+        f"{URL}?pagina=1&tamanho_pagina=10",
+        headers=headers,
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -107,20 +109,25 @@ def test_listar_minhas_vagas_confirma_dados_contagem_e_paginacao(
 
 
 def test_listar_minhas_vagas_garante_isolamento_de_organizacao(
-    client, service_mock
+    client, contas, service_mock
 ):
-    id_org_logada = "org-uuid-888-exclusiva"
-    token_org_a = gerar_token_teste(sub=id_org_logada, perfil="Organizacao")
+    headers = autenticar(client, "ong@example.com")
 
-    service_mock.listar_vagas_da_organizacao.return_value = PaginatedResponseVagas(
-        itens=[], pagina=1, tamanho_pagina=10, total_itens=0, total_paginas=0
+    service_mock.listar_vagas_da_organizacao.return_value = (
+        PaginatedResponseVagas(
+            itens=[],
+            pagina=1,
+            tamanho_pagina=10,
+            total_itens=0,
+            total_paginas=0,
+        )
     )
 
-    client.get(URL, headers={"Authorization": f"Bearer {token_org_a}"})
+    client.get(URL, headers=headers)
 
     service_mock.listar_vagas_da_organizacao.assert_called_once()
     _, kwargs = service_mock.listar_vagas_da_organizacao.call_args
-    assert kwargs["organizacao_id"] == id_org_logada
+    assert kwargs["organizacao_id"] == contas["organizacao"].id
 
 
 def test_listar_vagas_usa_o_id_da_organizacao_do_jwt_com_fixture(
@@ -168,15 +175,21 @@ def test_listar_vagas_parametros_invalidos_retornam_422(
 
 
 def test_listar_minhas_vagas_lista_vazia_retorna_200_ok(
-    client, service_mock
+    client, contas, service_mock
 ):
-    token = gerar_token_teste(sub="org-sem-vagas", perfil="Organizacao")
+    headers = autenticar(client, "ong@example.com")
 
-    service_mock.listar_vagas_da_organizacao.return_value = PaginatedResponseVagas(
-        itens=[], pagina=1, tamanho_pagina=10, total_itens=0, total_paginas=0
+    service_mock.listar_vagas_da_organizacao.return_value = (
+        PaginatedResponseVagas(
+            itens=[],
+            pagina=1,
+            tamanho_pagina=10,
+            total_itens=0,
+            total_paginas=0,
+        )
     )
 
-    response = client.get(URL, headers={"Authorization": f"Bearer {token}"})
+    response = client.get(URL, headers=headers)
 
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -215,14 +228,10 @@ def test_listar_vagas_com_token_invalido_retorna_401(
 
 
 def test_listar_minhas_vagas_perfil_voluntario_retorna_403(
-    client, service_mock
+    client, contas, service_mock
 ):
-    token_voluntario = gerar_token_teste(
-        sub="voluntario-123", perfil="Voluntario"
-    )
-    response = client.get(
-        URL, headers={"Authorization": f"Bearer {token_voluntario}"}
-    )
+    headers = autenticar(client, "voluntario@example.com")
+    response = client.get(URL, headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     service_mock.listar_vagas_da_organizacao.assert_not_called()
 
@@ -239,13 +248,13 @@ def test_listar_vagas_com_perfil_voluntario_fixture_retorna_403(
 
 
 def test_listar_minhas_vagas_erro_no_banco_retorna_500(
-    client, service_mock
+    client, contas, service_mock
 ):
-    token = gerar_token_teste(sub="org-uuid-123", perfil="Organizacao")
+    headers = autenticar(client, "ong@example.com")
 
     service_mock.listar_vagas_da_organizacao.side_effect = Exception(
         "Erro de conexão com o banco MySQL"
     )
 
-    response = client.get(URL, headers={"Authorization": f"Bearer {token}"})
+    response = client.get(URL, headers=headers)
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
