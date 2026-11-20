@@ -126,6 +126,7 @@ def test_revalida_conta_desativada_e_nao_expoe_segredos(client, db, contas):
     assert client.get(URL).status_code == 401
     assert client.put(URL, json={}).status_code == 401
 
+
 @pytest.mark.parametrize("preferencia", [
     "DIA:FERIADO", "DIA:segunda", "DIA:", "DIA", "DIA:SABADO:MANHA",
     "PERIODO:MADRUGADA", "PERIODO:manha", "PERIODO:", "PERIODO",

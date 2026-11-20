@@ -16,14 +16,9 @@ from sqlalchemy.orm import Session
 from app.auth.schemas import LoginResponse
 from app.auth.service import criar_sessao
 from app.core.database import get_db
-from app.core.security import hash_password
 from app.core.midia import remover_imagem_local, salvar_imagem
+from app.core.security import hash_password
 from app.dependencies import require_perfil
-from app.usuarios.enums import Perfil
-from app.usuarios.models import Usuario, Voluntario
-from app.usuarios.schemas import UsuarioPublico
-from app.usuarios.validacoes import PADRAO_TELEFONE, SenhaCadastro
-from app.usuarios.validacoes import normalizar_telefone as normalizar_numero_telefone
 from app.usuarios.disponibilidade import (
     DIAS,
     TURNOS,
@@ -32,6 +27,11 @@ from app.usuarios.disponibilidade import (
     ler_carga_legada,
     ler_disponibilidade_legada,
 )
+from app.usuarios.enums import Perfil
+from app.usuarios.models import Usuario, Voluntario
+from app.usuarios.schemas import UsuarioPublico
+from app.usuarios.validacoes import PADRAO_TELEFONE, SenhaCadastro
+from app.usuarios.validacoes import normalizar_telefone as normalizar_numero_telefone
 
 router = APIRouter(prefix="/voluntarios", tags=["Voluntários"])
 Banco = Annotated[Session, Depends(get_db)]
