@@ -5,6 +5,7 @@ import os
 import re
 import warnings
 from pathlib import Path
+from threading import Lock
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Request
@@ -14,6 +15,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 router = APIRouter(prefix="/midia", tags=["Mídia pública"])
 MAX_BYTES = 5 * 1024 * 1024
 MAX_PIXELS = 20_000_000
+bloqueio_midia = Lock()
 
 
 def pasta_midia() -> Path:

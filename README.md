@@ -101,6 +101,8 @@ Exemplo de corpo para publicação:
 
 Ao atualizar o sistema, `docker compose up --build -d --wait` aplica a migração de vagas na inicialização da API. As publicações usam o volume persistente já configurado para o MySQL.
 
+As fotos enviadas antes da publicação podem ser reutilizadas em uma nova tentativa. A API verifica a mídia a cada hora e remove uploads sem vínculo com mais de 24 horas, inclusive quando o formulário foi abandonado ou o navegador foi fechado. Fotos de vagas em qualquer estado, avatares e modelos vinculados são preservados. Se um upload já tiver sido removido, a publicação retorna 422 e solicita selecionar as imagens novamente. A limpeza usa o mesmo volume persistente do Compose e uma trava compartilhada com a publicação no processo da API; a implantação atual executa um único worker.
+
 ## Contrato de autenticação
 
 O backend usa a porta 8000: abra <http://localhost:8000/docs> para consultar e testar as rotas no Swagger. O ReDoc está em <http://localhost:8000/redoc> e o esquema OpenAPI em <http://localhost:8000/openapi.json>. O frontend usa uma porta separada, definida em `WEB_PORT`.

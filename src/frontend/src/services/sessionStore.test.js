@@ -53,6 +53,30 @@ describe('armazenamento da sessão', () => {
     expect(readSession()).toBeNull()
   })
 
+  it('preserva a conta lembrada ao entrar sem persistência em outra aba', () => {
+    writeSession('conta-A', 2000000000, true)
+    const lembrada = localStorage.getItem('volunja:session')
+    sessionStorage.clear()
+
+    writeSession('conta-B', 2000000100)
+    expect(readSession()?.access_token).toBe('conta-B')
+    expect(localStorage.getItem('volunja:session')).toBe(lembrada)
+    updateSessionExpiry('conta-B', 2000000200)
+    clearSession()
+    expect(readSession()).toBeNull()
+    expect(localStorage.getItem('volunja:session')).toBe(lembrada)
+
+    sessionStorage.clear()
+    expect(readSession()?.access_token).toBe('conta-A')
+  })
+
+  it('remove a persistência quando o próprio token passa a valer só na aba', () => {
+    writeSession('conta-A', 2000000000, true)
+    writeSession('conta-A', 2000000000)
+    expect(localStorage.getItem('volunja:session')).toBeNull()
+    expect(readSession()?.access_token).toBe('conta-A')
+  })
+
   it('atualiza a expiração da conta lembrada e limpa ambos os armazenamentos no logout', () => {
     writeSession('token', 2000000000, true)
     updateSessionExpiry('token', 2000000100)

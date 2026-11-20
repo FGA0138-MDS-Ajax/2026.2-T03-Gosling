@@ -40,7 +40,9 @@ export function writeSession(accessToken, expiresAt, persistent = false) {
   sessionStorage.setItem(STORAGE_KEY, value)
   sessionStorage.removeItem(ENDED_KEY)
   if (persistent) localStorage.setItem(STORAGE_KEY, value)
-  else localStorage.removeItem(STORAGE_KEY)
+  else if (parseSession(localStorage.getItem(STORAGE_KEY))?.access_token === accessToken) {
+    localStorage.removeItem(STORAGE_KEY)
+  }
 }
 
 export function updateSessionExpiry(accessToken, expiresAt) {
