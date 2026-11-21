@@ -12,9 +12,15 @@ nav:
   - Documentos:
       - Documento de Visão: visão.md
       - Documento de Arquitetura: arquitetura.md
+  - Testes de Software:
+      - Plano e cobertura: testes.md
+      - Autenticação e acesso: testes/autenticacao.md
+      - Cadastros e perfis: testes/cadastros-perfis.md
+      - Publicação e gestão de vagas: testes/vagas.md
+      - Regressões da revisão: testes/regressoes.md
+      - Testes de sistema: testes/sistema.md
   - Acompanhamento:
       - Sprints e métricas: sprints.md
-      - Execução dos testes: testes.md
       - Débitos técnicos: debitos-tecnicos.md
       - Tratamento da inspeção: inspecao.md
 theme:
@@ -30,6 +36,7 @@ plugins:
       lang: pt
 
 markdown_extensions:
+  - attr_list
   - tables
   - toc:
       permalink: true

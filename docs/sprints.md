@@ -16,13 +16,20 @@ Os registros das sprints encerradas foram consolidados nesta data. Eles recupera
 | 6 · 21–27/10 | Cadastro e autenticação, CN01 | [Ata de 26/10](atas-reuniao/ata-reuniao-2.md) registra a distribuição do trabalho, sem detalhar decisões. A autenticação seria integrada na Sprint 7. | Desenvolvimento previsto não foi entregue dentro deste intervalo. |
 | 7 · 28/10–03/11 | Perfis do voluntário e da organização | Estrutura do sistema em [28/10][estrutura]; autenticação integrada pela [PR #57][pr57] em 02/11; entradas institucionais e projeto social pelas [PRs #59][pr59] e [#61][pr61]. | Entrega de CN01 atrasada em relação à Sprint 6. Perfis continuaram em desenvolvimento. |
 | 8 · 04–10/11 | Publicação e gestão de vagas, CN04; ponto de controle | Cadastro/API de organizações e formulário institucional nas [PRs #65][pr65] e [#67][pr67]; perfil institucional na [#69][pr69], integrados em 09/11. Implementações de cadastro/perfil de voluntário estavam em integração. | CN02/CN03 avançaram depois do prazo original. A publicação ainda não havia sido mesclada à `developer` no encerramento. |
-| 9 · 11–17/11 | Busca, candidatura, calendário e inspeção | [PR #72][pr72] mesclada em `test/fluxos-isolamento` em 11/11; consolidação de cadastro, perfil e publicação na `developer` pela [#68][pr68] em 13/11. Gestão de vagas passou pelas [#84][pr84], [#86][pr86], [#92][pr92] e [#93][pr93]. A [#88][pr88] foi aberta em 16/11. | Publicação integrada. RF09/RF10 têm defeitos de contrato com o banco. Candidatura/calendário não foram entregues. #88 permanece em revisão. |
-| 10 · 18–24/11 | Triagem, conexão, comprovante e correções da inspeção | Em 20/11 foram consolidados estes relatórios e tratados os comentários da #88 sobre sessão entre abas e uploads sem vínculo. | Em andamento; correções da #88 dependem de merge e nova revisão. A sequência abaixo é proposta de replanejamento. |
+| 9 · 11–17/11 | Busca, candidatura, calendário e inspeção | [PR #72][pr72] mesclada em `test/fluxos-isolamento` em 11/11; consolidação de cadastro, perfil e publicação na `developer` pela [#68][pr68] em 13/11. Gestão de vagas passou pelas [#84][pr84], [#86][pr86], [#92][pr92] e [#93][pr93]. A [#88][pr88] foi aberta em 16/11. | Publicação integrada. RF09/RF10 têm defeitos de contrato com o banco. Candidatura/calendário não foram entregues. #88 encerrada sem merge na consulta de 20/11. |
+| 10 · 18–24/11 | Triagem, conexão, comprovante e correções da inspeção | Em 20/11 foram consolidados estes relatórios e tratados os comentários da #88 sobre sessão entre abas e uploads sem vínculo. | Em andamento; correções validadas em fe69315 ainda sem integração na developer. A sequência abaixo é proposta de replanejamento. |
 | 11 · 25/11–01/12 | Ajustes de UX e entrega final | Período futuro na data deste registro. | Planejada; execução e resultado ainda não aferidos. |
 
 A `main` permanece no commit inicial; a implementação está na `developer`. Há, portanto, um desvio do fluxo de releases previsto no DA. A publicação do Pages ocorre pela branch `docs`, cujo conteúdo publicado também precisava receber as atualizações documentais já existentes na `developer`.
 
 ## Relatos das sprints de desenvolvimento
+
+| Sprint | Relatório com casos e prints |
+| --- | --- |
+| 7 · autenticação | [Autenticação e controle de acesso](testes/autenticacao.md) |
+| 8 · cadastros e perfil institucional | [Cadastros, salvamento e persistência dos perfis](testes/cadastros-perfis.md) |
+| 9 · publicação e integração | [Publicação e gestão de vagas](testes/vagas.md), com as execuções e anexos de cada entrega. |
+| 10 · reparos e consolidação | [Regressões da revisão](testes/regressoes.md) e [8 testes de sistema](testes/sistema.md), com o relatório e as capturas do CI. |
 
 ### Sprint 6 — início do desenvolvimento
 
@@ -46,7 +53,7 @@ A #68 consolidou a publicação com múltiplos encontros, persistência, valida�
 
 O painel/listagem passou por merge, reversão e restauração (#84 → #86 → #92). A edição chegou pela #93. Entretanto, o repositório SQL de RF09/RF10 ainda utiliza estruturas ausentes das migrações. Esses itens estão no [registro de débitos e defeitos](debitos-tecnicos.md), com prioridade de correção antes de tratar a gestão de vagas como concluída.
 
-Busca e detalhes avançam na #88, ainda aberta. Candidatura, calendário e conflito entre compromissos não têm incremento integrado que permita marcar CT04/CT08–CT13 como executados.
+Busca e detalhes foram trabalhados na #88, encerrada sem merge na consulta de 20/11. Suas evidências pertencem à branch validada, sem comprovação de integração na developer. Candidatura, calendário e conflito entre compromissos não têm incremento integrado que permita marcar CT04/CT08–CT13 como executados.
 
 ### Sprint 10 — estabilização e documentação
 
@@ -60,7 +67,7 @@ Esta sequência é uma **proposta para validação da equipe e do P.O.**. As dat
 
 | Janela | Ordem e resultado esperado | Critério de conclusão |
 | --- | --- | --- |
-| Restante da Sprint 10 | Finalizar revisão da #88; corrigir o contrato de RF09/RF10 com as migrações e acrescentar integração com MySQL. | PR revisada por outro integrante, CI aprovado e reprodução do fluxo sem HTTP 500. |
+| Restante da Sprint 10 | Integrar a implementação validada de fe69315 por PR revisada; corrigir o contrato de RF09/RF10 com as migrações e acrescentar integração com MySQL. | PR revisada por outro integrante, CI aprovado e reprodução do fluxo sem HTTP 500. |
 | Restante da Sprint 10 | Reavaliar capacidade para candidatura, documentos, acompanhamento, calendário e conflito transacional. | Backlog da sprint com itens, responsáveis e pontos registrados; dependências e itens não comportados negociados com o P.O. |
 | Sprint 11 | Concluir os Must ainda assumidos, executar seus testes de sistema e a avaliação de usabilidade; estabilizar a versão de apresentação. | CTs correspondentes executados e registrados; defeitos críticos resolvidos; release revisada na `main`. |
 

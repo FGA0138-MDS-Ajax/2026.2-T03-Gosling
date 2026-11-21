@@ -1,0 +1,15 @@
+Origem: https://github.com/FGA0138-MDS-Ajax/2026.2-T03-Gosling/actions/runs/44835433519/job/136631159873
+Commit: fe69315c4533fed54ee4eb74db336b3e3eb158b7
+Execução: 20/11/2026
+Recorte das linhas de resultado, sem timestamps nem códigos de cor.
+
+Running 8 tests using 1 worker
+✓  1 e2e/auth.spec.js:4:1 › login é acessível e responsivo nos três tamanhos (2.0s)
+✓  2 e2e/auth.spec.js:20:1 › abre o acesso ao cadastro do voluntário pelo teclado no celular (1.0s)
+✓  3 e2e/auth.spec.js:37:1 › nega acesso sem login, trata erros e encaminha os três perfis (1.6s)
+✓  4 e2e/auth.spec.js:83:1 › proxy limita tentativas e não limita a rota de saúde (87ms)
+✓  5 e2e/integracao.spec.js:68:1 › cadastro de ONG mascara telefone e atualiza a checklist da senha ao digitar (1.0s)
+✓  6 e2e/integracao.spec.js:90:1 › cadastro e perfil persistem no MySQL e isolam dois voluntários (3.7s)
+✓  7 e2e/integracao.spec.js:190:1 › contas persistentes em duas abas mantêm a identidade ao editar, restaurar e sair (3.0s)
+✓  8 e2e/integracao.spec.js:267:1 › publicação mostra erros por campo e salva local longo, carga decimal e encontros (2.7s)
+8 passed (17.8s)

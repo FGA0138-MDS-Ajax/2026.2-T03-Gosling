@@ -13,6 +13,20 @@ Os registros de execução foram consolidados em **20/11/2026**, durante a Sprin
 - [Débitos técnicos e defeitos](debitos-tecnicos.md): prioridades, impacto e critérios de encerramento.
 - [Tratamento da inspeção Allen](inspecao.md): análise dos 16 apontamentos, autoria e registros de revisão das PRs.
 
+## Testes de software e evidências
+
+Os relatórios trazem os casos verificados, os resultados e os prints das PRs dentro do próprio Pages:
+
+| Entrega | Relatório |
+| --- | --- |
+| Login, sessão e segurança | [Autenticação e acesso](testes/autenticacao.md) |
+| Cadastro e edição de dados | [Cadastros e perfis](testes/cadastros-perfis.md) |
+| Publicação e painel institucional | [Publicação e gestão de vagas](testes/vagas.md) |
+| Reparos solicitados na revisão | [Regressões de sessão e mídia](testes/regressoes.md) |
+| Navegador, API, MySQL e Nginx | [Testes de sistema — 8 cenários e capturas](testes/sistema.md) |
+
+O [plano de testes e cobertura](testes.md) mantém a rastreabilidade com CT01–CT14, os comandos de execução e as pendências.
+
 Na data do registro, candidaturas, triagem e calendário ainda têm entregas pendentes. A descrição do produto abaixo apresenta o escopo pretendido; o estado de implementação está nos relatórios de acompanhamento.
 
 ## Documentos do projeto

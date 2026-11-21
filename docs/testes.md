@@ -4,6 +4,22 @@ Relatório consolidado em **20/11/2026**. O VolunJá tem testes automatizados de
 
 A evidência disponível comprova parte dos fluxos do MVP. Candidatura, triagem, calendário e conflitos entre candidaturas continuam pendentes. Cobertura de código, testes com mocks e verificações de acessibilidade têm escopos próprios e não equivalem à execução de todos os testes de sistema.
 
+## Relatórios e prints por entrega
+
+| Relatório | Roteiro e evidências disponíveis |
+| --- | --- |
+| [Autenticação e acesso](testes/autenticacao.md) | Login/JWT, segurança, três perfis e prints das PRs #57/#59. |
+| [Cadastros e perfis](testes/cadastros-perfis.md) | Backend, cadastro da ONG, consulta/salvamento/recarga do perfil e integração do voluntário; PRs #65/#67/#69/#72. |
+| [Publicação e gestão de vagas](testes/vagas.md) | Validações, resultados de backend/frontend/CI da #68 e estados do painel simulado da #85. |
+| [Regressões da revisão](testes/regressoes.md) | Defeitos de sessão/mídia, reparos, resultados finais e prints históricos da #88. |
+| [Testes de sistema](testes/sistema.md) | Os 8 cenários Playwright, resultado esperado/obtido, passos executados e 17 capturas do relatório e do sistema real. |
+
+As imagens foram incorporadas ao repositório e podem ser ampliadas por clique. Cada legenda informa a origem. As contagens do print, da descrição da PR e do CI são diferenciadas quando representam execuções distintas.
+
+[![Relatório Playwright do CI com oito testes de sistema aprovados](assets/testes/sistema-fe69315/relatorio-playwright.png){ loading=lazy width="1280" height="1000" }](testes/sistema.md)
+
+*Relatório de testes de sistema do commit fe69315. Fonte: [GitHub Actions](https://github.com/FGA0138-MDS-Ajax/2026.2-T03-Gosling/actions/runs/44835433519). [Abrir roteiro e capturas](testes/sistema.md).*
+
 ## Escopo e ambientes
 
 | Camada / nível | Ferramentas e ambiente | O que é verificado | Responsabilidade e momento |
@@ -30,9 +46,11 @@ Os números abaixo são os resultados **relatados nas respectivas PRs**, com os 
 | [#69][pr69] · 09/11 | Testes de frontend, lint/build, consulta/edição com API real e persistência após recarga, com imagens na PR. | Sprint 8. |
 | [#72][pr72] · 11/11 | 218 testes de backend, 87,84% de cobertura; 99 de frontend; integração de cadastro/perfil. Merge desta PR em `test/fluxos-isolamento`. | Sprint 9; consolidação posterior na `developer` pela #68. |
 | [#68][pr68] · 13/11 | 283 testes de backend, 88,90% de cobertura; 140 de frontend; 7 de navegador contra Docker/MySQL. A [execução do commit final][ci68] concluiu com sucesso. | Sprint 9; publicação e integração de cadastro/perfil. |
-| [#88][pr88] · aberta em 16/11 | A descrição original registrava 341 testes de backend, 89,73% de cobertura, 169 de frontend e 8 Playwright. A contagem mudou após integração da `developer` e os reparos de revisão. | Sprint 9/10, ainda pendente de merge. Resultado atual abaixo. |
+| [#88][pr88] · aberta em 16/11, encerrada sem merge na consulta de 20/11 | A descrição original registrava 341 testes de backend, 89,73% de cobertura, 169 de frontend e 8 Playwright. A contagem mudou após integração da `developer` e os reparos de revisão. | Sprint 9/10; evidência do commit da branch, sem comprovação de integração na `developer`. Resultado abaixo. |
 
 Os relatórios em PDF de [JWT](TESTS_REFERENTES_A_JWT.pdf), [cadastro de voluntários](TESTES_REFERENTES_A_VOLUNTARIOS.pdf) e [perfil — issue #20](Documentação%20de%20Testes%20-%20Issue%20%2320%20(Volunjá%20API).pdf) também existem. Parte deles descreve módulos legados ou contratos anteriores; são evidência histórica e precisam ser lidos junto ao código da aplicação ativa, sem assumir que validam os endpoints atuais.
+
+Na #68, os prints exibem 246 testes de backend/88,75% de cobertura e 129 de frontend, enquanto a descrição final relata 283/140 e o CI final registra 307/140. A [conferência por execução](testes/vagas.md#execucoes-e-versoes-das-evidencias) apresenta cada fonte separadamente.
 
 ## Validação das correções da PR 88
 

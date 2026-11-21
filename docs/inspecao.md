@@ -44,7 +44,7 @@ Foram conferidas as submissões formais de review e as conversas das **17 PRs me
 
 Assim, o número **13/17 é sustentado quando “review” significa a submissão formal do GitHub**, com a ressalva de que a amostra inclui branches de integração. Ele não prova ausência de toda conversa ou leitura humana. As evidências também não sustentam afirmar que todas as PRs tiveram aprovação registrada.
 
-A [#88][pr88] está fora dessa contagem porque permanece aberta. Em 20/11 Juan submeteu `CHANGES_REQUESTED` sobre sessão e mídia. Os dois reparos foram enviados no [commit `fe69315`][correcao88] e as duas threads foram resolvidas. Isso não transforma a review do Juan em `APPROVED`; a aprovação deve ser registrada pelo revisor.
+A [#88][pr88] está fora dessa contagem porque não foi mesclada; na consulta desta atualização, em 20/11, consta encerrada sem merge. Em 20/11 Juan submeteu `CHANGES_REQUESTED` sobre sessão e mídia. Os dois reparos foram enviados no [commit `fe69315`][correcao88] e as duas threads foram resolvidas. Resolver a thread não registra aprovação pelo revisor nem integração na developer.
 
 ## Testes de sistema existentes e alcance da crítica
 
