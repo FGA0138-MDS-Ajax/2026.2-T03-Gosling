@@ -8,9 +8,21 @@ nav:
   - Início: index.md
   - Atas de Reunião:
       - Ata 1: atas-reuniao/ata-reuniao-1.md
+      - Ata 2: atas-reuniao/ata-reuniao-2.md
   - Documentos:
-    - Documento de visão: visão.md
-    - Documento de Arquitetura: arquitetura.md
+      - Documento de Visão: visão.md
+      - Documento de Arquitetura: arquitetura.md
+  - Testes de Software:
+      - Plano e cobertura: testes.md
+      - Autenticação e acesso: testes/autenticacao.md
+      - Cadastros e perfis: testes/cadastros-perfis.md
+      - Publicação e gestão de vagas: testes/vagas.md
+      - Regressões da revisão: testes/regressoes.md
+      - Testes de sistema: testes/sistema.md
+  - Acompanhamento:
+      - Sprints e métricas: sprints.md
+      - Débitos técnicos: debitos-tecnicos.md
+      - Tratamento da inspeção: inspecao.md
 theme:
   name: material
   language: pt
@@ -24,6 +36,7 @@ plugins:
       lang: pt
 
 markdown_extensions:
+  - attr_list
   - tables
   - toc:
       permalink: true
