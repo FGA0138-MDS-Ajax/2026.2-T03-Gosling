@@ -66,8 +66,19 @@ def _criar_vaga(client: TestClient, org: dict, titulo: str) -> None:
     payload = {
         "titulo": titulo,
         "descricao": "Vaga criada pelo teste de integração",
-        "cidade": "Brasília",
-        "estado_uf": "DF",
+        "atividades": "Atividades de apoio realizadas pelo voluntário",
+        "causa": "Educação",
+        "modalidade": "PRESENCIAL",
+        "local": "Brasília - DF",
+        "periodo": "MANHA",
+        "carga_horaria": 4,
+        "numero_vagas": 3,
+        "ocorrencias": [
+            {
+                "inicio": "2027-03-10T08:00:00-03:00",
+                "fim": "2027-03-10T12:00:00-03:00",
+            }
+        ],
     }
     resp = client.post("/api/v1/vagas", json=payload, headers=org["headers"])
     assert resp.status_code in (200, 201), resp.text
@@ -78,8 +89,6 @@ def _listar(client: TestClient, org: dict, pagina: int, tamanho: int):
         f"/api/v1/organizacoes/me/vagas?pagina={pagina}&tamanho_pagina={tamanho}",
         headers=org["headers"],
     )
-
-
 @pytest.fixture(scope="module")
 def cenario(client):
     org_a = _criar_organizacao_e_logar(client, "a")
