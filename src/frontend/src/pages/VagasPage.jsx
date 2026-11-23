@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import EncontrosEditor from '../components/EncontrosEditor'
 import VagaCard from '../components/VagaCard'
 import VagaMediaFields from '../components/VagaMediaFields'
+import LocationFields from '../components/LocationFields'
+import { localizacaoInicial, localizacaoPayload, validarLocalizacao } from '../utils/localizacao'
 import { Footer, Header } from '../components/ui/Layout'
 import { useAuth } from '../hooks/useAuth'
 import { useVagas } from '../hooks/useVagas'
@@ -54,6 +56,9 @@ export default function VagasPage() {
   const [documentos, setDocumentos] = useState([])
   const [erroMidia, setErroMidia] = useState('')
   const fotosEnviadas = useRef(new Map())
+  const [modalidadePublicacao, setModalidadePublicacao] = useState('PRESENCIAL')
+  const [origemEndereco, setOrigemEndereco] = useState('PROPRIA')
+  const [enderecoVaga, setEnderecoVaga] = useState(() => localizacaoInicial(null))
 
   const sessaoValidada = !loading && !restoreError
   const podePublicar = sessaoValidada
@@ -93,6 +98,7 @@ export default function VagasPage() {
     setErroEncontros('')
     setEncontros([criarEncontro()])
     setFotos([]); setDocumentos([]); setErroMidia(''); fotosEnviadas.current.clear()
+    setModalidadePublicacao('PRESENCIAL'); setOrigemEndereco('PROPRIA'); setEnderecoVaga(localizacaoInicial(null))
     dialogo.current.querySelector('form').reset()
     dialogo.current.showModal()
   }
@@ -127,6 +133,7 @@ export default function VagasPage() {
       carga_horaria: cargaHoraria, numero_vagas: numeroVagas,
     }
     const invalidos = validarPublicacao(campos)
+    if (modalidadePublicacao !== 'REMOTO' && origemEndereco === 'PROPRIA') Object.assign(invalidos, validarLocalizacao(enderecoVaga))
     if (!catalogo.itens.some(causa => causa.id === causaId && causa.ativo)) invalidos.causa_id = 'Selecione uma causa disponível.'
     const fotosInvalidas = fotos.length > 10 || fotos.some(file => !['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 5*1024*1024)
     const documentosInvalidos = documentos.some(doc => doc.nome.trim().length < 2 || (doc.modelo_url && !/^https:\/\/[^\s]+$/.test(doc.modelo_url)))
@@ -146,6 +153,13 @@ export default function VagasPage() {
       modalidade: String(dados.get('modalidade')),
       periodo: String(dados.get('periodo')),
       ocorrencias,
+    }
+    if (modalidadePublicacao !== 'REMOTO') {
+      if (origemEndereco === 'ORGANIZACAO') payload.origem_localizacao = 'ORGANIZACAO'
+      else {
+        const endereco = localizacaoPayload(enderecoVaga)
+        if (endereco) { payload.localizacao = endereco; payload.origem_localizacao = 'PROPRIA' }
+      }
     }
     envioPendente.current = true
     setPublicando(true)
@@ -326,7 +340,7 @@ export default function VagasPage() {
               </div>
               <div className={styles.formField}>
                 <label htmlFor="vaga-modalidade">Modalidade</label>
-                <select id="vaga-modalidade" name="modalidade" required {...atributosCampo('modalidade')}>
+                <select id="vaga-modalidade" name="modalidade" required value={modalidadePublicacao} onChange={event => setModalidadePublicacao(event.target.value)} {...atributosCampo('modalidade')}>
                   {Object.entries(MODALIDADES).map(([valor, texto]) => (
                     <option key={valor} value={valor}>{texto}</option>
                   ))}
@@ -358,6 +372,14 @@ export default function VagasPage() {
                 {erroCampo('numero_vagas')}
               </div>
             </div>
+            {modalidadePublicacao !== 'REMOTO' ? <>
+              <div className={styles.formField}><label htmlFor="vaga-origem-endereco">Endereço da atividade</label>
+                <select id="vaga-origem-endereco" name="origem_localizacao" value={origemEndereco} onChange={event => setOrigemEndereco(event.target.value)} {...atributosCampo('origem_localizacao')}>
+                  <option value="PROPRIA">Endereço próprio desta vaga</option><option value="ORGANIZACAO">Endereço cadastrado da organização</option>
+                </select>{erroCampo('origem_localizacao')}</div>
+              {origemEndereco === 'PROPRIA' ? <LocationFields value={enderecoVaga} onChange={setEnderecoVaga} errors={errosCampos} disabled={publicando} />
+                : <p>Use o endereço cadastrado da organização quando o encontro ocorrer na sede. <Link to="/organizacao/perfil">Conferir endereço da organização</Link></p>}
+            </> : <p>Atividade remota: informe a plataforma ou orientação no campo de local. Endereço presencial e coordenadas não são enviados.</p>}
             <EncontrosEditor encontros={encontros} onChange={alterarEncontros} erro={erroEncontros} />
             <VagaMediaFields fotos={fotos} setFotos={setFotos} documentos={documentos} setDocumentos={setDocumentos} error={erroMidia} />
 

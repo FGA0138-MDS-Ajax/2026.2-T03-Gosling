@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth'
 import { detalharVaga, listarVagas } from '../services/vagasService'
 import { useSavedVagas } from '../hooks/useSavedVagas'
 import { formatarOcorrencia, horarioDoEncontro } from '../utils/ocorrencias'
+import { destinoMapa, textoEndereco } from '../utils/localizacao'
 import s from './VagaDetails.module.css'
 
 const modalities = { PRESENCIAL: 'Presencial', REMOTO: 'Remoto', HIBRIDO: 'Híbrido' }
@@ -111,7 +112,7 @@ function VagaDetails({ id }) {
             <section><h2>Documentos exigidos</h2><p className={s.hint}>Você envia no momento da candidatura.</p>
               {vaga.documentos_exigidos?.length ? <ul className={s.documents}>{vaga.documentos_exigidos.map((doc,i) => <li key={i}><span className={s.docIcon}><Icon group="detalhe" name={doc.modelo_url ? 'imgIcon11' : 'imgIcon10'} /></span><div><strong>{doc.nome}</strong><small>{doc.modelo_url ? 'Modelo fornecido pela organização' : 'Exigido para esta atividade'}</small></div>{doc.modelo_url && <a href={doc.modelo_url} target="_blank" rel="noopener noreferrer"><Icon group="detalhe" name="imgIcon12" />Baixar modelo</a>}</li>)}</ul> : <p className={s.empty}>A organização não informou documentos obrigatórios.</p>}
             </section>
-            <section><h2>Local</h2><div className={s.map}><div className={s.mapDecoration} aria-hidden="true"><span /></div><div className={s.address}><span><strong>{vaga.local}</strong><small>{modalities[vaga.modalidade]}</small></span>{vaga.modalidade !== 'REMOTO' && <a href={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(vaga.local)} target="_blank" rel="noopener noreferrer"><Icon group="detalhe" name="imgIcon13" />Como chegar</a>}</div></div></section>
+            <section><h2>Local</h2><div className={s.map}><div className={s.mapDecoration} aria-hidden="true"><span /></div><div className={s.address}><span><strong>{vaga.local}</strong>{vaga.localizacao && <small>{textoEndereco(vaga.localizacao)}</small>}<small>{modalities[vaga.modalidade]}</small></span>{vaga.modalidade !== 'REMOTO' && <a href={destinoMapa(vaga)} target="_blank" rel="noopener noreferrer"><Icon group="detalhe" name="imgIcon13" />Como chegar</a>}</div></div></section>
           </article>
           <aside className={s.aside} aria-label="Participar desta vaga"><div className={s.applyCard}><small>Próximo encontro</small><strong className={s.nextTitle}>{next ? longDate(next.inicio) : 'Encontros encerrados'}</strong><p className={s.hint}>{next ? horarioDoEncontro(next) + (remaining > 0 ? ` · mais ${remaining} ${remaining === 1 ? 'encontro' : 'encontros'}` : '') : 'Confira a programação com a organização.'}</p><div className={s.capacity}>{vaga.numero_vagas} vagas ofertadas</div>
             <div className={s.application}>{application()}</div>{saveButton()}<div className={s.privacy}><p><Icon group="detalhe" name="imgIcon15" />Antes de enviar, sua agenda será conferida para evitar conflito de horários.</p><p><Icon group="detalhe" name="imgIcon16" />O contato do responsável é liberado depois do aceite.</p></div></div>

@@ -76,6 +76,28 @@ function botaoEnviar() {
 }
 
 describe('página pública de vagas', () => {
+  it.each(['PRESENCIAL', 'REMOTO'])('publica %s com o contrato correto de endereço', async modalidade => {
+    const user = userEvent.setup()
+    abrir(ONG)
+    await screen.findAllByRole('article')
+    await preencherFormulario(user)
+    fireEvent.change(screen.getByLabelText('CEP'), { target: { value: '70000001' } })
+    fireEvent.change(screen.getByLabelText('Logradouro'), { target: { value: 'Endereço da atividade' } })
+    if (modalidade === 'REMOTO') {
+      await user.selectOptions(screen.getByLabelText('Modalidade'), 'REMOTO')
+      expect(screen.queryByLabelText('CEP')).not.toBeInTheDocument()
+    }
+    await user.click(botaoEnviar())
+    await waitFor(() => expect(vagasService.publicarVaga).toHaveBeenCalledTimes(1))
+    const payload = vagasService.publicarVaga.mock.calls[0][0]
+    if (modalidade === 'PRESENCIAL') {
+      expect(payload).toMatchObject({ origem_localizacao: 'PROPRIA',
+        localizacao: {cep:'70000001',logradouro:'Endereço da atividade'} })
+    } else {
+      expect(payload).not.toHaveProperty('localizacao')
+      expect(payload).not.toHaveProperty('origem_localizacao')
+    }
+  })
   it.each([
     [null, false],
     [{ perfil: 'VOLUNTARIO' }, false],

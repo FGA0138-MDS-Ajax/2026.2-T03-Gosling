@@ -36,7 +36,9 @@ export function errosPublicacao(detail) {
     if (campo === 'ocorrencias') {
       const indice = issue.loc?.[2]
       encontros.push(`${Number.isInteger(indice) ? `Encontro ${indice + 1}: ` : ''}${mensagem}`)
-    } else if (texto || ['causa_id', 'modalidade', 'periodo', 'carga_horaria', 'numero_vagas'].includes(campo)) {
+    } else if (campo === 'localizacao') {
+      campos[issue.loc.slice(1).join('.')] ??= mensagem
+    } else if (texto || ['causa_id', 'modalidade', 'periodo', 'carga_horaria', 'numero_vagas', 'origem_localizacao'].includes(campo)) {
       campos[campo] ??= mensagem
     } else {
       gerais.push(mensagem)
