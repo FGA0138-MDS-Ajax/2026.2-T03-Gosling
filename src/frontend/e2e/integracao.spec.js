@@ -296,7 +296,7 @@ test('publicação mostra erros por campo e salva local longo, carga decimal e e
   await page.getByLabel(/Título da vaga/).fill(titulo)
   await page.getByLabel(/Descrição/).fill('Leitura compartilhada com a comunidade.')
   await page.getByLabel(/Atividades do voluntário/).fill('Organizar livros e apoiar as atividades de leitura.')
-  await page.getByLabel(/Causa/).fill('Educação')
+  await page.getByLabel(/Causa/).selectOption({ label: 'Educação' })
   const local = 'Centro comunitário, Brasília. '.repeat(10).trim()
   expect(local.length).toBeGreaterThan(200)
   await page.getByLabel(/Local ou atividade remota/).fill(local)
