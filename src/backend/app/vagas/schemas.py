@@ -115,18 +115,29 @@ class ListaVagasResponse(BaseModel):
 
 
 class AtualizarVagaRequest(BaseModel):
-   
-    titulo: Optional[str] = Field(None, min_length=3, max_length=100)
+    model_config = ConfigDict(extra="forbid")  # ← garante 422 para campo desconhecido
+
+    titulo: Optional[str] = Field(None, min_length=3, max_length=150)
     descricao: Optional[str] = Field(None, min_length=10)
     cidade: Optional[str] = None
     estado_uf: Optional[str] = Field(None, min_length=2, max_length=2)
     data_inicio: Optional[datetime] = None
     data_fim: Optional[datetime] = None
-    estado_vaga: Optional[str] = Field(
-        None,
-        description="Estado da vaga: ABERTA, ENCERRADA ou RASCUNHO",
+    ocorrencias: Optional[list[OcorrenciaRequest]] = Field(
+        None, min_length=1, max_length=100
+    )
+    estado_vaga: Optional[StatusVaga] = Field(
+        None, description="Estado da vaga: ABERTA, ENCERRADA ou RASCUNHO"
     )
 
+    @model_validator(mode="after")
+    def validar_ocorrencias(self):
+        if self.ocorrencias:
+            self.ocorrencias.sort(key=lambda item: item.inicio)
+            for anterior, atual in zip(self.ocorrencias, self.ocorrencias[1:]):
+                if atual.inicio < anterior.fim:
+                    raise ValueError("Os encontros da vaga têm horários sobrepostos.")
+        return self
 
 class VagaResumoResponse(BaseModel):
     
