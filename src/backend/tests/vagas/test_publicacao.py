@@ -264,25 +264,15 @@ def test_falha_ao_confirmar_nao_deixa_publicacao_parcial(
     assert quantidade(db, Causa) == causas_antes
 
 
-def test_causa_criada_entre_consulta_e_insert_e_reutilizada(
-    client, db, contas, dados_vaga, monkeypatch
+def test_publicacoes_reutilizam_o_catalogo_com_nome_legado_ou_id(
+    client, db, contas, dados_vaga
 ):
     headers = autenticar(client, contas)
     causas_antes = quantidade(db, Causa)
     primeira = publicar(client, headers, dados_vaga)
-    consultar_original = db.scalar
-    consultas = 0
-
-    def consultar(statement, *args, **kwargs):
-        nonlocal consultas
-        descricoes = getattr(statement, "column_descriptions", [])
-        if descricoes and descricoes[0].get("entity") is Causa:
-            consultas += 1
-            if consultas == 1:
-                return None
-        return consultar_original(statement, *args, **kwargs)
-
-    monkeypatch.setattr(db, "scalar", consultar)
-    segunda = publicar(client, headers, dados_vaga)
+    por_id = {**dados_vaga, "causa_id": primeira["causa"]["id"]}
+    del por_id["causa"]
+    segunda = publicar(client, headers, por_id)
     assert primeira["causa"]["id"] == segunda["causa"]["id"]
+    assert primeira["id"] != segunda["id"]
     assert quantidade(db, Causa) == causas_antes

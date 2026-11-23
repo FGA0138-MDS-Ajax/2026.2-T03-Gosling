@@ -8,6 +8,7 @@ from pydantic import (
     EmailStr,
     Field,
     field_validator,
+    model_validator,
 )
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -15,6 +16,9 @@ from sqlalchemy.orm import Session
 
 from app.auth.schemas import LoginResponse
 from app.auth.service import criar_sessao
+from app.causas.repository import CausaRepository
+from app.causas.schemas import IdCausa
+from app.causas.service import CatalogoService, nomes_legados
 from app.core.database import get_db
 from app.core.midia import remover_imagem_local, salvar_imagem
 from app.core.security import hash_password
@@ -83,10 +87,20 @@ class Cadastro(BaseModel):
     causas: list[Annotated[str, Field(min_length=1, max_length=100)]] = Field(
         default_factory=list, max_length=100
     )
+    causa_ids: list[IdCausa] | None = Field(default=None, max_length=100)
     disponibilidade_semanal: list[FaixaDisponibilidade] = Field(
         default_factory=list, max_length=21
     )
     carga_horaria_semanal: int | None = Field(default=None, ge=1, le=60, strict=True)
+
+    @model_validator(mode="after")
+    def contrato_de_interesses(self):
+        if "causa_ids" in self.model_fields_set:
+            if self.causa_ids is None or "causas" in self.model_fields_set:
+                raise ValueError(
+                    "Informe causa_ids como lista, sem o campo legado causas."
+                )
+        return self
 
     @field_validator("disponibilidade_semanal")
     @classmethod
@@ -156,11 +170,17 @@ class Edicao(BaseModel):
     estado: UF | None = None
     biografia: str | None = Field(default=None, max_length=500)
     causas: list[ItemPerfil] | None = Field(default=None, max_length=100)
+    causa_ids: list[IdCausa] | None = Field(default=None, max_length=100)
+    causas_legadas: list[str] | None = Field(default=None, max_length=100)
     disponibilidades: list[Disponibilidade] | None = Field(default=None, max_length=100)
     disponibilidade_semanal: list[FaixaDisponibilidade] | None = Field(
         default=None, max_length=21
     )
     carga_horaria_semanal: int | None = Field(default=None, ge=1, le=60, strict=True)
+
+    @model_validator(mode="after")
+    def contrato_de_interesses(self):
+        return Cadastro.contrato_de_interesses(self)
 
     @field_validator("disponibilidades")
     @classmethod
@@ -187,16 +207,24 @@ class PerfilVoluntario(UsuarioPublico):
     estado: str | None
     biografia: str | None
     causas: list[str]
+    causa_ids: list[int] = Field(default_factory=list)
+    causas_legadas: list[str] = Field(default_factory=list)
     disponibilidades: list[str]
     disponibilidade_semanal: list[FaixaDisponibilidade] = Field(default_factory=list)
     carga_horaria_semanal: int | None = None
     foto_url: str | None = None
 
     @field_validator(
-        "causas", "disponibilidades", "disponibilidade_semanal", mode="before"
+        "causas",
+        "causa_ids",
+        "disponibilidades",
+        "disponibilidade_semanal",
+        mode="before",
     )
     @classmethod
-    def listas_de_contas_existentes(cls, valor):
+    def listas_de_contas_existentes(cls, valor, info):
+        if info.field_name == "causas":
+            return nomes_legados(valor)
         return [] if valor is None else valor
 
 
@@ -205,6 +233,11 @@ def cadastrar(dados: Cadastro, db: Banco, response: Response):
     if not dados.consentimento_termos:
         raise HTTPException(400, "É necessário aceitar os termos.")
     email = str(dados.email).lower()
+    catalogo = CatalogoService(CausaRepository(db))
+    if dados.causa_ids is not None:
+        ids = catalogo.validar_ids(dados.causa_ids)
+    else:
+        ids, _ = catalogo.resolver_nomes(dados.causas)
     conta = Voluntario(
         nome=dados.nome_completo,
         email=email,
@@ -214,7 +247,8 @@ def cadastrar(dados: Cadastro, db: Banco, response: Response):
         estado=dados.estado,
         consentimento_termos=True,
         senha_hash=hash_password(dados.password.get_secret_value()),
-        causas=dados.causas,
+        causas=catalogo.nomes_para_exibicao(ids, []),
+        causa_ids=ids,
         disponibilidade_semanal=[f.model_dump() for f in dados.disponibilidade_semanal],
         carga_horaria_semanal=dados.carga_horaria_semanal,
     )
@@ -255,12 +289,17 @@ Conta = Annotated[Voluntario, Depends(obter_conta)]
 
 
 @router.get("/me", response_model=PerfilVoluntario)
-def consultar(conta: Conta):
-    return montar_perfil(conta)
+def consultar(conta: Conta, db: Banco):
+    return montar_perfil(conta, db)
 
 
-def montar_perfil(conta: Voluntario) -> PerfilVoluntario:
+def montar_perfil(conta: Voluntario, db: Session) -> PerfilVoluntario:
     perfil = PerfilVoluntario.model_validate(conta)
+    catalogo = CatalogoService(CausaRepository(db))
+    ids, legadas = catalogo.interesses_atuais(conta.causa_ids, conta.causas)
+    perfil.causa_ids = ids
+    perfil.causas_legadas = legadas
+    perfil.causas = catalogo.nomes_para_exibicao(ids, legadas)
     if conta.disponibilidade_semanal is None:
         perfil.disponibilidade_semanal = [
             FaixaDisponibilidade(**faixa)
@@ -273,6 +312,23 @@ def montar_perfil(conta: Voluntario) -> PerfilVoluntario:
 @router.put("/me", response_model=PerfilVoluntario)
 def atualizar(dados: Edicao, conta: Conta, db: Banco):
     campos = dados.model_dump(exclude_unset=True)
+    if any(campo in campos for campo in ("causa_ids", "causas", "causas_legadas")):
+        catalogo = CatalogoService(CausaRepository(db))
+        anteriores, legadas = catalogo.interesses_atuais(conta.causa_ids, conta.causas)
+        if "causa_ids" in campos:
+            ids = catalogo.validar_ids(campos.pop("causa_ids"), anteriores)
+        elif "causas" in campos:
+            ids, legadas = catalogo.resolver_nomes(
+                campos.pop("causas") or [], anteriores, legadas
+            )
+        else:
+            ids = anteriores
+        if "causas_legadas" in campos:
+            legadas = catalogo.validar_legadas(
+                campos.pop("causas_legadas") or [], legadas
+            )
+        conta.causa_ids = ids
+        conta.causas = catalogo.nomes_para_exibicao(ids, legadas)
     nome = campos.pop("nome_completo", None)
     if nome is not None:
         conta.nome = nome
@@ -306,7 +362,7 @@ def atualizar(dados: Edicao, conta: Conta, db: Banco):
     for campo, valor in campos.items():
         setattr(conta, campo, valor)
     db.commit()
-    return montar_perfil(conta)
+    return montar_perfil(conta, db)
 
 
 @router.put("/me/foto", response_model=PerfilVoluntario)
@@ -321,7 +377,7 @@ async def atualizar_foto(request: Request, conta: Conta, db: Banco):
         remover_imagem_local(nova)
         raise
     remover_imagem_local(anterior)
-    return montar_perfil(conta)
+    return montar_perfil(conta, db)
 
 
 @router.delete("/me/foto", response_model=PerfilVoluntario)
@@ -330,4 +386,4 @@ def excluir_foto(conta: Conta, db: Banco):
     conta.foto_url = None
     db.commit()
     remover_imagem_local(anterior)
-    return montar_perfil(conta)
+    return montar_perfil(conta, db)

@@ -2,6 +2,8 @@ import math
 from typing import Any, Dict
 
 from fastapi import HTTPException
+from app.causas.repository import CausaRepository
+from app.causas.service import CatalogoService, erro_causa, normalizar
 
 from app.core.midia import bloqueio_midia, pasta_midia
 from app.usuarios.enums import TipoOrganizacao
@@ -53,16 +55,19 @@ class VagaService:
 
         with bloqueio_midia:
             for foto in dados.fotos:
-                if foto.startswith("/api/v1/midia/") and not (
-                    pasta_midia() / foto.rsplit("/", 1)[1]
-                ).is_file():
+                if (
+                    foto.startswith("/api/v1/midia/")
+                    and not (pasta_midia() / foto.rsplit("/", 1)[1]).is_file()
+                ):
                     raise HTTPException(
                         422, "Uma das fotos expirou. Selecione as imagens novamente."
                     )
             try:
-                causa = self.repository.obter_ou_criar_causa(dados.causa)
+                causa = CatalogoService(
+                    CausaRepository(self.repository.session)
+                ).publicavel(dados.causa_id, dados.causa)
                 vaga = Vaga(
-                    **dados.model_dump(exclude={"causa", "ocorrencias"}),
+                    **dados.model_dump(exclude={"causa", "causa_id", "ocorrencias"}),
                     organizacao=organizacao,
                     causa=causa,
                     status=StatusVaga.ABERTA,
@@ -80,6 +85,15 @@ class VagaService:
                 raise
 
     def listar(self, pagina: int, por_pagina: int, **filtros) -> ListaVagasResponse:
+        catalogo = CatalogoService(CausaRepository(self.repository.session))
+        if filtros.get("causa_id") is not None:
+            if filtros["causa_id"] not in catalogo.por_id:
+                erro_causa("causa_id", "Causa não encontrada.", origem="query")
+        elif filtros.get("causa"):
+            causa = catalogo.por_nome.get(normalizar(filtros["causa"]))
+            if causa is not None:
+                filtros["causa_id"] = causa.id
+                filtros["causa"] = None
         vagas, total = self.repository.listar_publicas(pagina, por_pagina, **filtros)
         return ListaVagasResponse(
             itens=[VagaPublica.model_validate(vaga) for vaga in vagas],
@@ -142,12 +156,11 @@ class VagaService:
         if not payload:
             return vaga
 
-        alterou_inicio = (
-            "data_inicio" in payload
-            and payload["data_inicio"] != vaga.get("data_inicio")
-        )
-        alterou_fim = (
-            "data_fim" in payload and payload["data_fim"] != vaga.get("data_fim")
+        alterou_inicio = "data_inicio" in payload and payload[
+            "data_inicio"
+        ] != vaga.get("data_inicio")
+        alterou_fim = "data_fim" in payload and payload["data_fim"] != vaga.get(
+            "data_fim"
         )
         if alterou_inicio or alterou_fim:
             if self.repository.tem_candidaturas_ativas(vaga_id):

@@ -1,8 +1,9 @@
 from app.usuarios.models import Voluntario
+from app.usuarios.catalogos import Causa
+from sqlalchemy import select
 
-def test_consulta_do_voluntario_usa_o_titular_do_token(
-    client, db, contas, senha_hash
-):
+
+def test_consulta_do_voluntario_usa_o_titular_do_token(client, db, contas, senha_hash):
     primeiro = contas["voluntario"]
     segundo = Voluntario(
         nome="Outro Voluntario",
@@ -18,9 +19,7 @@ def test_consulta_do_voluntario_usa_o_titular_do_token(
             json={"email": titular.email, "senha": "SenhaDeTeste123!"},
         )
         assert login.status_code == 200, login.text
-        headers = {
-            "Authorization": f"Bearer {login.json()['access_token']}"
-        }
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
 
         resposta = client.get(
             "/api/v1/voluntarios/me",
@@ -40,7 +39,9 @@ def test_consulta_do_voluntario_usa_o_titular_do_token(
         alteracao = {
             "nome_completo": f"{titular.nome} atualizado",
             "cidade": f"Cidade {titular.id}",
-            "causas": [f"Causa {titular.id}"],
+            "causa_ids": [
+                db.scalar(select(Causa.id).where(Causa.codigo == "educacao"))
+            ],
             "disponibilidades": ["DIA:SABADO", "PERIODO:MANHA", "CARGA_HORARIA:4"],
         }
         dados_terceiro = (terceiro.nome, terceiro.cidade, terceiro.causas)

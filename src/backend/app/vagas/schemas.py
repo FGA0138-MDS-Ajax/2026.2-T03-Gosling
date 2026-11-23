@@ -13,6 +13,7 @@ from pydantic import (
 )
 
 from app.vagas.enums import Modalidade, Periodo, StatusVaga
+from app.causas.schemas import IdCausa
 
 
 class OcorrenciaRequest(BaseModel):
@@ -60,7 +61,8 @@ class CadastroVagaRequest(BaseModel):
     titulo: str = Field(min_length=3, max_length=150)
     descricao: str = Field(min_length=10, max_length=5000)
     atividades: str = Field(min_length=10, max_length=5000)
-    causa: str = Field(min_length=3, max_length=100)
+    causa: str | None = Field(default=None, min_length=3, max_length=100)
+    causa_id: IdCausa | None = None
     modalidade: Modalidade
     local: str = Field(min_length=3, max_length=500)
     periodo: Periodo
@@ -79,6 +81,13 @@ class CadastroVagaRequest(BaseModel):
     def urls_seguras(cls, valor):
         return [validar_url_publica(url) for url in valor]
 
+    @field_validator("causa_id", mode="before")
+    @classmethod
+    def causa_nao_nula(cls, valor):
+        if valor is None:
+            raise ValueError("Selecione uma causa do catálogo.")
+        return valor
+
     @field_validator(
         "titulo", "descricao", "atividades", "causa", "local", mode="before"
     )
@@ -90,6 +99,12 @@ class CadastroVagaRequest(BaseModel):
     @classmethod
     def normalizar_horas(cls, valor: Decimal) -> Decimal:
         return valor.quantize(Decimal("0.01"))
+
+    @model_validator(mode="after")
+    def selecionar_causa(self):
+        if (self.causa is None) == (self.causa_id is None):
+            raise ValueError("Informe somente causa_id; o campo causa é legado.")
+        return self
 
     @model_validator(mode="after")
     def validar_ocorrencias(self):
@@ -114,6 +129,8 @@ class CausaPublica(BaseModel):
 
     id: int
     nome: str
+    codigo: str | None = None
+    ativo: bool = False
 
 
 class OcorrenciaPublica(OcorrenciaRequest):
