@@ -90,3 +90,9 @@ def validar_regiao_compativel(dados):
                     "A cidade e a UF devem ser iguais nos dados de localização."
                 )
     return dados
+
+
+class LocalizacaoPublica(Localizacao):
+    # A região anterior pode ser parcial; a leitura não revalida o legado.
+    cidade: str | None = None
+    estado: str | None = None

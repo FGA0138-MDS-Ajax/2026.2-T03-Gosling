@@ -26,12 +26,14 @@ def test_migracao_preserva_textos_e_regiao_anterior_sem_inventar_coordenadas(
             )
             connection.execute(
                 text(
-                    "INSERT INTO voluntarios (id,cidade,estado) VALUES (1,'Ceilândia','DF')"
+                    "INSERT INTO voluntarios (id,cidade,estado) "
+                    "VALUES (1,'Ceilândia','DF')"
                 )
             )
             connection.execute(
                 text(
-                    "INSERT INTO organizacoes (id,endereco) VALUES (2,'Endereço sem CEP')"
+                    "INSERT INTO organizacoes (id,endereco) "
+                    "VALUES (2,'Endereço sem CEP')"
                 )
             )
             for identificador, modalidade, local in (
@@ -40,10 +42,13 @@ def test_migracao_preserva_textos_e_regiao_anterior_sem_inventar_coordenadas(
             ):
                 connection.execute(
                     text(
-                        "INSERT INTO vagas (id,organizacao_id,causa_id,titulo,descricao,"
+                        "INSERT INTO vagas "
+                        "(id,organizacao_id,causa_id,titulo,descricao,"
                         "atividades,modalidade,local,periodo,carga_horaria,numero_vagas,"
-                        "status) VALUES (:id,2,(SELECT id FROM causas LIMIT 1),'Anterior',"
-                        "'Descrição anterior','Atividades anteriores',:modalidade,:local,"
+                        "status) VALUES "
+                        "(:id,2,(SELECT id FROM causas LIMIT 1),'Anterior',"
+                        "'Descrição anterior','Atividades anteriores',"
+                        ":modalidade,:local,"
                         "'MANHA',1,10,'ABERTA')"
                     ),
                     {"id": identificador, "modalidade": modalidade, "local": local},

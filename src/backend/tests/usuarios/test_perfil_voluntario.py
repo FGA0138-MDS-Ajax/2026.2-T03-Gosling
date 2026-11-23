@@ -140,6 +140,7 @@ def test_revalida_conta_desativada_e_nao_expoe_segredos(client, db, contas):
         "identificacao",
         "telefone",
         "cidade",
+        "localizacao",
         "estado",
         "biografia",
         "causas",

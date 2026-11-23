@@ -40,8 +40,3 @@ def aplicar_localizacao(entidade, dados: Localizacao | None):
     valores = dados.model_dump() if dados is not None else dict.fromkeys(CAMPOS)
     for campo, valor in valores.items():
         setattr(entidade, campo, valor)
-
-
-def limpar_coordenadas(entidade):
-    for campo in ("latitude", "longitude", "origem_coordenadas"):
-        setattr(entidade, campo, None)

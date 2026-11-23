@@ -22,6 +22,12 @@ from app.causas.service import CatalogoService, nomes_legados
 from app.core.database import get_db
 from app.core.midia import remover_imagem_local, salvar_imagem
 from app.core.security import hash_password
+from app.localizacao.models import aplicar_localizacao
+from app.localizacao.schemas import (
+    Localizacao,
+    LocalizacaoPublica,
+    validar_regiao_compativel,
+)
 from app.dependencies import require_perfil
 from app.usuarios.disponibilidade import (
     DIAS,
@@ -82,6 +88,7 @@ class Cadastro(BaseModel):
     telefone: str | None = Field(default=None, pattern=PADRAO_TELEFONE)
     cidade: str | None = Field(default=None, min_length=2, max_length=100)
     estado: UF | None = None
+    localizacao: Localizacao | None = None
     password: SenhaCadastro
     consentimento_termos: bool = Field(strict=True)
     causas: list[Annotated[str, Field(min_length=1, max_length=100)]] = Field(
@@ -101,6 +108,10 @@ class Cadastro(BaseModel):
                     "Informe causa_ids como lista, sem o campo legado causas."
                 )
         return self
+
+    @model_validator(mode="after")
+    def regiao_compativel(self):
+        return validar_regiao_compativel(self)
 
     @field_validator("disponibilidade_semanal")
     @classmethod
@@ -168,6 +179,7 @@ class Edicao(BaseModel):
     telefone: str | None = Field(default=None, pattern=PADRAO_TELEFONE)
     cidade: str | None = Field(default=None, max_length=100)
     estado: UF | None = None
+    localizacao: Localizacao | None = None
     biografia: str | None = Field(default=None, max_length=500)
     causas: list[ItemPerfil] | None = Field(default=None, max_length=100)
     causa_ids: list[IdCausa] | None = Field(default=None, max_length=100)
@@ -181,6 +193,10 @@ class Edicao(BaseModel):
     @model_validator(mode="after")
     def contrato_de_interesses(self):
         return Cadastro.contrato_de_interesses(self)
+
+    @model_validator(mode="after")
+    def regiao_compativel(self):
+        return validar_regiao_compativel(self)
 
     @field_validator("disponibilidades")
     @classmethod
@@ -205,6 +221,7 @@ class PerfilVoluntario(UsuarioPublico):
     telefone: str | None
     cidade: str | None
     estado: str | None
+    localizacao: LocalizacaoPublica | None = None
     biografia: str | None
     causas: list[str]
     causa_ids: list[int] = Field(default_factory=list)
@@ -252,6 +269,10 @@ def cadastrar(dados: Cadastro, db: Banco, response: Response):
         disponibilidade_semanal=[f.model_dump() for f in dados.disponibilidade_semanal],
         carga_horaria_semanal=dados.carga_horaria_semanal,
     )
+    if dados.localizacao is not None:
+        aplicar_localizacao(conta, dados.localizacao)
+        conta.cidade = dados.localizacao.cidade or dados.cidade
+        conta.estado = dados.localizacao.estado or dados.estado
     conta.disponibilidades = atualizar_legado(
         [], conta.disponibilidade_semanal, conta.carga_horaria_semanal
     )
@@ -289,7 +310,8 @@ Conta = Annotated[Voluntario, Depends(obter_conta)]
 
 
 @router.get("/me", response_model=PerfilVoluntario)
-def consultar(conta: Conta, db: Banco):
+def consultar(conta: Conta, db: Banco, response: Response):
+    response.headers["Cache-Control"] = "no-store"
     return montar_perfil(conta, db)
 
 
@@ -310,7 +332,8 @@ def montar_perfil(conta: Voluntario, db: Session) -> PerfilVoluntario:
 
 
 @router.put("/me", response_model=PerfilVoluntario)
-def atualizar(dados: Edicao, conta: Conta, db: Banco):
+def atualizar(dados: Edicao, conta: Conta, db: Banco, response: Response):
+    response.headers["Cache-Control"] = "no-store"
     campos = dados.model_dump(exclude_unset=True)
     if any(campo in campos for campo in ("causa_ids", "causas", "causas_legadas")):
         catalogo = CatalogoService(CausaRepository(db))
@@ -329,6 +352,20 @@ def atualizar(dados: Edicao, conta: Conta, db: Banco):
             )
         conta.causa_ids = ids
         conta.causas = catalogo.nomes_para_exibicao(ids, legadas)
+    if "localizacao" in campos:
+        aplicar_localizacao(conta, dados.localizacao)
+        campos.pop("localizacao")
+        # O objeto novo contém a região; não aplique novamente os campos legados.
+        campos.pop("cidade", None)
+        campos.pop("estado", None)
+    elif any(
+        campo in campos and campos[campo] != getattr(conta, campo)
+        for campo in ("cidade", "estado")
+    ):
+        # A região mudou sem confirmação de um novo ponto.
+        cidade_anterior, estado_anterior = conta.cidade, conta.estado
+        aplicar_localizacao(conta, None)
+        conta.cidade, conta.estado = cidade_anterior, estado_anterior
     nome = campos.pop("nome_completo", None)
     if nome is not None:
         conta.nome = nome
@@ -366,7 +403,8 @@ def atualizar(dados: Edicao, conta: Conta, db: Banco):
 
 
 @router.put("/me/foto", response_model=PerfilVoluntario)
-async def atualizar_foto(request: Request, conta: Conta, db: Banco):
+async def atualizar_foto(request: Request, conta: Conta, db: Banco, response: Response):
+    response.headers["Cache-Control"] = "no-store"
     anterior = conta.foto_url
     nova = await salvar_imagem(request, avatar=True)
     try:
@@ -381,7 +419,8 @@ async def atualizar_foto(request: Request, conta: Conta, db: Banco):
 
 
 @router.delete("/me/foto", response_model=PerfilVoluntario)
-def excluir_foto(conta: Conta, db: Banco):
+def excluir_foto(conta: Conta, db: Banco, response: Response):
+    response.headers["Cache-Control"] = "no-store"
     anterior = conta.foto_url
     conta.foto_url = None
     db.commit()
