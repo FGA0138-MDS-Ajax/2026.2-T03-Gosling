@@ -59,6 +59,7 @@ class Vaga(LocalizacaoMixin, Base):
     carga_horaria: Mapped[Decimal | None] = mapped_column(Numeric(7, 2))
     numero_vagas: Mapped[int | None]
     fotos: Mapped[list[str] | None] = mapped_column(JSON)
+    enquadramento_fotos: Mapped[dict | None] = mapped_column(JSON)
     documentos_exigidos: Mapped[list[dict[str, str | None]] | None] = mapped_column(
         JSON
     )
