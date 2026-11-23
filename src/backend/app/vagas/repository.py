@@ -119,21 +119,46 @@ class VagaRepository:
         ).scalar_one()
         return total > 0
 
-    def atualizar_vaga(self, vaga_id: str, dados_atualizacao: Dict[str, Any]) -> bool:
-        """Atualiza dinamicamente apenas os campos informados."""
-        if not dados_atualizacao:
-            return False
+_CAMPO_PARA_COLUNA = {
+    "estado_vaga": "status",
+}
 
-        for chave in dados_atualizacao:
-            if not chave.isidentifier():
-                raise ValueError(f"Nome de campo inválido: {chave!r}")
+def atualizar_vaga(self, vaga_id: str, dados_atualizacao: Dict[str, Any]) -> bool:
+    if not dados_atualizacao:
+        return False
 
-        campos_set = ", ".join(f"{chave} = :{chave}" for chave in dados_atualizacao)
-        parametros = {**dados_atualizacao, "vaga_id": vaga_id}
+    ocorrencias = dados_atualizacao.pop("ocorrencias", None)
 
-        resultado = self.session.execute(
-            text(f"UPDATE vagas SET {campos_set} WHERE id = :vaga_id"),
-            parametros,
+    campos_set = []
+    parametros: Dict[str, Any] = {"vaga_id": vaga_id}
+    for chave, valor in dados_atualizacao.items():
+        coluna = _CAMPO_PARA_COLUNA.get(chave, chave)
+        if not coluna.isidentifier():
+            raise ValueError(f"Nome de campo inválido: {coluna!r}")
+        campos_set.append(f"{coluna} = :{coluna}")
+        parametros[coluna] = valor
+
+    if campos_set:
+        sql = f"UPDATE vagas SET {', '.join(campos_set)} WHERE id = :vaga_id"
+        self.session.execute(text(sql), parametros)
+
+    if ocorrencias is not None:
+        self.session.execute(
+            text("DELETE FROM ocorrencias_vaga WHERE vaga_id = :vaga_id"),
+            {"vaga_id": vaga_id},
         )
-        self.session.commit()
-        return resultado.rowcount > 0
+        for item in ocorrencias:
+            self.session.execute(
+                text(
+                    "INSERT INTO ocorrencias_vaga (vaga_id, inicio, fim) "
+                    "VALUES (:vaga_id, :inicio, :fim)"
+                ),
+                {
+                    "vaga_id": vaga_id,
+                    "inicio": item["inicio"],
+                    "fim": item["fim"],
+                },
+            )
+
+    self.session.commit()
+    return True
