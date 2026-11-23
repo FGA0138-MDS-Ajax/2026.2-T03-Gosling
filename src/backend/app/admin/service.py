@@ -9,6 +9,7 @@ from app.admin.schemas import (
 )
 from app.core.errors import NaoAutenticadoError
 from app.core.security import hash_password
+from app.localizacao.models import aplicar_localizacao
 from app.usuarios.enums import Perfil, TipoOrganizacao
 from app.usuarios.models import Organizacao, Usuario, Voluntario
 
@@ -42,13 +43,14 @@ class AdminService:
     def criar(self, dados: CriarContaRequest):
         cnpj = getattr(dados, "cnpj", None)
         self._verificar_duplicidade(str(dados.email), cnpj)
-        campos = dados.model_dump(exclude={"senha", "perfil"})
+        campos = dados.model_dump(exclude={"senha", "perfil", "localizacao"})
         campos["senha_hash"] = hash_password(dados.senha.get_secret_value())
         if dados.perfil == Perfil.ORGANIZACAO:
             usuario = Organizacao(
                 **campos, perfil=Perfil.ORGANIZACAO,
                 tipo=TipoOrganizacao.ONG, consentimento_termos=False,
             )
+            aplicar_localizacao(usuario, dados.localizacao)
         elif dados.perfil == Perfil.VOLUNTARIO:
             usuario = Voluntario(**campos, perfil=Perfil.VOLUNTARIO)
         else:
