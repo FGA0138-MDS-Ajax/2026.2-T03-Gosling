@@ -9,7 +9,7 @@ import { organizationFields, validCnpj } from '../utils/organizationFields'
 import { PHONE_ERROR, phoneDigits, validPhone } from '../utils/accountFields'
 import styles from './OrganizationSignup.module.css'
 
-const fields = organizationFields.filter((field) => field.name !== 'senha')
+const fields = organizationFields.filter(field => field.name !== 'senha')
 
 export default function OrganizationProfilePage() {
   const [organization, setOrganization] = useState(null)
@@ -29,17 +29,22 @@ export default function OrganizationProfilePage() {
   useEffect(() => {
     mounted.current = true
     const controller = new AbortController()
-    getOrganization(controller.signal).then((data) => {
-      if (controller.signal.aborted) return
-      setOrganization(data)
-      setValues(data)
-      setLoading(false)
-    }).catch(() => {
-      if (controller.signal.aborted) return
-      setLoadError(true)
-      setLoading(false)
-    })
-    return () => { mounted.current = false; controller.abort() }
+    getOrganization(controller.signal)
+      .then(data => {
+        if (controller.signal.aborted) return
+        setOrganization(data)
+        setValues(data)
+        setLoading(false)
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return
+        setLoadError(true)
+        setLoading(false)
+      })
+    return () => {
+      mounted.current = false
+      controller.abort()
+    }
   }, [attempt])
 
   useEffect(() => {
@@ -48,7 +53,7 @@ export default function OrganizationProfilePage() {
   }, [errors, pending])
 
   function change(name, value) {
-    setValues((current) => ({ ...current, [name]: value }))
+    setValues(current => ({ ...current, [name]: value }))
     setSaved(false)
     setMessage('')
   }
@@ -56,23 +61,29 @@ export default function OrganizationProfilePage() {
   async function submit(event) {
     event.preventDefault()
     if (submitting.current) return
-    const payload = Object.fromEntries(fields.map(({ name }) => [name, (values[name] ?? '').trim()]))
+    const payload = Object.fromEntries(
+      fields.map(({ name }) => [name, (values[name] ?? '').trim()]),
+    )
     payload.cnpj = payload.cnpj.toUpperCase().replace(/[./-]/g, '')
     payload.telefone = phoneDigits(payload.telefone)
     payload.email = payload.email.toLowerCase()
     payload.descricao = (values.descricao ?? '').trim()
-    if (Object.hasOwn(values, 'localizacao')) payload.localizacao = localizacaoPayload(values.localizacao)
+    if (Object.hasOwn(values, 'localizacao'))
+      payload.localizacao = localizacaoPayload(values.localizacao)
     const invalid = validarLocalizacao(values.localizacao)
     for (const field of fields) {
       const value = payload[field.name]
       const optional = organization.tipo !== 'ONG' && ['cnpj', 'razao_social'].includes(field.name)
       if (!value && optional) continue
       if (!value) invalid[field.name] = 'Preencha este campo.'
-      else if (field.minLength && value.length < field.minLength) invalid[field.name] = `Use pelo menos ${field.minLength} caracteres.`
-      else if (field.maxLength && value.length > field.maxLength) invalid[field.name] = `Use até ${field.maxLength} caracteres.`
+      else if (field.minLength && value.length < field.minLength)
+        invalid[field.name] = `Use pelo menos ${field.minLength} caracteres.`
+      else if (field.maxLength && value.length > field.maxLength)
+        invalid[field.name] = `Use até ${field.maxLength} caracteres.`
     }
     if (payload.cnpj && !validCnpj(payload.cnpj)) invalid.cnpj = 'Informe um CNPJ válido.'
-    if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) invalid.email = 'Informe um e-mail válido.'
+    if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email))
+      invalid.email = 'Informe um e-mail válido.'
     if (payload.telefone && !validPhone(payload.telefone)) invalid.telefone = PHONE_ERROR
     if (payload.descricao.length > 5000) invalid.descricao = 'Use até 5000 caracteres.'
     setErrors(invalid)
@@ -98,12 +109,17 @@ export default function OrganizationProfilePage() {
         for (const issue of detail) {
           const name = issue.loc?.[1]
           if (name === 'localizacao') invalidFields[issue.loc.slice(1).join('.')] = issue.msg
-          else if (fields.some((field) => field.name === name) || name === 'descricao') invalidFields[name] = issue.msg
+          else if (fields.some(field => field.name === name) || name === 'descricao')
+            invalidFields[name] = issue.msg
         }
         setErrors(invalidFields)
         setMessage('Confira os campos indicados e tente novamente.')
       } else {
-        setMessage(typeof detail === 'string' ? detail : 'Não foi possível salvar o perfil. Tente novamente.')
+        setMessage(
+          typeof detail === 'string'
+            ? detail
+            : 'Não foi possível salvar o perfil. Tente novamente.',
+        )
       }
     } finally {
       submitting.current = false
@@ -120,52 +136,127 @@ export default function OrganizationProfilePage() {
       <section className={styles.card}>
         <h1>Perfil institucional</h1>
         {loading && <p role="status">Carregando perfil…</p>}
-        {loadError && <>
-          <p role="alert">Não foi possível carregar o perfil.</p>
-          <button type="button" className={styles.submit} onClick={() => { setLoading(true); setLoadError(false); setAttempt(attempt + 1) }}>Tentar novamente</button>
-        </>}
-        {!loading && !loadError && organization && <>
-          <dl>
-            <dt>Tipo de organização</dt>
-            <dd>{organization.tipo === 'ONG' ? 'ONG' : 'Projeto social'}</dd>
-            <dt>Homologação</dt>
-            <dd>{organization.homologada ? 'Homologada' : 'Pendente'}</dd>
-          </dl>
-          <p>Tipo de organização e homologação são definidos pelo sistema.</p>
-          <form ref={formRef} noValidate aria-label="Editar perfil institucional" aria-busy={pending} onSubmit={submit}>
-            <fieldset disabled={pending}>
-              <legend>Dados institucionais e contatos</legend>
-              <div className={styles.grid}>
-                {fields.map(({ name, label, hint, ...props }) => {
-                  const required = organization.tipo === 'ONG' || !['cnpj', 'razao_social'].includes(name)
-                  return <div className={styles.field} key={name}>
-                    <label htmlFor={name}>{label}{!required && ' (opcional)'}</label>
-                    {name === 'telefone' ? <PhoneInput {...props} id={name} name={name} required={required} value={values[name] ?? ''}
-                      onValueChange={(value) => change(name, value)} aria-invalid={Boolean(errors[name])}
-                      aria-describedby={[`${name}-hint`, errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ')} /> :
-                    <input {...props} id={name} name={name} required={required} value={values[name] ?? ''}
-                      onChange={(event) => change(name, event.target.value)} aria-invalid={Boolean(errors[name])}
-                      aria-describedby={[hint ? `${name}-hint` : '', errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ') || undefined} />}
-                    {hint && <small id={`${name}-hint`}>{hint}</small>}
-                    {errors[name] && <span className={styles.error} id={`${name}-error`}>{errors[name]}</span>}
-                  </div>
-                })}
-              </div>
-              <LocationFields value={values.localizacao} onChange={value => change('localizacao', value)} errors={errors} disabled={pending} />
-              <div className={styles.field}>
-                <label htmlFor="descricao">Descrição (opcional)</label>
-                <textarea id="descricao" name="descricao" rows={4} maxLength={5000} value={values.descricao ?? ''}
-                  onChange={(event) => change('descricao', event.target.value)} aria-invalid={Boolean(errors.descricao)}
-                  aria-describedby={errors.descricao ? 'descricao-error' : undefined} />
-                {errors.descricao && <span className={styles.error} id="descricao-error">{errors.descricao}</span>}
-              </div>
-              {message && <p role="alert" className={styles.error}>{message}</p>}
-              <button type="submit" className={styles.submit}>{pending ? 'Salvando…' : 'Salvar alterações'}</button>
-            </fieldset>
-          </form>
-          {saved && <p role="status">Perfil atualizado com sucesso.</p>}
-          {pending && <p role="status">Salvando perfil…</p>}
-        </>}
+        {loadError && (
+          <>
+            <p role="alert">Não foi possível carregar o perfil.</p>
+            <button
+              type="button"
+              className={styles.submit}
+              onClick={() => {
+                setLoading(true)
+                setLoadError(false)
+                setAttempt(attempt + 1)
+              }}
+            >
+              Tentar novamente
+            </button>
+          </>
+        )}
+        {!loading && !loadError && organization && (
+          <>
+            <dl>
+              <dt>Tipo de organização</dt>
+              <dd>{organization.tipo === 'ONG' ? 'ONG' : 'Projeto social'}</dd>
+              <dt>Homologação</dt>
+              <dd>{organization.homologada ? 'Homologada' : 'Pendente'}</dd>
+            </dl>
+            <p>Tipo de organização e homologação são definidos pelo sistema.</p>
+            <form
+              ref={formRef}
+              noValidate
+              aria-label="Editar perfil institucional"
+              aria-busy={pending}
+              onSubmit={submit}
+            >
+              <fieldset disabled={pending}>
+                <legend>Dados institucionais e contatos</legend>
+                <div className={styles.grid}>
+                  {fields.map(({ name, label, hint, ...props }) => {
+                    const required =
+                      organization.tipo === 'ONG' || !['cnpj', 'razao_social'].includes(name)
+                    return (
+                      <div className={styles.field} key={name}>
+                        <label htmlFor={name}>
+                          {label}
+                          {!required && ' (opcional)'}
+                        </label>
+                        {name === 'telefone' ? (
+                          <PhoneInput
+                            {...props}
+                            id={name}
+                            name={name}
+                            required={required}
+                            value={values[name] ?? ''}
+                            onValueChange={value => change(name, value)}
+                            aria-invalid={Boolean(errors[name])}
+                            aria-describedby={[`${name}-hint`, errors[name] ? `${name}-error` : '']
+                              .filter(Boolean)
+                              .join(' ')}
+                          />
+                        ) : (
+                          <input
+                            {...props}
+                            id={name}
+                            name={name}
+                            required={required}
+                            value={values[name] ?? ''}
+                            onChange={event => change(name, event.target.value)}
+                            aria-invalid={Boolean(errors[name])}
+                            aria-describedby={
+                              [hint ? `${name}-hint` : '', errors[name] ? `${name}-error` : '']
+                                .filter(Boolean)
+                                .join(' ') || undefined
+                            }
+                          />
+                        )}
+                        {hint && <small id={`${name}-hint`}>{hint}</small>}
+                        {errors[name] && (
+                          <span className={styles.error} id={`${name}-error`}>
+                            {errors[name]}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                <LocationFields
+                  value={values.localizacao}
+                  onChange={value => change('localizacao', value)}
+                  errors={errors}
+                  disabled={pending}
+                />
+                <div className={styles.field}>
+                  <label htmlFor="descricao">Descrição (opcional)</label>
+                  <textarea
+                    id="descricao"
+                    name="descricao"
+                    rows={4}
+                    maxLength={5000}
+                    value={values.descricao ?? ''}
+                    onChange={event => change('descricao', event.target.value)}
+                    aria-invalid={Boolean(errors.descricao)}
+                    aria-describedby={errors.descricao ? 'descricao-error' : undefined}
+                  />
+                  {errors.descricao && (
+                    <span className={styles.error} id="descricao-error">
+                      {errors.descricao}
+                    </span>
+                  )}
+                </div>
+                {message && (
+                  <p role="alert" className={styles.error}>
+                    {message}
+                  </p>
+                )}
+                <button type="submit" className={styles.submit}>
+                  {pending ? 'Salvando…' : 'Salvar alterações'}
+                </button>
+              </fieldset>
+            </form>
+            {saved && <p role="status">Perfil atualizado com sucesso.</p>}
+            {pending && <p role="status">Salvando perfil…</p>}
+          </>
+        )}
       </section>
     </main>
   )

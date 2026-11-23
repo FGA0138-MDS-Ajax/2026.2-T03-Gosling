@@ -10,18 +10,35 @@ vi.mock('../services/cepService', () => ({ consultarCep: vi.fn() }))
 
 function Form({ inicial = {}, onChange = () => {} }) {
   const [value, setValue] = useState(localizacaoInicial(inicial))
-  return <LocationFields value={value} onChange={data => { setValue(data); onChange(data) }} allowBrowser />
+  return (
+    <LocationFields
+      value={value}
+      onChange={data => {
+        setValue(data)
+        onChange(data)
+      }}
+      allowBrowser
+    />
+  )
 }
 
 describe('endereço detalhado', () => {
   it('consulta somente por ação explícita e mantém correção manual', async () => {
     const user = userEvent.setup()
-    consultarCep.mockResolvedValue({ cep: '70000001', logradouro: 'Rua consultada', bairro: 'Centro', cidade: 'Brasília', estado: 'DF' })
+    consultarCep.mockResolvedValue({
+      cep: '70000001',
+      logradouro: 'Rua consultada',
+      bairro: 'Centro',
+      cidade: 'Brasília',
+      estado: 'DF',
+    })
     render(<Form />)
     await user.type(screen.getByLabelText('CEP'), '70000001')
     expect(consultarCep).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Consultar CEP' }))
-    expect(await screen.findByText('CEP consultado. Confira e corrija os campos antes de salvar.')).toBeVisible()
+    expect(
+      await screen.findByText('CEP consultado. Confira e corrija os campos antes de salvar.'),
+    ).toBeVisible()
     expect(screen.getByLabelText('Logradouro')).toHaveValue('Rua consultada')
     await user.clear(screen.getByLabelText('Logradouro'))
     await user.type(screen.getByLabelText('Logradouro'), 'Rua corrigida')
@@ -39,15 +56,27 @@ describe('endereço detalhado', () => {
   })
   it('não sobrescreve correção manual com consulta atrasada e invalida ponto antigo', async () => {
     let resolver
-    consultarCep.mockImplementation(() => new Promise(resolve => { resolver = resolve }))
+    consultarCep.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolver = resolve
+        }),
+    )
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<Form inicial={{ cep: '70000001', latitude: '-15.8', longitude: '-48.1' }} onChange={onChange} />)
+    render(
+      <Form
+        inicial={{ cep: '70000001', latitude: '-15.8', longitude: '-48.1' }}
+        onChange={onChange}
+      />,
+    )
     await user.click(screen.getByRole('button', { name: 'Consultar CEP' }))
     await user.type(screen.getByLabelText('Logradouro'), 'Correção manual')
     await act(async () => resolver({ logradouro: 'Resposta antiga' }))
     expect(screen.getByLabelText('Logradouro')).toHaveValue('Correção manual')
-    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ latitude: '', longitude: '' }))
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ latitude: '', longitude: '' }),
+    )
   })
   it('geolocalização exige clique e recusa não impede edição', async () => {
     const getCurrentPosition = vi.fn((sucesso, erro) => erro({ code: 1 }))

@@ -31,18 +31,30 @@ export default function VagasPage() {
   const catalogo = useCausas()
   const idNaUrl = Number(params.get('causa_id'))
   const causaLegada = (params.get('causa') || '').trim().slice(0, 100)
-  const causaSelecionada = idNaUrl > 0 && Number.isInteger(idNaUrl)
-    ? catalogo.itens.find(causa => causa.id === idNaUrl) : causaPorNome(catalogo.itens, causaLegada)
-  const causaId = idNaUrl > 0 && Number.isInteger(idNaUrl) ? String(idNaUrl) : String(causaSelecionada?.id || '')
+  const causaSelecionada =
+    idNaUrl > 0 && Number.isInteger(idNaUrl)
+      ? catalogo.itens.find(causa => causa.id === idNaUrl)
+      : causaPorNome(catalogo.itens, causaLegada)
+  const causaId =
+    idNaUrl > 0 && Number.isInteger(idNaUrl) ? String(idNaUrl) : String(causaSelecionada?.id || '')
   const filtros = {
     causa: causaId ? '' : causaLegada,
     causaId,
     modalidade: MODALIDADES[params.get('modalidade')] ? params.get('modalidade') : '',
     periodo: PERIODOS[params.get('periodo')] ? params.get('periodo') : '',
   }
-  const filtrando = Boolean(filtros.causa || filtros.causaId || filtros.modalidade || filtros.periodo)
+  const filtrando = Boolean(
+    filtros.causa || filtros.causaId || filtros.modalidade || filtros.periodo,
+  )
   const [pagina, setPagina] = useState(1)
-  const { itens: vagas, total, por_pagina: porPagina, carregando, erro: erroCarregamento, recarregar } = useVagas(pagina, filtros)
+  const {
+    itens: vagas,
+    total,
+    por_pagina: porPagina,
+    carregando,
+    erro: erroCarregamento,
+    recarregar,
+  } = useVagas(pagina, filtros)
   const [erro, setErro] = useState('')
   const [errosCampos, setErrosCampos] = useState({})
   const [erroEncontros, setErroEncontros] = useState('')
@@ -61,9 +73,8 @@ export default function VagasPage() {
   const [enderecoVaga, setEnderecoVaga] = useState(() => localizacaoInicial(null))
 
   const sessaoValidada = !loading && !restoreError
-  const podePublicar = sessaoValidada
-    && usuario?.perfil === 'ORGANIZACAO'
-    && usuario?.tipo === 'ONG'
+  const podePublicar =
+    sessaoValidada && usuario?.perfil === 'ORGANIZACAO' && usuario?.tipo === 'ONG'
 
   useEffect(() => {
     if (!podePublicar || !location.state?.abrirPublicacao) return
@@ -80,7 +91,8 @@ export default function VagasPage() {
   function filtrar(nome, valor) {
     const proximos = new URLSearchParams(params)
     if (nome === 'causa_id') proximos.delete('causa')
-    if (!valor || (nome === 'causa_id' ? filtros.causaId === valor : proximos.get(nome) === valor)) proximos.delete(nome)
+    if (!valor || (nome === 'causa_id' ? filtros.causaId === valor : proximos.get(nome) === valor))
+      proximos.delete(nome)
     else proximos.set(nome, valor)
     setParams(proximos, { replace: true })
     setPagina(1)
@@ -97,8 +109,13 @@ export default function VagasPage() {
     setErrosCampos({})
     setErroEncontros('')
     setEncontros([criarEncontro()])
-    setFotos([]); setDocumentos([]); setErroMidia(''); fotosEnviadas.current.clear()
-    setModalidadePublicacao('PRESENCIAL'); setOrigemEndereco('PROPRIA'); setEnderecoVaga(localizacaoInicial(null))
+    setFotos([])
+    setDocumentos([])
+    setErroMidia('')
+    fotosEnviadas.current.clear()
+    setModalidadePublicacao('PRESENCIAL')
+    setOrigemEndereco('PROPRIA')
+    setEnderecoVaga(localizacaoInicial(null))
     dialogo.current.querySelector('form').reset()
     dialogo.current.showModal()
   }
@@ -106,9 +123,12 @@ export default function VagasPage() {
   function alterarEncontros(novos) {
     setEncontros(novos)
     setErroEncontros('')
-    if (novos.every((item) => item.dataInicio && item.horaInicio && item.dataFim && item.horaFim)) {
-      try { prepararOcorrencias(novos) }
-      catch (failure) { setErroEncontros(failure.message) }
+    if (novos.every(item => item.dataInicio && item.horaInicio && item.dataFim && item.horaFim)) {
+      try {
+        prepararOcorrencias(novos)
+      } catch (failure) {
+        setErroEncontros(failure.message)
+      }
     }
   }
 
@@ -129,24 +149,49 @@ export default function VagasPage() {
     const numeroVagas = Number(dados.get('numero_vagas'))
 
     const campos = {
-      titulo, descricao, atividades, causa_id: causaId, local,
-      carga_horaria: cargaHoraria, numero_vagas: numeroVagas,
+      titulo,
+      descricao,
+      atividades,
+      causa_id: causaId,
+      local,
+      carga_horaria: cargaHoraria,
+      numero_vagas: numeroVagas,
     }
     const invalidos = validarPublicacao(campos)
-    if (modalidadePublicacao !== 'REMOTO' && origemEndereco === 'PROPRIA') Object.assign(invalidos, validarLocalizacao(enderecoVaga))
-    if (!catalogo.itens.some(causa => causa.id === causaId && causa.ativo)) invalidos.causa_id = 'Selecione uma causa disponível.'
-    const fotosInvalidas = fotos.length > 10 || fotos.some(file => !['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 5*1024*1024)
-    const documentosInvalidos = documentos.some(doc => doc.nome.trim().length < 2 || (doc.modelo_url && !/^https:\/\/[^\s]+$/.test(doc.modelo_url)))
-    setErroMidia(fotosInvalidas ? 'Use até 10 imagens JPG, PNG ou WebP de até 5 MB cada.' : documentosInvalidos ? 'Informe o nome de cada documento e um link HTTPS válido, quando houver modelo.' : '')
+    if (modalidadePublicacao !== 'REMOTO' && origemEndereco === 'PROPRIA')
+      Object.assign(invalidos, validarLocalizacao(enderecoVaga))
+    if (!catalogo.itens.some(causa => causa.id === causaId && causa.ativo))
+      invalidos.causa_id = 'Selecione uma causa disponível.'
+    const fotosInvalidas =
+      fotos.length > 10 ||
+      fotos.some(
+        file =>
+          !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ||
+          file.size > 5 * 1024 * 1024,
+      )
+    const documentosInvalidos = documentos.some(
+      doc =>
+        doc.nome.trim().length < 2 ||
+        (doc.modelo_url && !/^https:\/\/[^\s]+$/.test(doc.modelo_url)),
+    )
+    setErroMidia(
+      fotosInvalidas
+        ? 'Use até 10 imagens JPG, PNG ou WebP de até 5 MB cada.'
+        : documentosInvalidos
+          ? 'Informe o nome de cada documento e um link HTTPS válido, quando houver modelo.'
+          : '',
+    )
     setErrosCampos(invalidos)
 
     let ocorrencias
-    try { ocorrencias = prepararOcorrencias(encontros) }
-    catch (failure) {
+    try {
+      ocorrencias = prepararOcorrencias(encontros)
+    } catch (failure) {
       setErroEncontros(failure.message)
     }
     if (Object.keys(invalidos).length) setErro('Confira os campos indicados e tente novamente.')
-    if (Object.keys(invalidos).length || !ocorrencias || fotosInvalidas || documentosInvalidos) return
+    if (Object.keys(invalidos).length || !ocorrencias || fotosInvalidas || documentosInvalidos)
+      return
 
     const payload = {
       ...campos,
@@ -158,7 +203,10 @@ export default function VagasPage() {
       if (origemEndereco === 'ORGANIZACAO') payload.origem_localizacao = 'ORGANIZACAO'
       else {
         const endereco = localizacaoPayload(enderecoVaga)
-        if (endereco) { payload.localizacao = endereco; payload.origem_localizacao = 'PROPRIA' }
+        if (endereco) {
+          payload.localizacao = endereco
+          payload.origem_localizacao = 'PROPRIA'
+        }
       }
     }
     envioPendente.current = true
@@ -166,11 +214,16 @@ export default function VagasPage() {
     try {
       const urls = []
       for (const file of fotos) {
-        if (!fotosEnviadas.current.has(file)) fotosEnviadas.current.set(file, await enviarFotoVaga(file))
+        if (!fotosEnviadas.current.has(file))
+          fotosEnviadas.current.set(file, await enviarFotoVaga(file))
         urls.push(fotosEnviadas.current.get(file))
       }
       if (urls.length) payload.fotos = urls
-      if (documentos.length) payload.documentos_exigidos = documentos.map(doc => ({nome:doc.nome.trim(),modelo_url:doc.modelo_url.trim() || null}))
+      if (documentos.length)
+        payload.documentos_exigidos = documentos.map(doc => ({
+          nome: doc.nome.trim(),
+          modelo_url: doc.modelo_url.trim() || null,
+        }))
       await publicarVaga(payload)
       setPagina(1)
       recarregar()
@@ -184,7 +237,11 @@ export default function VagasPage() {
         setErroEncontros(invalidos.encontros)
         setErro(invalidos.mensagem)
       } else {
-        setErro(typeof detalhe === 'string' ? detalhe : 'Não foi possível publicar a vaga. Tente novamente.')
+        setErro(
+          typeof detalhe === 'string'
+            ? detalhe
+            : 'Não foi possível publicar a vaga. Tente novamente.',
+        )
       }
     } finally {
       envioPendente.current = false
@@ -200,12 +257,20 @@ export default function VagasPage() {
   }
 
   function erroCampo(campo) {
-    return errosCampos[campo] && <span className={styles.fieldError} id={`vaga-${campo}-erro`}>{errosCampos[campo]}</span>
+    return (
+      errosCampos[campo] && (
+        <span className={styles.fieldError} id={`vaga-${campo}-erro`}>
+          {errosCampos[campo]}
+        </span>
+      )
+    )
   }
 
   return (
     <div className={explorar.page}>
-      <a className={styles.skipLink} href="#conteudo-vagas">Ir para as vagas</a>
+      <a className={styles.skipLink} href="#conteudo-vagas">
+        Ir para as vagas
+      </a>
       <Header />
 
       <main id="conteudo-vagas">
@@ -213,7 +278,11 @@ export default function VagasPage() {
           <div className={explorar.introInner}>
             <div>
               <h1 id="titulo-vagas">Explorar vagas</h1>
-              <p>{carregando ? 'Carregando as vagas abertas…' : `${total} ${total === 1 ? 'vaga aberta' : 'vagas abertas'} para você conhecer`}</p>
+              <p>
+                {carregando
+                  ? 'Carregando as vagas abertas…'
+                  : `${total} ${total === 1 ? 'vaga aberta' : 'vagas abertas'} para você conhecer`}
+              </p>
             </div>
             {podePublicar && (
               <button
@@ -227,66 +296,183 @@ export default function VagasPage() {
               </button>
             )}
           </div>
-          {loading && <p className={explorar.session} role="status">Validando sessão…</p>}
-          {restoreError && <p className={explorar.session} role="status">
-            <Link to="/login" state={{ from: '/vagas' }}>Valide sua sessão</Link> para publicar ou se candidatar.
-          </p>}
+          {loading && (
+            <p className={explorar.session} role="status">
+              Validando sessão…
+            </p>
+          )}
+          {restoreError && (
+            <p className={explorar.session} role="status">
+              <Link to="/login" state={{ from: '/vagas' }}>
+                Valide sua sessão
+              </Link>{' '}
+              para publicar ou se candidatar.
+            </p>
+          )}
         </section>
 
-        <p className={explorar.feedback} role="status">{mensagem}</p>
+        <p className={explorar.feedback} role="status">
+          {mensagem}
+        </p>
 
         <div className={explorar.layout}>
           <aside className={explorar.filters} aria-label="Filtros">
-            <div className={explorar.filtersHead}><h2>Filtros</h2>{filtrando && <button type="button" onClick={limparFiltros}>Limpar</button>}</div>
-            <fieldset><legend>Causa</legend>
+            <div className={explorar.filtersHead}>
+              <h2>Filtros</h2>
+              {filtrando && (
+                <button type="button" onClick={limparFiltros}>
+                  Limpar
+                </button>
+              )}
+            </div>
+            <fieldset>
+              <legend>Causa</legend>
               {catalogo.carregando && <p role="status">Carregando causas…</p>}
-              {catalogo.erro && <div><p role="alert">{catalogo.erro}</p><button className={explorar.retry} type="button" onClick={catalogo.recarregar}>Tentar carregar causas novamente</button></div>}
-              <div className={explorar.options}>{catalogo.itens.map(causa =>
-                <button key={causa.id} type="button" aria-pressed={filtros.causaId === String(causa.id)} onClick={() => filtrar('causa_id', String(causa.id))}>{causa.nome}{!causa.ativo && ' (anterior)'}</button>)}</div>
+              {catalogo.erro && (
+                <div>
+                  <p role="alert">{catalogo.erro}</p>
+                  <button className={explorar.retry} type="button" onClick={catalogo.recarregar}>
+                    Tentar carregar causas novamente
+                  </button>
+                </div>
+              )}
+              <div className={explorar.options}>
+                {catalogo.itens.map(causa => (
+                  <button
+                    key={causa.id}
+                    type="button"
+                    aria-pressed={filtros.causaId === String(causa.id)}
+                    onClick={() => filtrar('causa_id', String(causa.id))}
+                  >
+                    {causa.nome}
+                    {!causa.ativo && ' (anterior)'}
+                  </button>
+                ))}
+              </div>
             </fieldset>
-            <fieldset><legend>Modalidade</legend>
-              <div className={explorar.segmented}>{Object.entries(MODALIDADES).map(([valor, texto]) =>
-                <button key={valor} type="button" aria-pressed={filtros.modalidade === valor} onClick={() => filtrar('modalidade', valor)}>{texto}</button>)}</div>
+            <fieldset>
+              <legend>Modalidade</legend>
+              <div className={explorar.segmented}>
+                {Object.entries(MODALIDADES).map(([valor, texto]) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    aria-pressed={filtros.modalidade === valor}
+                    onClick={() => filtrar('modalidade', valor)}
+                  >
+                    {texto}
+                  </button>
+                ))}
+              </div>
             </fieldset>
-            <fieldset><legend>Período</legend>
-              <div className={explorar.options}>{Object.entries(PERIODOS).map(([valor, texto]) =>
-                <button key={valor} type="button" aria-pressed={filtros.periodo === valor} onClick={() => filtrar('periodo', valor)}>{texto}</button>)}</div>
+            <fieldset>
+              <legend>Período</legend>
+              <div className={explorar.options}>
+                {Object.entries(PERIODOS).map(([valor, texto]) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    aria-pressed={filtros.periodo === valor}
+                    onClick={() => filtrar('periodo', valor)}
+                  >
+                    {texto}
+                  </button>
+                ))}
+              </div>
             </fieldset>
           </aside>
 
           <section className={explorar.results} aria-labelledby="vagas-publicadas">
             <div className={explorar.sectionHeading}>
               <h2 id="vagas-publicadas">{filtrando ? 'Resultado da busca' : 'Vagas publicadas'}</h2>
-              <span>{total} {total === 1 ? 'oportunidade' : 'oportunidades'}</span>
+              <span>
+                {total} {total === 1 ? 'oportunidade' : 'oportunidades'}
+              </span>
             </div>
-            {filtrando && <ul className={explorar.active} aria-label="Filtros ativos">
-              {(filtros.causa || filtros.causaId) && <li><button type="button" onClick={() => filtrar('causa_id', '')}>{causaSelecionada?.nome || filtros.causa || 'Causa selecionada'}<span aria-hidden="true">×</span><span className={explorar.srOnly}>remover filtro</span></button></li>}
-              {filtros.modalidade && <li><button type="button" onClick={() => filtrar('modalidade', '')}>{MODALIDADES[filtros.modalidade]}<span aria-hidden="true">×</span><span className={explorar.srOnly}>remover filtro</span></button></li>}
-              {filtros.periodo && <li><button type="button" onClick={() => filtrar('periodo', '')}>{PERIODOS[filtros.periodo]}<span aria-hidden="true">×</span><span className={explorar.srOnly}>remover filtro</span></button></li>}
-            </ul>}
+            {filtrando && (
+              <ul className={explorar.active} aria-label="Filtros ativos">
+                {(filtros.causa || filtros.causaId) && (
+                  <li>
+                    <button type="button" onClick={() => filtrar('causa_id', '')}>
+                      {causaSelecionada?.nome || filtros.causa || 'Causa selecionada'}
+                      <span aria-hidden="true">×</span>
+                      <span className={explorar.srOnly}>remover filtro</span>
+                    </button>
+                  </li>
+                )}
+                {filtros.modalidade && (
+                  <li>
+                    <button type="button" onClick={() => filtrar('modalidade', '')}>
+                      {MODALIDADES[filtros.modalidade]}
+                      <span aria-hidden="true">×</span>
+                      <span className={explorar.srOnly}>remover filtro</span>
+                    </button>
+                  </li>
+                )}
+                {filtros.periodo && (
+                  <li>
+                    <button type="button" onClick={() => filtrar('periodo', '')}>
+                      {PERIODOS[filtros.periodo]}
+                      <span aria-hidden="true">×</span>
+                      <span className={explorar.srOnly}>remover filtro</span>
+                    </button>
+                  </li>
+                )}
+              </ul>
+            )}
 
             {carregando ? (
-              <p className={explorar.state} role="status">Carregando vagas…</p>
+              <p className={explorar.state} role="status">
+                Carregando vagas…
+              </p>
             ) : erroCarregamento ? (
               <div className={explorar.state}>
                 <p role="alert">{erroCarregamento}</p>
-                <button className={explorar.retry} type="button" onClick={recarregar}>Tentar novamente</button>
+                <button className={explorar.retry} type="button" onClick={recarregar}>
+                  Tentar novamente
+                </button>
               </div>
             ) : vagas.length === 0 ? (
               <div className={explorar.state}>
-                <p>{filtrando ? 'Nenhuma vaga aberta com esses filtros.' : 'Ainda não há vagas publicadas.'}</p>
-                {filtrando && <button className={explorar.retry} type="button" onClick={limparFiltros}>Limpar filtros</button>}
+                <p>
+                  {filtrando
+                    ? 'Nenhuma vaga aberta com esses filtros.'
+                    : 'Ainda não há vagas publicadas.'}
+                </p>
+                {filtrando && (
+                  <button className={explorar.retry} type="button" onClick={limparFiltros}>
+                    Limpar filtros
+                  </button>
+                )}
               </div>
             ) : (
               <ul className={explorar.grid}>
-                {vagas.map((vaga) => <li key={vaga.id}><VagaCard vaga={vaga} /></li>)}
+                {vagas.map(vaga => (
+                  <li key={vaga.id}>
+                    <VagaCard vaga={vaga} />
+                  </li>
+                ))}
               </ul>
             )}
             {!carregando && !erroCarregamento && total > porPagina && (
               <nav className={explorar.pagination} aria-label="Páginas de vagas">
-                <button type="button" disabled={pagina === 1} onClick={() => setPagina((atual) => atual - 1)}>Anterior</button>
-                <span>Página {pagina} de {Math.ceil(total / porPagina)}</span>
-                <button type="button" disabled={pagina * porPagina >= total} onClick={() => setPagina((atual) => atual + 1)}>Próxima</button>
+                <button
+                  type="button"
+                  disabled={pagina === 1}
+                  onClick={() => setPagina(atual => atual - 1)}
+                >
+                  Anterior
+                </button>
+                <span>
+                  Página {pagina} de {Math.ceil(total / porPagina)}
+                </span>
+                <button
+                  type="button"
+                  disabled={pagina * porPagina >= total}
+                  onClick={() => setPagina(atual => atual + 1)}
+                >
+                  Próxima
+                </button>
               </nav>
             )}
           </section>
@@ -302,95 +488,230 @@ export default function VagasPage() {
           aria-labelledby="titulo-publicacao"
           aria-describedby="aviso-publicacao"
           onClose={() => botaoPublicar.current?.focus()}
-          onCancel={(event) => { if (publicando) event.preventDefault() }}
+          onCancel={event => {
+            if (publicando) event.preventDefault()
+          }}
         >
           <div className={styles.dialogHeader}>
             <h2 id="titulo-publicacao">Publicar vaga</h2>
-            <button type="button" disabled={publicando} onClick={() => dialogo.current.close()}>Fechar</button>
+            <button type="button" disabled={publicando} onClick={() => dialogo.current.close()}>
+              Fechar
+            </button>
           </div>
           <p id="aviso-publicacao" className={styles.demoNotice}>
             Descreva a atividade e adicione todos os encontros com suas datas e horários.
           </p>
 
-          <form noValidate aria-label="Publicar vaga" onSubmit={enviarPublicacao} aria-busy={publicando}>
+          <form
+            noValidate
+            aria-label="Publicar vaga"
+            onSubmit={enviarPublicacao}
+            aria-busy={publicando}
+          >
             <fieldset className={styles.publicationFields} disabled={publicando}>
-            <div className={styles.formGrid}>
-              <div className={`${styles.formField} ${styles.fullWidth}`}>
-                <label htmlFor="vaga-titulo">Título da vaga</label>
-                <input id="vaga-titulo" name="titulo" minLength={3} maxLength={150} required {...atributosCampo('titulo')} />
-                {erroCampo('titulo')}
+              <div className={styles.formGrid}>
+                <div className={`${styles.formField} ${styles.fullWidth}`}>
+                  <label htmlFor="vaga-titulo">Título da vaga</label>
+                  <input
+                    id="vaga-titulo"
+                    name="titulo"
+                    minLength={3}
+                    maxLength={150}
+                    required
+                    {...atributosCampo('titulo')}
+                  />
+                  {erroCampo('titulo')}
+                </div>
+                <div className={`${styles.formField} ${styles.fullWidth}`}>
+                  <label htmlFor="vaga-descricao">Descrição</label>
+                  <textarea
+                    id="vaga-descricao"
+                    name="descricao"
+                    minLength={10}
+                    maxLength={5000}
+                    rows={3}
+                    required
+                    {...atributosCampo('descricao')}
+                  />
+                  {erroCampo('descricao')}
+                </div>
+                <div className={`${styles.formField} ${styles.fullWidth}`}>
+                  <label htmlFor="vaga-atividades">Atividades do voluntário</label>
+                  <textarea
+                    id="vaga-atividades"
+                    name="atividades"
+                    minLength={10}
+                    maxLength={5000}
+                    rows={3}
+                    required
+                    {...atributosCampo('atividades')}
+                  />
+                  {erroCampo('atividades')}
+                </div>
+                <div className={styles.formField}>
+                  <label htmlFor="vaga-causa">Causa</label>
+                  <select
+                    id="vaga-causa"
+                    name="causa_id"
+                    required
+                    disabled={catalogo.carregando || Boolean(catalogo.erro)}
+                    {...atributosCampo('causa_id')}
+                  >
+                    <option value="">Selecione uma causa</option>
+                    {catalogo.itens
+                      .filter(causa => causa.ativo)
+                      .map(causa => (
+                        <option key={causa.id} value={causa.id}>
+                          {causa.nome}
+                        </option>
+                      ))}
+                  </select>
+                  {erroCampo('causa_id')}
+                  {catalogo.erro && (
+                    <div>
+                      <p role="alert">{catalogo.erro}</p>
+                      <button
+                        className={explorar.retry}
+                        type="button"
+                        onClick={catalogo.recarregar}
+                      >
+                        Tentar carregar causas novamente
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className={styles.formField}>
+                  <label htmlFor="vaga-modalidade">Modalidade</label>
+                  <select
+                    id="vaga-modalidade"
+                    name="modalidade"
+                    required
+                    value={modalidadePublicacao}
+                    onChange={event => setModalidadePublicacao(event.target.value)}
+                    {...atributosCampo('modalidade')}
+                  >
+                    {Object.entries(MODALIDADES).map(([valor, texto]) => (
+                      <option key={valor} value={valor}>
+                        {texto}
+                      </option>
+                    ))}
+                  </select>
+                  {erroCampo('modalidade')}
+                </div>
+                <div className={`${styles.formField} ${styles.fullWidth}`}>
+                  <label htmlFor="vaga-local">Local ou atividade remota</label>
+                  <input
+                    id="vaga-local"
+                    name="local"
+                    minLength={3}
+                    maxLength={500}
+                    required
+                    {...atributosCampo('local')}
+                  />
+                  {erroCampo('local')}
+                </div>
+                <div className={styles.formField}>
+                  <label htmlFor="vaga-periodo">Período</label>
+                  <select id="vaga-periodo" name="periodo" required {...atributosCampo('periodo')}>
+                    {Object.entries(PERIODOS).map(([valor, texto]) => (
+                      <option key={valor} value={valor}>
+                        {texto}
+                      </option>
+                    ))}
+                  </select>
+                  {erroCampo('periodo')}
+                </div>
+                <div className={styles.formField}>
+                  <label htmlFor="vaga-carga">Carga horária (horas)</label>
+                  <input
+                    id="vaga-carga"
+                    name="carga_horaria"
+                    type="number"
+                    min="0.01"
+                    max="99999.99"
+                    step="0.01"
+                    required
+                    {...atributosCampo('carga_horaria')}
+                  />
+                  {erroCampo('carga_horaria')}
+                </div>
+                <div className={styles.formField}>
+                  <label htmlFor="vaga-quantidade">Número de vagas</label>
+                  <input
+                    id="vaga-quantidade"
+                    name="numero_vagas"
+                    type="number"
+                    min="1"
+                    step="1"
+                    required
+                    {...atributosCampo('numero_vagas')}
+                  />
+                  {erroCampo('numero_vagas')}
+                </div>
               </div>
-              <div className={`${styles.formField} ${styles.fullWidth}`}>
-                <label htmlFor="vaga-descricao">Descrição</label>
-                <textarea id="vaga-descricao" name="descricao" minLength={10} maxLength={5000} rows={3} required {...atributosCampo('descricao')} />
-                {erroCampo('descricao')}
-              </div>
-              <div className={`${styles.formField} ${styles.fullWidth}`}>
-                <label htmlFor="vaga-atividades">Atividades do voluntário</label>
-                <textarea id="vaga-atividades" name="atividades" minLength={10} maxLength={5000} rows={3} required {...atributosCampo('atividades')} />
-                {erroCampo('atividades')}
-              </div>
-              <div className={styles.formField}>
-                <label htmlFor="vaga-causa">Causa</label>
-                <select id="vaga-causa" name="causa_id" required disabled={catalogo.carregando || Boolean(catalogo.erro)} {...atributosCampo('causa_id')}>
-                  <option value="">Selecione uma causa</option>{catalogo.itens.filter(causa => causa.ativo).map(causa => <option key={causa.id} value={causa.id}>{causa.nome}</option>)}
-                </select>
-                {erroCampo('causa_id')}
-                {catalogo.erro && <div><p role="alert">{catalogo.erro}</p><button className={explorar.retry} type="button" onClick={catalogo.recarregar}>Tentar carregar causas novamente</button></div>}
-              </div>
-              <div className={styles.formField}>
-                <label htmlFor="vaga-modalidade">Modalidade</label>
-                <select id="vaga-modalidade" name="modalidade" required value={modalidadePublicacao} onChange={event => setModalidadePublicacao(event.target.value)} {...atributosCampo('modalidade')}>
-                  {Object.entries(MODALIDADES).map(([valor, texto]) => (
-                    <option key={valor} value={valor}>{texto}</option>
-                  ))}
-                </select>
-                {erroCampo('modalidade')}
-              </div>
-              <div className={`${styles.formField} ${styles.fullWidth}`}>
-                <label htmlFor="vaga-local">Local ou atividade remota</label>
-                <input id="vaga-local" name="local" minLength={3} maxLength={500} required {...atributosCampo('local')} />
-                {erroCampo('local')}
-              </div>
-              <div className={styles.formField}>
-                <label htmlFor="vaga-periodo">Período</label>
-                <select id="vaga-periodo" name="periodo" required {...atributosCampo('periodo')}>
-                  {Object.entries(PERIODOS).map(([valor, texto]) => (
-                    <option key={valor} value={valor}>{texto}</option>
-                  ))}
-                </select>
-                {erroCampo('periodo')}
-              </div>
-              <div className={styles.formField}>
-                <label htmlFor="vaga-carga">Carga horária (horas)</label>
-                <input id="vaga-carga" name="carga_horaria" type="number" min="0.01" max="99999.99" step="0.01" required {...atributosCampo('carga_horaria')} />
-                {erroCampo('carga_horaria')}
-              </div>
-              <div className={styles.formField}>
-                <label htmlFor="vaga-quantidade">Número de vagas</label>
-                <input id="vaga-quantidade" name="numero_vagas" type="number" min="1" step="1" required {...atributosCampo('numero_vagas')} />
-                {erroCampo('numero_vagas')}
-              </div>
-            </div>
-            {modalidadePublicacao !== 'REMOTO' ? <>
-              <div className={styles.formField}><label htmlFor="vaga-origem-endereco">Endereço da atividade</label>
-                <select id="vaga-origem-endereco" name="origem_localizacao" value={origemEndereco} onChange={event => setOrigemEndereco(event.target.value)} {...atributosCampo('origem_localizacao')}>
-                  <option value="PROPRIA">Endereço próprio desta vaga</option><option value="ORGANIZACAO">Endereço cadastrado da organização</option>
-                </select>{erroCampo('origem_localizacao')}</div>
-              {origemEndereco === 'PROPRIA' ? <LocationFields value={enderecoVaga} onChange={setEnderecoVaga} errors={errosCampos} disabled={publicando} />
-                : <p>Use o endereço cadastrado da organização quando o encontro ocorrer na sede. <Link to="/organizacao/perfil">Conferir endereço da organização</Link></p>}
-            </> : <p>Atividade remota: informe a plataforma ou orientação no campo de local. Endereço presencial e coordenadas não são enviados.</p>}
-            <EncontrosEditor encontros={encontros} onChange={alterarEncontros} erro={erroEncontros} />
-            <VagaMediaFields fotos={fotos} setFotos={setFotos} documentos={documentos} setDocumentos={setDocumentos} error={erroMidia} />
+              {modalidadePublicacao !== 'REMOTO' ? (
+                <>
+                  <div className={styles.formField}>
+                    <label htmlFor="vaga-origem-endereco">Endereço da atividade</label>
+                    <select
+                      id="vaga-origem-endereco"
+                      name="origem_localizacao"
+                      value={origemEndereco}
+                      onChange={event => setOrigemEndereco(event.target.value)}
+                      {...atributosCampo('origem_localizacao')}
+                    >
+                      <option value="PROPRIA">Endereço próprio desta vaga</option>
+                      <option value="ORGANIZACAO">Endereço cadastrado da organização</option>
+                    </select>
+                    {erroCampo('origem_localizacao')}
+                  </div>
+                  {origemEndereco === 'PROPRIA' ? (
+                    <LocationFields
+                      value={enderecoVaga}
+                      onChange={setEnderecoVaga}
+                      errors={errosCampos}
+                      disabled={publicando}
+                    />
+                  ) : (
+                    <p>
+                      Use o endereço cadastrado da organização quando o encontro ocorrer na sede.{' '}
+                      <Link to="/organizacao/perfil">Conferir endereço da organização</Link>
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p>
+                  Atividade remota: informe a plataforma ou orientação no campo de local. Endereço
+                  presencial e coordenadas não são enviados.
+                </p>
+              )}
+              <EncontrosEditor
+                encontros={encontros}
+                onChange={alterarEncontros}
+                erro={erroEncontros}
+              />
+              <VagaMediaFields
+                fotos={fotos}
+                setFotos={setFotos}
+                documentos={documentos}
+                setDocumentos={setDocumentos}
+                error={erroMidia}
+              />
 
-            {erro && <p className={styles.error} role="alert">{erro}</p>}
+              {erro && (
+                <p className={styles.error} role="alert">
+                  {erro}
+                </p>
+              )}
 
-            <div className={styles.formActions}>
-              <button type="button" onClick={() => dialogo.current.close()}>Cancelar</button>
-              <button className={styles.primaryButton} type="submit">
-                {publicando ? 'Publicando…' : 'Publicar vaga'}
-              </button>
-            </div>
+              <div className={styles.formActions}>
+                <button type="button" onClick={() => dialogo.current.close()}>
+                  Cancelar
+                </button>
+                <button className={styles.primaryButton} type="submit">
+                  {publicando ? 'Publicando…' : 'Publicar vaga'}
+                </button>
+              </div>
             </fieldset>
           </form>
         </dialog>
