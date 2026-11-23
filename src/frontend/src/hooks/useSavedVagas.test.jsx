@@ -41,7 +41,7 @@ it('compartilha carregamento e confirma a mudança nos dois componentes só apó
   act(() => { operation = result.current.first.toggle(7) })
   expect(result.current.first.ids).toEqual([])
   expect(result.current.second.ids).toEqual([])
-  expect(result.current.second.pending).toContain(7)
+  await waitFor(() => expect(result.current.second.pending).toContain(7))
   await act(async () => { response.resolve(); await operation })
   expect(result.current.first.ids).toEqual([7])
   expect(result.current.second.ids).toEqual([7])
@@ -68,7 +68,7 @@ it('deduplica cliques simultâneos do mesmo coração', async () => {
   let first, second
   act(() => { first = result.current.first.toggle(7); second = result.current.second.toggle(7) })
   expect(first).toBe(second)
-  expect(api.saveVaga).toHaveBeenCalledTimes(1)
+  await waitFor(() => expect(api.saveVaga).toHaveBeenCalledTimes(1))
   await act(async () => { response.resolve(); await first })
   expect(result.current.first.ids).toEqual([7])
 })
@@ -140,6 +140,9 @@ it('o visitante salva apenas neste navegador sem chamadas protegidas', async () 
   expect(JSON.parse(localStorage.getItem(key()))).toEqual([7])
   expect(api.listSavedVagas).not.toHaveBeenCalled()
   expect(api.saveVaga).not.toHaveBeenCalled()
+  await act(async () => { await result.current.second.toggle(7) })
+  expect(result.current.first.ids).toEqual([])
+  expect(JSON.parse(localStorage.getItem(key()))).toEqual([])
 })
 
 it('não sincroniza os salvos locais automaticamente após login', async () => {
@@ -150,6 +153,20 @@ it('não sincroniza os salvos locais automaticamente após login', async () => {
   expect(result.current.first.ids).toEqual([])
   expect(result.current.first.local).toEqual([7, 9])
   expect(api.saveVaga).not.toHaveBeenCalled()
+})
+
+it('preserva a intenção de importar quando já há uma remoção em andamento', async () => {
+  server['conta-A'] = [7]
+  localStorage.setItem(key(), '[7]')
+  const { result } = open()
+  await waitFor(() => expect(result.current.first.ready).toBe(true))
+  const response = deferred()
+  api.removeSavedVaga.mockImplementationOnce(async () => { await response.promise; server['conta-A'] = [] })
+  let removal, importing
+  act(() => { removal = result.current.first.toggle(7); importing = result.current.first.importLocal() })
+  await act(async () => { response.resolve(); await removal; await importing })
+  expect(server['conta-A']).toEqual([7])
+  expect(JSON.parse(localStorage.getItem(key()))).toEqual([])
 })
 
 it('importa somente por ação explícita e preserva os IDs que falharam', async () => {

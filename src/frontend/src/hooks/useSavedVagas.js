@@ -50,7 +50,7 @@ async function load(store, force = false) {
   if (store.snapshot.ready && !force) return
   const revision = store.revision
   publish(store, { loading: true })
-  const request = (async () => {
+  const request = Promise.resolve().then(async () => {
     try {
       const ids = await listSavedVagas({ authToken: store.token })
       if (isCurrent(store) && revision === store.revision) publish(store, { ids, ready: true })
@@ -58,14 +58,17 @@ async function load(store, force = false) {
       if (store.inflight === request) store.inflight = null
       publish(store, { loading: false })
     }
-  })()
+  })
   store.inflight = request
   return request
 }
 
 function change(store, id, target) {
-  if (store.locks.has(id)) return store.locks.get(id)
-  const request = (async () => {
+  if (store.locks.has(id)) {
+    const pending = store.locks.get(id)
+    return target === undefined ? pending : pending.then(() => change(store, id, target))
+  }
+  const request = Promise.resolve().then(async () => {
     try {
       publish(store, { pending: [...store.snapshot.pending, id] })
       if (!isCurrent(store) || store.kind === 'bloqueado') throw new Error('Valide sua sessão para salvar vagas.')
@@ -91,7 +94,7 @@ function change(store, id, target) {
       store.locks.delete(id)
       publish(store, { pending: store.snapshot.pending.filter(value => value !== id) })
     }
-  })()
+  })
   store.locks.set(id, request)
   return request
 }
