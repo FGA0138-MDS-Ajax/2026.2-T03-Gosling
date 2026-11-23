@@ -10,6 +10,9 @@ const http = axios.create({ baseURL: '/api/v1', timeout: 10000 })
 http.interceptors.request.use((config) => {
   if (!config.publicRequest) {
     const session = readSession()
+    if (config.expectedAuthToken !== undefined && config.expectedAuthToken !== session?.access_token) {
+      return Promise.reject(new axios.CanceledError('A sessão mudou antes do envio.'))
+    }
     config.authToken = session?.access_token
     if (config.authToken) {
       config.headers.Authorization = `Bearer ${config.authToken}`
