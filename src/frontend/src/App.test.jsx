@@ -356,6 +356,18 @@ describe('fluxo de autenticação', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Sua sessão expirou')
   })
 
+  it('recupera o aviso se a sessão foi encerrada antes de recarregar a página', async () => {
+    const data = session()
+    writeSession(data.access_token, data.expires_at)
+    clearSession({ expired: true })
+
+    open('/voluntario')
+
+    expect(await screen.findByRole('heading', { name: 'Entrar no VolunJá' })).toBeVisible()
+    expect(screen.getByRole('status')).toHaveTextContent('Sua sessão expirou')
+    expect(authService.getSession).not.toHaveBeenCalled()
+  })
+
   it('oferece nova tentativa se não conseguir validar a sessão', async () => {
     const user = userEvent.setup()
     const data = session()
