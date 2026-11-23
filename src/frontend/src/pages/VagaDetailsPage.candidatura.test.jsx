@@ -186,7 +186,7 @@ describe('carregamento, erros, confirmação após 201 e conflito 409', () => {
     expect(conflito.getByRole('alert')).toHaveTextContent('Você já tem um compromisso nesse horário.')
     expect(screen.queryByRole('dialog', { name: 'Confirmar candidatura' })).not.toBeInTheDocument()
     expect(screen.queryByRole('dialog', { name: 'Candidatura enviada' })).not.toBeInTheDocument()
-    await user.click(conflito.getByRole('link', { name: 'Abrir minha agenda' }))
+    await user.click(conflito.getByRole('link', { name: 'Ver meu calendário' }))
     expect(screen.getByRole('heading', { name: 'Minha agenda' })).toBeVisible()
   })
 
