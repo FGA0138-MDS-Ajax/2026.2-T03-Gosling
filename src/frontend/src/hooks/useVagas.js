@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listarVagas } from '../services/vagasService'
 
-export function useVagas(pagina, { porPagina = 20, causa = '', modalidade = '', periodo = '' } = {}) {
+export function useVagas(pagina, { porPagina = 20, causa = '', causaId = '', modalidade = '', periodo = '' } = {}) {
   const [resultado, setResultado] = useState({
     itens: [], total: 0, pagina: 1, por_pagina: 20, chave: null, erro: '',
   })
   const [revisao, setRevisao] = useState(0)
-  const consulta = `${pagina}:${porPagina}:${causa}:${modalidade}:${periodo}`
+  const consulta = `${pagina}:${porPagina}:${causa}:${causaId}:${modalidade}:${periodo}`
   const chave = `${consulta}:${revisao}`
 
   useEffect(() => {
     const controller = new AbortController()
     let ativo = true
-    listarVagas({ pagina, porPagina, causa, modalidade, periodo, signal: controller.signal })
+    listarVagas({ pagina, porPagina, causa, causaId, modalidade, periodo, signal: controller.signal })
       .then((data) => {
         if (ativo) setResultado({ ...data, chave: `${consulta}:${revisao}`, erro: '' })
       })
@@ -23,7 +23,7 @@ export function useVagas(pagina, { porPagina = 20, causa = '', modalidade = '', 
         })
       })
     return () => { ativo = false; controller.abort() }
-  }, [pagina, porPagina, causa, modalidade, periodo, consulta, revisao])
+  }, [pagina, porPagina, causa, causaId, modalidade, periodo, consulta, revisao])
 
   const recarregar = useCallback(() => setRevisao((atual) => atual + 1), [])
   return {

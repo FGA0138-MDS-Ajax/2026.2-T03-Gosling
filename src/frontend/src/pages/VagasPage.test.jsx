@@ -1,10 +1,12 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuth } from '../hooks/useAuth'
 import * as vagasService from '../services/vagasService'
 import { VAGAS_TESTE } from '../test/fixtures/vagas'
+import { CAUSAS_TESTE } from '../test/fixtures/causas'
+import { listarCausas } from '../services/causasService'
 import VagasPage from './VagasPage'
 
 vi.mock('../hooks/useAuth', () => ({ useAuth: vi.fn() }))
@@ -34,7 +36,7 @@ beforeEach(() => {
   vagasService.publicarVaga.mockImplementation(async (payload) => {
     const vaga = {
       ...payload, id: 99, status: 'ABERTA',
-      causa: { id: 1, nome: payload.causa },
+      causa: CAUSAS_TESTE.find(causa => causa.id === payload.causa_id),
       organizacao: { id: ONG.id, nome: ONG.nome },
       ocorrencias: payload.ocorrencias.map((item, indice) => ({ ...item, id: 100 + indice })),
     }
@@ -62,7 +64,7 @@ async function preencherFormulario(user) {
   await user.type(screen.getByLabelText('Título da vaga'), 'Oficina de leitura')
   await user.type(screen.getByLabelText('Descrição'), 'Apoio às atividades de leitura da comunidade.')
   await user.type(screen.getByLabelText('Atividades do voluntário'), 'Organizar livros e apoiar a leitura.')
-  await user.type(screen.getByLabelText('Causa'), 'Educação')
+  await user.selectOptions(screen.getByLabelText('Causa'), '1')
   await user.type(screen.getByLabelText('Local ou atividade remota'), 'Brasília')
   await user.type(screen.getByLabelText('Carga horária (horas)'), '3')
   await user.type(screen.getByLabelText('Número de vagas'), '2')
@@ -108,8 +110,10 @@ describe('página pública de vagas', () => {
     expect(screen.getAllByRole('article')).toHaveLength(4)
     expect(screen.getByText(ONG.nome)).toBeVisible()
     expect(vagasService.publicarVaga).toHaveBeenCalledWith(expect.objectContaining({
+      causa_id: 1,
       ocorrencias: [{ inicio: '2026-11-16T12:00:00.000Z', fim: '2026-11-16T15:00:00.000Z' }],
     }))
+    expect(vagasService.publicarVaga.mock.calls[0][0]).not.toHaveProperty('causa')
     expect(vagasService.publicarVaga.mock.calls[0][0]).not.toHaveProperty('organizacao_id')
 
     view.unmount()
@@ -225,12 +229,12 @@ describe('página pública de vagas', () => {
     const user = userEvent.setup()
     abrir(null, {}, '/vagas?causa=Educação&modalidade=VOANDO')
     await screen.findByRole('heading', { name: 'Resultado da busca' })
-    expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ causa: 'Educação', modalidade: '', periodo: '' }))
     const filtros = within(screen.getByRole('complementary', { name: 'Filtros' }))
-    expect(filtros.getByRole('button', { name: 'Educação' })).toHaveAttribute('aria-pressed', 'true')
+    expect(await filtros.findByRole('button', { name: 'Educação' })).toHaveAttribute('aria-pressed', 'true')
+    await waitFor(() => expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ causaId: '1', causa: '', modalidade: '', periodo: '' })))
     await user.click(filtros.getByRole('button', { name: 'Remoto' }))
     await user.click(filtros.getByRole('button', { name: 'Noite' }))
-    expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ pagina: 1, causa: 'Educação', modalidade: 'REMOTO', periodo: 'NOITE' }))
+    expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ pagina: 1, causaId: '1', causa: '', modalidade: 'REMOTO', periodo: 'NOITE' }))
     const ativos = within(screen.getByRole('list', { name: 'Filtros ativos' }))
     await user.click(ativos.getByRole('button', { name: /Educação/ }))
     expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ causa: '', modalidade: 'REMOTO', periodo: 'NOITE' }))
@@ -245,5 +249,16 @@ describe('página pública de vagas', () => {
     expect(await screen.findByText('Nenhuma vaga aberta com esses filtros.')).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Limpar filtros' }))
     expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ periodo: '' }))
+  })
+
+  it('usa opções e IDs da API no lugar de texto livre para publicação', async () => {
+    listarCausas.mockResolvedValueOnce([{ id: 41, codigo: 'servidor', nome: 'Causa do servidor', ativo: true, aliases: [] }])
+    const user = userEvent.setup()
+    abrir(ONG)
+    await user.click(screen.getByRole('button', { name: 'Publicar vaga', exact: true }))
+    const campo = screen.getByRole('combobox', { name: 'Causa' })
+    expect(await within(campo).findByRole('option', { name: 'Causa do servidor' })).toHaveValue('41')
+    expect(within(campo).queryByRole('option', { name: 'Educação' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: 'Causa' })).not.toBeInTheDocument()
   })
 })

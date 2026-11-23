@@ -6,7 +6,7 @@ export function Interests({ value, onChange, catalogo, legadas = [], onLegacyCha
   const causas = catalogo.itens.filter(causa => causa.ativo || value.includes(causa.id))
   return <>
     {catalogo.carregando && <p role="status">Carregando causas…</p>}
-    {catalogo.erro && <div><p role="alert">{catalogo.erro}</p><button type="button" onClick={catalogo.recarregar}>Tentar carregar causas novamente</button></div>}
+    {catalogo.erro && <div><p role="alert">{catalogo.erro}</p><button className={s.retry} type="button" onClick={catalogo.recarregar}>Tentar carregar causas novamente</button></div>}
     <div className={s.chips} role="group" tabIndex={error ? -1 : undefined} aria-describedby={error ? 'causas-error' : undefined} aria-label="Causas de interesse">{causas.map(causa => {
       const selected = value.includes(causa.id)
       return <button type="button" role="checkbox" aria-checked={selected} disabled={disabled || catalogo.carregando || Boolean(catalogo.erro)} key={causa.id}

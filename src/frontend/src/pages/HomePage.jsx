@@ -3,21 +3,22 @@ import { Link, useNavigate } from 'react-router-dom'
 import VagaCard from '../components/VagaCard'
 import { Footer, Header, Icon } from '../components/ui/Layout'
 import { useVagas } from '../hooks/useVagas'
+import { useCausas } from '../hooks/useCausas'
 import { designAssets } from '../utils/designAssets'
 import { initials } from '../utils/initials'
 import { proximoEncontro, resumoEncontro } from '../utils/ocorrencias'
-import { CAUSAS_DESTAQUE, MODALIDADES, PERIODOS, normalizarCausa } from '../utils/vagaLabels'
+import { APRESENTACAO_CAUSAS, MODALIDADES, PERIODOS } from '../utils/vagaLabels'
 import s from './Home.module.css'
 
 const numero = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 })
-const POPULARES = [['Manhã', '?periodo=MANHA'], ['Remoto', '?modalidade=REMOTO'], ['Educação', '?causa=Educação'], ['Proteção animal', '?causa=Proteção animal']]
+const POPULARES = [['Manhã', '?periodo=MANHA'], ['Remoto', '?modalidade=REMOTO']]
 const PASSOS = [
   ['Encontre', 'Filtre por causa, modalidade e período. Veja local, carga horária e todas as datas antes de decidir.'],
   ['Candidate-se sem conflitos', 'Antes de enviar, sua agenda é conferida. Se um horário se sobrepõe, avisamos qual vaga e quando.'],
   ['Conecte-se', 'Após o aceite, o contato do responsável é liberado e você recebe um comprovante da atividade.'],
 ]
 
-function Busca({ causas }) {
+function Busca({ causas, carregando, erro }) {
   const navigate = useNavigate()
   function buscar(event) {
     event.preventDefault()
@@ -27,10 +28,10 @@ function Busca({ causas }) {
   }
   const campo = (name, label, vazio, opcoes) => <label className={s.searchField}>
     <span>{label}</span>
-    <select name={name} defaultValue="">{[['', vazio], ...opcoes].map(([valor, texto]) => <option key={valor} value={valor}>{texto}</option>)}</select>
+    <select name={name} defaultValue="" disabled={name === 'causa_id' && (carregando || Boolean(erro))}>{[['', vazio], ...opcoes].map(([valor, texto]) => <option key={valor} value={valor}>{texto}</option>)}</select>
   </label>
   return <form className={s.search} role="search" aria-label="Buscar vagas" onSubmit={buscar}>
-    {campo('causa', 'Causa', 'Todas as causas', causas.map((nome) => [nome, nome]))}
+    {campo('causa_id', 'Causa', 'Todas as causas', causas.map(causa => [causa.id, causa.nome]))}
     <span className={s.searchDivider} aria-hidden="true" />
     {campo('modalidade', 'Modalidade', 'Qualquer formato', Object.entries(MODALIDADES))}
     <span className={s.searchDivider} aria-hidden="true" />
@@ -97,6 +98,7 @@ function Ilustracao({ tipo }) {
 }
 
 export default function HomePage() {
+  const catalogo = useCausas()
   const [agora] = useState(() => Date.now())
   const { itens, total, carregando, erro, recarregar } = useVagas(1, { porPagina: 100 })
   const abertas = itens.filter((vaga) => proximoEncontro(vaga.ocorrencias, agora))
@@ -107,8 +109,11 @@ export default function HomePage() {
   const futuros = itens.flatMap((vaga) => vaga.ocorrencias.filter((o) => new Date(o.fim).getTime() > agora))
   const horas = futuros.reduce((soma, o) => soma + (new Date(o.fim) - new Date(o.inicio)) / 36e5, 0)
   const organizacoes = new Set(itens.filter((vaga) => vaga.organizacao.homologada).map((vaga) => vaga.organizacao.id)).size
-  const contagem = (nome) => itens.filter((vaga) => normalizarCausa(vaga.causa.nome) === normalizarCausa(nome)).length
-  const causas = [...new Set([...CAUSAS_DESTAQUE.map((c) => c.nome), ...itens.map((vaga) => vaga.causa.nome)])]
+  const contagem = id => itens.filter(vaga => vaga.causa.id === id).length
+  const causas = catalogo.itens.filter(causa => causa.ativo)
+  const causasDestaque = causas.filter(causa => Number.isInteger(APRESENTACAO_CAUSAS[causa.codigo]?.destaque))
+    .map(causa => ({ ...causa, ...APRESENTACAO_CAUSAS[causa.codigo] })).sort((a,b) => a.destaque - b.destaque)
+  const populares = [...POPULARES, ...causas.filter(causa => ['educacao','protecao-animal'].includes(causa.codigo)).map(causa => [causa.nome, `?causa_id=${causa.id}`])]
   const pronto = !carregando && !erro
   const painel = itens.filter((vaga) => vaga.fotos?.length).slice(0, 3)
 
@@ -119,8 +124,9 @@ export default function HomePage() {
         <p className={s.eyebrow}>Voluntariado no Distrito Federal</p>
         <h1 id="home-title">Seu tempo<br />muda histórias.</h1>
         <p className={s.lead}>Encontre vagas de voluntariado perto de você, nos horários que cabem na sua semana — e candidate-se em poucos toques.</p>
-        <Busca causas={causas} />
-        <p className={s.popular}><span>Populares:</span>{POPULARES.map(([texto, busca]) => <Link key={texto} to={`/vagas${busca}`}>{texto}</Link>)}</p>
+        <Busca causas={causas} carregando={catalogo.carregando} erro={catalogo.erro} />
+        {catalogo.erro && <div><p role="alert">{catalogo.erro}</p><button className={s.secondary} type="button" onClick={catalogo.recarregar}>Tentar carregar causas novamente</button></div>}
+        <p className={s.popular}><span>Populares:</span>{populares.map(([texto, busca]) => <Link key={texto} to={`/vagas${busca}`}>{texto}</Link>)}</p>
         <div className={s.heroImage}>
           <img src={designAssets.home.imgHero} alt="Voluntários carregando caixas de doações em frente a um centro comunitário" />
           <div className={s.notification} aria-hidden="true">
@@ -141,9 +147,10 @@ export default function HomePage() {
 
       <section className={s.section} aria-labelledby="causas">
         <div className={s.sectionHead}><h2 id="causas">Explore por causa.</h2><Link className={s.textLink} to="/vagas">Ver todas as causas<img src={designAssets.home['chev-r-teal']} alt="" width="16" height="16" /></Link></div>
-        <ul className={s.causes}>{CAUSAS_DESTAQUE.map(({ nome, icone, tom }) => {
-          const n = contagem(nome)
-          return <li key={nome}><Link to={`/vagas?causa=${encodeURIComponent(nome)}`} className={s.cause}>
+        {catalogo.carregando && <p role="status">Carregando causas…</p>}
+        <ul className={s.causes}>{causasDestaque.map(({ id, nome, icone, tom }) => {
+          const n = contagem(id)
+          return <li key={id}><Link to={`/vagas?causa_id=${id}`} className={s.cause}>
             <span className={`${s.causeIcon} ${s[tom]}`}><img src={designAssets.home[icone]} alt="" width="24" height="24" /></span>
             <strong>{nome}</strong><small>{pronto ? (n ? `${n} ${n === 1 ? 'vaga aberta' : 'vagas abertas'}` : 'Nenhuma vaga ainda') : ' '}</small>
           </Link></li>
