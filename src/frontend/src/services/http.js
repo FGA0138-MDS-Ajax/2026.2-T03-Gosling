@@ -29,9 +29,10 @@ http.interceptors.response.use(
       error.response?.status === 401 &&
       request &&
       !request.publicRequest &&
+      request.authToken &&
       request.authToken === readSession()?.access_token
     ) {
-      clearSession()
+      clearSession({ expired: true })
       window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
     }
     return Promise.reject(error)
