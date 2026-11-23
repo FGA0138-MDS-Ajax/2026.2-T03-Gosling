@@ -84,7 +84,7 @@ Exemplo de corpo para publicação:
   "titulo": "Oficina de leitura",
   "descricao": "Leitura compartilhada com a comunidade.",
   "atividades": "Organizar livros e apoiar as atividades de leitura.",
-  "causa": "Educação",
+  "causa_id": 1,
   "modalidade": "PRESENCIAL",
   "local": "Brasília, DF",
   "periodo": "MANHA",
@@ -102,6 +102,45 @@ Exemplo de corpo para publicação:
 Ao atualizar o sistema, `docker compose up --build -d --wait` aplica a migração de vagas na inicialização da API. As publicações usam o volume persistente já configurado para o MySQL.
 
 As fotos enviadas antes da publicação podem ser reutilizadas em uma nova tentativa. A API verifica a mídia a cada hora e remove uploads sem vínculo com mais de 24 horas, inclusive quando o formulário foi abandonado ou o navegador foi fechado. Fotos de vagas em qualquer estado, avatares e modelos vinculados são preservados. Se um upload já tiver sido removido, a publicação retorna 422 e solicita selecionar as imagens novamente. A limpeza usa o mesmo volume persistente do Compose e uma trava compartilhada com a publicação no processo da API; a implantação atual executa um único worker.
+
+## Catálogo compartilhado de causas
+
+`GET /api/v1/causas` é público e devolve as causas ativas com `id`, `codigo`,
+`nome`, `ativo` e `aliases`. O identificador é opaco: consulte o catálogo antes
+de preencher `causa_id` no exemplo de publicação acima; o valor 1 é ilustrativo.
+`GET /api/v1/causas?incluir_inativas=true` inclui as categorias anteriores para
+exibir interesses e filtros legados.
+
+Publicação usa `causa_id`; cadastro e edição do voluntário usam `causa_ids`.
+O servidor valida existência, estado ativo e duplicidade antes de gravar.
+IDs inválidos/inativos retornam 422 no campo correspondente, sem alteração
+parcial. Um interesse inativo já associado ao titular pode ser preservado ou
+removido, mas não pode ser adicionado novamente depois de removido.
+
+Os nomes retornam somente para exibição. A busca principal usa
+`GET /api/v1/vagas?causa_id={id}`; URLs antigas com `causa=nome` continuam aceitas.
+O cliente usa o mesmo catálogo em home, publicação, filtros, cadastro e perfil,
+sem listas alternativas de categorias e sem criação livre a cada publicação.
+
+A migração `0008_catalogo_causas` preserva IDs existentes quando o rótulo já é
+canônico e mapeia explicitamente `Animais` → `Proteção animal`, `Idosos` →
+`Pessoas idosas` e `Esportes` → `Esporte`. As referências das vagas e os IDs
+dos interesses são migrados; registros anteriores permanecem no catálogo como
+inativos. `Assistência Social`, `Direitos Humanos` e outras categorias diferentes
+não são unidas automaticamente às oito causas padronizadas.
+
+O JSON anterior do voluntário é preservado. Interesses sem correspondência
+aparecem somente no perfil privado em `causas_legadas`; não viram categorias
+públicas. A edição aceita apenas preservar ou remover esses valores existentes.
+O novo cliente envia IDs para as causas e essa lista privada para manter os
+interesses antigos que ainda precisam de tratamento.
+
+Durante a transição, os campos antigos `causa` e `causas` aceitam nomes do
+catálogo e seus aliases. `causas` também pode preservar os interesses anteriores
+do próprio titular. Textos novos fora do catálogo são recusados; não envie o
+campo legado e o campo de IDs no mesmo recurso. A normalização NFKC/casefold e
+as restrições únicas do nome normalizado e do código continuam protegendo a
+identidade das categorias.
 
 ## Calendário do voluntário
 
