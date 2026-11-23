@@ -1,0 +1,22 @@
+.corpo { display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+.grupo { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.titulo { margin: 0 0 4px; font-size: 17px; font-weight: 600; color: var(--ink); }
+.dica { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.encontros, .documentos { list-style: none; margin: 12px 0 0; padding: 0; border: 1px solid #ededf1; border-radius: 16px; overflow: hidden; }
+.encontros li, .documentos li { padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.encontros li + li, .documentos li + li { border-top: 1px solid #ededf1; }
+.encontros span { color: var(--muted); }
+.documentos label { font-weight: 600; }
+.documentos a { font-size: 13px; font-weight: 600; color: var(--action); }
+.documentos input { font: inherit; font-size: 13px; }
+.erro { color: var(--error); font-size: 13px; line-height: 1.4; margin: 0; }
+.sucesso { margin: 0; font-size: 15px; line-height: 1.5; }
+.resumo { margin: 0; display: grid; gap: 12px; }
+.resumo dt { font-size: 12px; color: var(--muted); }
+.resumo dd { margin: 2px 0 0; font-weight: 600; }
+.acoes { display: flex; flex-wrap: wrap; gap: 12px; }
+.principal { border: 0; border-radius: 999px; background: var(--action); color: white; min-height: 48px; padding: 12px 22px; font: inherit; font-weight: 600; cursor: pointer; }
+.principal:hover { background: var(--action-hover); }
+.principal:disabled { background: #e8e8ed; color: var(--muted); cursor: default; }
+.secundario { border: 1px solid var(--border); border-radius: 999px; background: white; color: var(--ink); min-height: 48px; padding: 12px 22px; font: inherit; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; cursor: pointer; }
+.secundario:disabled { color: var(--muted); }
