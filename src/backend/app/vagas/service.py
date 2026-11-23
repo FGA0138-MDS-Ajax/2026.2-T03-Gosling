@@ -2,12 +2,13 @@ import math
 from typing import Any, Dict
 
 from fastapi import HTTPException
+
 from app.causas.repository import CausaRepository
 from app.causas.service import CatalogoService, erro_causa, normalizar
-
-from app.core.midia import bloqueio_midia, pasta_midia
+from app.core.midia import bloqueio_midia
 from app.localizacao.models import aplicar_localizacao
 from app.localizacao.schemas import Localizacao
+from app.midias.vagas import dados_modelos, preparar_midias, sincronizar_vinculos
 from app.usuarios.enums import TipoOrganizacao
 from app.usuarios.models import Organizacao
 from app.vagas.enums import Modalidade, StatusVaga
@@ -74,7 +75,20 @@ class VagaService:
     def _confirmar_publicacao(
         self, vaga: Vaga, organizacao: Organizacao, dados: CadastroVagaRequest
     ) -> VagaPublica:
-        self._validar_fotos(dados.fotos)
+        db = self.repository.session
+        midias, arquivos = preparar_midias(
+            db,
+            organizacao.id,
+            dados.model_dump(
+                mode="json",
+                include={
+                    "fotos",
+                    "documentos_exigidos",
+                    "enquadramento_fotos",
+                },
+            ),
+            vaga.rascunho,
+        )
         catalogo = CatalogoService(CausaRepository(self.repository.session))
         vaga.causa = catalogo.publicavel(dados.causa_id, dados.causa)
         campos = dados.model_dump(
@@ -84,10 +98,12 @@ class VagaService:
                 "ocorrencias",
                 "localizacao",
                 "origem_localizacao",
+                "documentos_exigidos",
             }
         )
         for campo, valor in campos.items():
             setattr(vaga, campo, valor)
+        vaga.documentos_exigidos = dados_modelos(db, midias["documentos_exigidos"])
 
         self._localizar_atividade(vaga, organizacao, dados)
         vaga.ocorrencias = [
@@ -97,19 +113,10 @@ class VagaService:
         vaga.status = StatusVaga.ABERTA
         vaga.rascunho = None
         self.repository.adicionar(vaga)
+        sincronizar_vinculos(db, vaga, arquivos)
         resposta = VagaPublica.model_validate(vaga)
         self.repository.confirmar()
         return resposta
-
-    @staticmethod
-    def _validar_fotos(fotos: list[str]) -> None:
-        for foto in fotos:
-            if foto.startswith("/api/v1/midia/"):
-                arquivo = pasta_midia() / foto.rsplit("/", 1)[1]
-                if not arquivo.is_file():
-                    raise HTTPException(
-                        422, "Uma das fotos expirou. Selecione as imagens novamente."
-                    )
 
     @staticmethod
     def _localizar_atividade(
@@ -139,17 +146,20 @@ class VagaService:
         else:
             vaga.origem_localizacao = "LEGADO"
 
-    @staticmethod
-    def _resposta_rascunho(vaga: Vaga) -> RascunhoResponse:
+    def _resposta_rascunho(self, vaga: Vaga) -> RascunhoResponse:
+        dados = dict(vaga.rascunho or {})
+        dados["documentos_exigidos"] = dados_modelos(
+            self.repository.session, dados.get("documentos_exigidos", [])
+        )
         return RascunhoResponse(
             id=vaga.id,
             versao=vaga.versao,
             criado_em=vaga.criado_em,
             atualizado_em=vaga.atualizado_em,
-            dados=vaga.rascunho or {},
+            dados=dados,
         )
 
-    def criar_rascunho(self, usuario_id: int, dados: DadosRascunho) -> RascunhoResponse:
+    def validar_autor_rascunho(self, usuario_id: int) -> Organizacao:
         organizacao = self.repository.buscar_organizacao(usuario_id)
         if (
             not organizacao
@@ -157,16 +167,23 @@ class VagaService:
             or organizacao.tipo != TipoOrganizacao.ONG
         ):
             raise HTTPException(403, "Somente uma ONG pode criar um rascunho.")
+        return organizacao
 
+    def criar_rascunho(self, usuario_id: int, dados: DadosRascunho) -> RascunhoResponse:
+        organizacao = self.validar_autor_rascunho(usuario_id)
         with bloqueio_midia:
             try:
-                self._validar_fotos(dados.fotos)
+                db = self.repository.session
+                campos, arquivos = preparar_midias(
+                    db, usuario_id, dados.model_dump(mode="json", exclude_unset=True)
+                )
                 vaga = Vaga(
                     organizacao=organizacao,
                     status=StatusVaga.RASCUNHO,
-                    rascunho=dados.model_dump(mode="json", exclude_unset=True),
+                    rascunho=campos,
                 )
                 self.repository.adicionar(vaga)
+                sincronizar_vinculos(db, vaga, arquivos)
                 resposta = self._resposta_rascunho(vaga)
                 self.repository.confirmar()
                 return resposta
@@ -196,12 +213,14 @@ class VagaService:
                 vaga = self._rascunho_para_editar(usuario_id, vaga_id, pedido.versao)
                 novos = pedido.dados.model_dump(mode="json", exclude_unset=True)
                 dados = {**(vaga.rascunho or {}), **novos}
-                self._validar_fotos(dados.get("fotos", []))
+                db = self.repository.session
+                dados, arquivos = preparar_midias(db, usuario_id, dados, vaga.rascunho)
                 if not self.repository.reservar_edicao_rascunho(vaga, pedido.versao):
                     raise erro_versao()
 
                 vaga.rascunho = dados
                 self.repository.adicionar(vaga)
+                sincronizar_vinculos(db, vaga, arquivos)
                 resposta = self._resposta_rascunho(vaga)
                 self.repository.confirmar()
                 return resposta

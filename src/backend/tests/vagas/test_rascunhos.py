@@ -79,7 +79,9 @@ def test_salva_parcialmente_e_retem_campos_nao_enviados(client, db, headers):
     assert salvo["dados"]["local"] == "Centro da comunidade"
     assert salvo["dados"]["ocorrencias"][0]["data_inicio"] == "2099-11-16"
     assert salvo["dados"]["fotos"] == dados["fotos"]
-    assert salvo["dados"]["documentos_exigidos"] == dados["documentos_exigidos"]
+    documento = salvo["dados"]["documentos_exigidos"][0]
+    assert documento["nome"] == "" and documento["modelo_url"] == "https://"
+    assert documento["id"] == rascunho["dados"]["documentos_exigidos"][0]["id"]
 
 
 def test_uma_aba_desatualizada_nao_sobrescreve_nem_publica(client, headers):

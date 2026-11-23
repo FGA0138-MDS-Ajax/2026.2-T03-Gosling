@@ -60,9 +60,7 @@ class Vaga(LocalizacaoMixin, Base):
     numero_vagas: Mapped[int | None]
     fotos: Mapped[list[str] | None] = mapped_column(JSON)
     enquadramento_fotos: Mapped[dict | None] = mapped_column(JSON)
-    documentos_exigidos: Mapped[list[dict[str, str | None]] | None] = mapped_column(
-        JSON
-    )
+    documentos_exigidos: Mapped[list[dict] | None] = mapped_column(JSON)
     status: Mapped[StatusVaga] = mapped_column(
         Enum(StatusVaga, name="status_vaga"), default=StatusVaga.ABERTA
     )
@@ -81,6 +79,10 @@ class Vaga(LocalizacaoMixin, Base):
         order_by="OcorrenciaVaga.inicio",
         lazy="selectin",
     )
+
+    @property
+    def foto_capa(self) -> str | None:
+        return self.fotos[0] if self.fotos else None
 
 
 class OcorrenciaVaga(Base):

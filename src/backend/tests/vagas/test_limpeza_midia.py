@@ -33,6 +33,10 @@ def envelhecer(tmp_path, url):
     os.utime(tmp_path / url.rsplit("/", 1)[1], (passado, passado))
 
 
+def url_privada(url):
+    return "/api/v1/midia/privada/" + url.rsplit("/", 1)[1]
+
+
 def test_upload_abandonado_expira_sem_remover_upload_recente(
     client, db, contas, tmp_path, monkeypatch
 ):
@@ -43,7 +47,8 @@ def test_upload_abandonado_expira_sem_remover_upload_recente(
     envelhecer(tmp_path, abandonada)
     assert limpar_imagens_orfas(db) == 1
     assert client.get(abandonada).status_code == 404
-    assert client.get(recente).status_code == 200
+    assert client.get(recente).status_code == 404
+    assert client.get(url_privada(recente), headers=auth).status_code == 200
     assert limpar_imagens_orfas(db) == 0
 
 
@@ -53,7 +58,15 @@ def test_preserva_fotos_de_vagas_em_todos_os_estados_e_avatar(
 ):
     monkeypatch.setenv("UPLOAD_DIR", str(tmp_path))
     auth = autenticar(client, contas)
-    foto, avatar, modelo = [enviar_foto(client, auth) for _ in range(3)]
+    foto, modelo = [enviar_foto(client, auth) for _ in range(2)]
+    imagem = io.BytesIO()
+    Image.new("RGB", (16, 16), color="teal").save(imagem, format="PNG")
+    auth_voluntario = autenticar(client, contas, "voluntario")
+    avatar = client.put(
+        "/api/v1/voluntarios/me/foto",
+        headers={**auth_voluntario, "Content-Type": "image/png"},
+        content=imagem.getvalue(),
+    ).json()["foto_url"]
     vaga = publicar(
         client,
         auth,
@@ -64,13 +77,15 @@ def test_preserva_fotos_de_vagas_em_todos_os_estados_e_avatar(
         },
     )
     db.get(Vaga, vaga["id"]).status = status
-    contas["voluntario"].foto_url = avatar
     db.commit()
     for url in (foto, avatar, modelo):
         envelhecer(tmp_path, url)
     assert limpar_imagens_orfas(db) == 0
-    for url in (foto, avatar, modelo):
-        assert client.get(url).status_code == 200
+    assert client.get(avatar).status_code == 200
+    for url in (foto, modelo):
+        status_publico = 200 if status == StatusVaga.ABERTA else 404
+        assert client.get(url).status_code == status_publico
+        assert client.get(url_privada(url), headers=auth).status_code == 200
 
 
 def test_falha_de_publicacao_permite_retentativa_e_limpa_apos_abandono(
@@ -89,7 +104,7 @@ def test_falha_de_publicacao_permite_retentativa_e_limpa_apos_abandono(
     with pytest.raises(RuntimeError, match="Falha simulada"):
         client.post("/api/v1/vagas", headers=auth, json={**dados_vaga, "fotos": [foto]})
     assert limpar_imagens_orfas(db) == 0
-    assert client.get(foto).status_code == 200
+    assert client.get(url_privada(foto), headers=auth).status_code == 200
 
     envelhecer(tmp_path, foto)
     assert limpar_imagens_orfas(db) == 1
@@ -118,7 +133,7 @@ def test_limpeza_falha_sem_apagar_arquivos_quando_banco_indisponivel(
     monkeypatch.setattr(db, "scalars", falhar)
     with pytest.raises(RuntimeError, match="Banco indisponível"):
         limpar_imagens_orfas(db)
-    assert client.get(foto).status_code == 200
+    assert (tmp_path / foto.rsplit("/", 1)[1]).is_file()
 
 
 def test_limpeza_ignora_arquivos_fora_do_padrao_de_upload(db, tmp_path, monkeypatch):
