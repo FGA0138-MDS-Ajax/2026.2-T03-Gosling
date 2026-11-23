@@ -142,6 +142,40 @@ e das ocorrências existentes, sem outra tabela de agenda. A API de registro
 de candidaturas da #46 deve reutilizar esse modelo; esta entrega corresponde
 à consulta da #50. A migração depende de `0005_layout_voluntario_vaga` da #97.
 
+## Vagas salvas
+
+As contas de voluntário mantêm suas vagas salvas no banco, com sincronização
+entre os cards da home, exploração, recomendações e detalhes. O coração muda
+após a confirmação da API; falhas mantêm o estado confirmado e permitem repetir.
+Ao recuperar o foco da janela, o cliente consulta novamente os salvos.
+
+Todos os endpoints exigem JWT de voluntário e usam exclusivamente seu titular:
+
+| Endpoint | Comportamento |
+| --- | --- |
+| `GET /api/v1/voluntarios/me/vagas-salvas` | Retorna `{"vaga_ids": [1, 2]}` com os IDs visíveis, ou lista vazia. |
+| `PUT /api/v1/voluntarios/me/vagas-salvas/{id}` | Salva uma vaga pública; retorna 204, inclusive se já estava salva. |
+| `DELETE /api/v1/voluntarios/me/vagas-salvas/{id}` | Remove o vínculo do titular; retorna 204, inclusive se não existia. |
+
+O cliente não envia o ID do voluntário no corpo nem na query. Respostas privadas
+usam `Cache-Control: no-store`. Requisições preparadas para uma sessão são
+canceladas se a conta mudar antes do envio. Salvar não cria candidatura nem
+reserva uma das vagas ofertadas.
+
+Vagas encerradas/suspensas ou de organizações sem visibilidade não são
+listadas e não podem receber um novo salvamento. Um vínculo anterior permanece
+no banco e volta a aparecer se a vaga recuperar a visibilidade; pode ser
+removido mesmo enquanto ela estiver indisponível. Excluir a vaga remove seus
+vínculos por chave estrangeira. A migração `0007_vagas_salvas` sucede
+`0006_candidaturas` e impede duplicidade por voluntário/vaga.
+
+Visitantes continuam salvando apenas neste navegador. Após o login, a área
+`/voluntario` oferece **Importar salvos deste navegador** para vincular à conta
+os salvos do visitante e os salvos locais antigos dessa mesma conta. A importação
+depende dessa ação explícita; favoritos locais de outras contas não participam.
+Somente os IDs confirmados pelo servidor são retirados do armazenamento local.
+Itens indisponíveis ou com falha de rede são preservados para outra tentativa.
+
 ## Contrato de autenticação
 
 O backend usa a porta 8000: abra <http://localhost:8000/docs> para consultar e testar as rotas no Swagger. O ReDoc está em <http://localhost:8000/redoc> e o esquema OpenAPI em <http://localhost:8000/openapi.json>. O frontend usa uma porta separada, definida em `WEB_PORT`.
