@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from app.admin.router import router as admin_router
 
 from app.auth.router import router as auth_router
+from app.candidaturas.router import router as candidaturas_router
 from app.core.errors import register_error_handlers
 from app.core.limpeza_midia import limpar_midias_periodicamente
 from app.core.midia import router as midia_router
@@ -29,6 +30,7 @@ app = FastAPI(title="VolunJá", lifespan=lifespan)
 register_error_handlers(app)
 app.include_router(admin_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
+app.include_router(candidaturas_router, prefix="/api/v1")
 app.include_router(usuarios_router, prefix="/api/v1")
 app.include_router(voluntarios_router, prefix="/api/v1")
 app.include_router(vagas_router, prefix="/api/v1")
