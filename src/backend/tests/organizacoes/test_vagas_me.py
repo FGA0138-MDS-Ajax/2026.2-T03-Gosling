@@ -15,9 +15,7 @@ SENHA = "SenhaDeTeste123!"
 
 
 def autenticar(client, email: str) -> dict[str, str]:
-    resposta = client.post(
-        "/api/v1/auth/login", json={"email": email, "senha": SENHA}
-    )
+    resposta = client.post("/api/v1/auth/login", json={"email": email, "senha": SENHA})
     assert resposta.status_code == status.HTTP_200_OK
     return {"Authorization": f"Bearer {resposta.json()['access_token']}"}
 
@@ -79,9 +77,7 @@ def test_listar_vagas_retorna_dados_da_organizacao_autenticada(
     assert primeira["total_candidaturas"] == 12
 
 
-def test_listar_vagas_usa_o_id_da_organizacao_do_jwt(
-    client, contas, service_mock
-):
+def test_listar_vagas_usa_o_id_da_organizacao_do_jwt(client, contas, service_mock):
     headers = autenticar(client, "ong@example.com")
 
     client.get(URL, headers=headers)
@@ -90,12 +86,11 @@ def test_listar_vagas_usa_o_id_da_organizacao_do_jwt(
         organizacao_id=contas["organizacao"].id,
         pagina=1,
         tamanho_pagina=10,
+        estado=None,
     )
 
 
-def test_listar_vagas_repassa_parametros_de_paginacao(
-    client, contas, service_mock
-):
+def test_listar_vagas_repassa_parametros_de_paginacao(client, contas, service_mock):
     headers = autenticar(client, "ong@example.com")
 
     resposta = client.get(f"{URL}?pagina=2&tamanho_pagina=5", headers=headers)
@@ -105,6 +100,7 @@ def test_listar_vagas_repassa_parametros_de_paginacao(
         organizacao_id=contas["organizacao"].id,
         pagina=2,
         tamanho_pagina=5,
+        estado=None,
     )
 
 
@@ -137,9 +133,7 @@ def test_listar_vagas_com_token_invalido_retorna_401(client, service_mock):
     service_mock.listar_vagas_da_organizacao.assert_not_called()
 
 
-def test_listar_vagas_com_perfil_voluntario_retorna_403(
-    client, contas, service_mock
-):
+def test_listar_vagas_com_perfil_voluntario_retorna_403(client, contas, service_mock):
     headers = autenticar(client, "voluntario@example.com")
 
     resposta = client.get(URL, headers=headers)

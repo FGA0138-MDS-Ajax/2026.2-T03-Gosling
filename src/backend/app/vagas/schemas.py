@@ -200,17 +200,19 @@ class AtualizarVagaRequest(BaseModel):
     data_fim: Optional[datetime] = None
     estado_vaga: Optional[str] = Field(
         None,
-        description="Estado da vaga: ABERTA, ENCERRADA ou RASCUNHO",
+        description="Estado da vaga publicada: ABERTA, ENCERRADA ou SUSPENSA",
     )
 
 
 class VagaResumoResponse(BaseModel):
     id: str
-    titulo: str
+    titulo: str | None
     estado_vaga: str
+    local: str | None = None
     cidade: Optional[str] = None
     estado_uf: Optional[str] = None
-    data_criacao: datetime
+    data_criacao: datetime | None
+    atualizado_em: datetime | None = None
     total_candidaturas: int = Field(
         default=0,
         description="Contagem acumulada de inscritos na vaga",

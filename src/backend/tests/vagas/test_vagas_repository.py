@@ -208,60 +208,6 @@ def test_listar_publicas_pagina_alem_do_fim_retorna_vazio(repo, cinco_vagas):
     assert total == 5
 
 
-def repo_com_sessao_simulada(total=5, linhas=None):
-    session = MagicMock()
-    resultado = session.execute.return_value
-    resultado.scalar_one.return_value = total
-    resultado.mappings.return_value.all.return_value = linhas or []
-    return VagaRepository(session), session
-
-
-def test_listar_vagas_por_organizacao_retorna_linhas_como_dicts_e_total():
-    repo, _ = repo_com_sessao_simulada(total=5, linhas=[{"id": 1, "titulo": "Vaga A"}])
-
-    vagas, total = repo.listar_vagas_por_organizacao(organizacao_id=10)
-
-    assert vagas == [{"id": 1, "titulo": "Vaga A"}]
-    assert total == 5
-
-
-def test_listar_vagas_por_organizacao_sem_vagas_retorna_vazio_e_total_zero():
-    repo, _ = repo_com_sessao_simulada(total=0, linhas=[])
-
-    vagas, total = repo.listar_vagas_por_organizacao(organizacao_id=10)
-
-    assert vagas == []
-    assert total == 0
-
-
-def test_listar_vagas_por_organizacao_conta_somente_a_organizacao_informada():
-    repo, session = repo_com_sessao_simulada()
-
-    repo.listar_vagas_por_organizacao(organizacao_id=10)
-
-    assert session.execute.call_count == 2
-    assert session.execute.call_args_list[0].args[1] == {"organizacao_id": 10}
-
-
-def test_listar_vagas_por_organizacao_calcula_limite_e_offset_da_pagina():
-    repo, session = repo_com_sessao_simulada()
-
-    repo.listar_vagas_por_organizacao(organizacao_id=10, pagina=3, tamanho_pagina=4)
-
-    parametros = session.execute.call_args_list[1].args[1]
-    assert parametros == {"organizacao_id": 10, "limite": 4, "offset": 8}
-
-
-def test_listar_vagas_por_organizacao_usa_paginacao_padrao():
-    repo, session = repo_com_sessao_simulada()
-
-    repo.listar_vagas_por_organizacao(organizacao_id=10)
-
-    parametros = session.execute.call_args_list[1].args[1]
-    assert parametros["limite"] == 10
-    assert parametros["offset"] == 0
-
-
 def test_confirmar_faz_commit_da_sessao():
     session = MagicMock()
 

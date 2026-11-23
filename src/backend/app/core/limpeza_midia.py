@@ -27,6 +27,13 @@ def limpar_imagens_orfas(session: Session) -> int:
             em_uso.update(fotos or [])
         for documentos in session.scalars(select(Vaga.documentos_exigidos)):
             em_uso.update(doc.get("modelo_url") for doc in documentos or [])
+        for dados in session.scalars(
+            select(Vaga.rascunho).where(Vaga.rascunho.is_not(None))
+        ):
+            em_uso.update(dados.get("fotos", []))
+            em_uso.update(
+                doc.get("modelo_url") for doc in dados.get("documentos_exigidos", [])
+            )
         removidas = 0
         for arquivo in pasta_midia().glob("*.webp"):
             if (

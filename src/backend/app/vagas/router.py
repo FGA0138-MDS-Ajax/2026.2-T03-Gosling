@@ -1,6 +1,15 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Path,
+    Query,
+    Request,
+    Response,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -9,6 +18,12 @@ from app.dependencies import require_perfil
 from app.usuarios.enums import Perfil
 from app.usuarios.schemas import UsuarioPublico
 from app.vagas.enums import Modalidade, Periodo
+from app.vagas.rascunhos import (
+    AtualizarRascunhoRequest,
+    DadosRascunho,
+    PublicarRascunhoRequest,
+    RascunhoResponse,
+)
 from app.vagas.repository import VagaRepository
 from app.vagas.schemas import (
     AtualizarVagaRequest,
@@ -59,6 +74,57 @@ def publicar_vaga(
     service: Annotated[VagaService, Depends(get_vaga_service)],
 ) -> VagaPublica:
     return service.publicar(usuario.id, dados)
+
+
+TitularOrganizacao = Annotated[
+    UsuarioPublico, Depends(require_perfil(Perfil.ORGANIZACAO))
+]
+ServicoVagas = Annotated[VagaService, Depends(get_vaga_service)]
+IdVaga = Annotated[int, Path(gt=0)]
+
+
+@router.post("/rascunhos", response_model=RascunhoResponse, status_code=201)
+def criar_rascunho(
+    dados: DadosRascunho,
+    response: Response,
+    usuario: TitularOrganizacao,
+    service: ServicoVagas,
+) -> RascunhoResponse:
+    response.headers["Cache-Control"] = "no-store"
+    return service.criar_rascunho(usuario.id, dados)
+
+
+@router.get("/rascunhos/{vaga_id}", response_model=RascunhoResponse)
+def consultar_rascunho(
+    vaga_id: IdVaga,
+    response: Response,
+    usuario: TitularOrganizacao,
+    service: ServicoVagas,
+) -> RascunhoResponse:
+    response.headers["Cache-Control"] = "no-store"
+    return service.consultar_rascunho(usuario.id, vaga_id)
+
+
+@router.patch("/rascunhos/{vaga_id}", response_model=RascunhoResponse)
+def atualizar_rascunho(
+    vaga_id: IdVaga,
+    dados: AtualizarRascunhoRequest,
+    response: Response,
+    usuario: TitularOrganizacao,
+    service: ServicoVagas,
+) -> RascunhoResponse:
+    response.headers["Cache-Control"] = "no-store"
+    return service.atualizar_rascunho(usuario.id, vaga_id, dados)
+
+
+@router.post("/rascunhos/{vaga_id}/publicar", response_model=VagaPublica)
+def publicar_rascunho(
+    vaga_id: IdVaga,
+    dados: PublicarRascunhoRequest,
+    usuario: TitularOrganizacao,
+    service: ServicoVagas,
+) -> VagaPublica:
+    return service.publicar_rascunho(usuario.id, vaga_id, dados)
 
 
 @router.get("/{vaga_id}", response_model=VagaPublica)
