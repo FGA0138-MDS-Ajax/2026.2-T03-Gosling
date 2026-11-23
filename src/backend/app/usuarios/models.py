@@ -50,6 +50,7 @@ class Voluntario(Usuario):
     estado: Mapped[str | None] = mapped_column(String(2))
     biografia: Mapped[str | None] = mapped_column(String(500))
     causas: Mapped[list[str] | None] = mapped_column(JSON)
+    causa_ids: Mapped[list[int] | None] = mapped_column(JSON)
     disponibilidades: Mapped[list[str] | None] = mapped_column(JSON)
     disponibilidade_semanal: Mapped[list[dict[str, str]] | None] = mapped_column(JSON)
     carga_horaria_semanal: Mapped[int | None]

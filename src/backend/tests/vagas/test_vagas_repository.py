@@ -36,6 +36,11 @@ def criar_organizacao(
 
 
 def criar_causa(db, nome="Educação") -> Causa:
+    existente = db.scalar(
+        select(Causa).where(Causa.nome_normalizado == normalizar(nome))
+    )
+    if existente is not None:
+        return existente
     causa = Causa(nome=nome, nome_normalizado=normalizar(nome))
     db.add(causa)
     db.flush()
@@ -112,13 +117,9 @@ def causa(db):
 def requer_unicidade_da_causa(db):
     inspetor = inspect(db.connection())
     tabela = Causa.__tablename__
-    colunas = [
-        item["column_names"] for item in inspetor.get_unique_constraints(tabela)
-    ]
+    colunas = [item["column_names"] for item in inspetor.get_unique_constraints(tabela)]
     colunas += [
-        item["column_names"]
-        for item in inspetor.get_indexes(tabela)
-        if item["unique"]
+        item["column_names"] for item in inspetor.get_indexes(tabela) if item["unique"]
     ]
     if ["nome_normalizado"] not in colunas:
         pytest.skip("Causa.nome_normalizado não tem restrição de unicidade.")
@@ -289,9 +290,7 @@ def repo_com_sessao_simulada(total=5, linhas=None):
 
 
 def test_listar_vagas_por_organizacao_retorna_linhas_como_dicts_e_total():
-    repo, _ = repo_com_sessao_simulada(
-        total=5, linhas=[{"id": 1, "titulo": "Vaga A"}]
-    )
+    repo, _ = repo_com_sessao_simulada(total=5, linhas=[{"id": 1, "titulo": "Vaga A"}])
 
     vagas, total = repo.listar_vagas_por_organizacao(organizacao_id=10)
 
@@ -320,9 +319,7 @@ def test_listar_vagas_por_organizacao_conta_somente_a_organizacao_informada():
 def test_listar_vagas_por_organizacao_calcula_limite_e_offset_da_pagina():
     repo, session = repo_com_sessao_simulada()
 
-    repo.listar_vagas_por_organizacao(
-        organizacao_id=10, pagina=3, tamanho_pagina=4
-    )
+    repo.listar_vagas_por_organizacao(organizacao_id=10, pagina=3, tamanho_pagina=4)
 
     parametros = session.execute.call_args_list[1].args[1]
     assert parametros == {"organizacao_id": 10, "limite": 4, "offset": 8}

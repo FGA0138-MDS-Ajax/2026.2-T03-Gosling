@@ -1,4 +1,5 @@
 import os
+from importlib import import_module
 from collections.abc import Iterator
 
 import pytest
@@ -36,11 +37,16 @@ def db() -> Iterator[Session]:
     )
     engine = create_engine(database_url, **options)
     if engine.dialect.name == "sqlite":
+
         @event.listens_for(engine, "connect")
         def habilitar_chaves_estrangeiras(connection, record):
             connection.execute("PRAGMA foreign_keys=ON")
 
         Base.metadata.create_all(engine)
+        with engine.begin() as connection:
+            import_module(
+                "migrations.versions.0008_catalogo_causas"
+            ).preencher_catalogo(connection)
     with engine.connect() as connection:
         transaction = connection.begin()
         with Session(
