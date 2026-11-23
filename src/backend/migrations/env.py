@@ -2,9 +2,9 @@ from alembic import context
 
 from app.core.config import get_database_url
 from app.core.database import get_engine
-from app.vagas.models import Vaga
+from app.candidaturas.models import Candidatura
 
-target_metadata = Vaga.metadata
+target_metadata = Candidatura.metadata
 
 
 def run_migrations_offline() -> None:
