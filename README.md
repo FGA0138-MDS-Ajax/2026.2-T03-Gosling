@@ -101,7 +101,36 @@ Exemplo de corpo para publicação:
 
 Ao atualizar o sistema, `docker compose up --build -d --wait` aplica a migração de vagas na inicialização da API. As publicações usam o volume persistente já configurado para o MySQL.
 
-As fotos enviadas antes da publicação podem ser reutilizadas em uma nova tentativa. A API verifica a mídia a cada hora e remove uploads sem vínculo com mais de 24 horas, inclusive quando o formulário foi abandonado ou o navegador foi fechado. Fotos de vagas em qualquer estado, avatares e modelos vinculados são preservados. Se um upload já tiver sido removido, a publicação retorna 422 e solicita selecionar as imagens novamente. A limpeza usa o mesmo volume persistente do Compose e uma trava compartilhada com a publicação no processo da API; a implantação atual executa um único worker.
+## Mídia de vagas e perfis
+
+Envie o arquivo no corpo da requisição com o `Content-Type` correspondente. Os
+limites de tamanho do Nginx acompanham os da API.
+
+| Uso | Rota em `/api/v1` | Regra |
+| --- | --- | --- |
+| Galeria da vaga | `POST /vagas/fotos` | Até 8 fotos por vaga, JPG, PNG ou WebP de até 10 MB cada. |
+| Avatar | `PUT /voluntarios/me/foto` | JPG, PNG ou WebP de até 5 MB, com saída de até 512 × 512 px. |
+| Logo e capa | `POST /organizacoes/me/midia/{logo\|capa}` | JPG ou PNG de até 5 MB. Mínimo de 400 × 400 px para o logo e 1600 × 600 px para a capa. |
+| Galeria institucional | `POST /organizacoes/me/midia/galeria` | JPG ou PNG de até 5 MB por imagem. |
+| Modelo de termo | `POST /vagas/modelos-termo?nome=arquivo.pdf` | PDF de até 5 MB. |
+
+A API limita as imagens a 20 megapixels, corrige a orientação e grava WebP sem os
+metadados do original. A galeria armazena a ordem em `fotos` e usa a primeira como
+`foto_capa`. `enquadramento_fotos` associa cada URL aos eixos `x` e `y`, em
+percentuais de 0 a 100.
+
+Cada requisito em `documentos_exigidos` tem ID, tipo, nome, orientação e
+obrigatoriedade. Um requisito do tipo `TERMO` pode usar o PDF enviado em
+`modelo_url`. A resposta inclui nome, formato e tamanho do modelo. A rota
+`/midia/privada/{arquivo}` exige autenticação do titular. O PDF de uma vaga
+pública é servido como anexo por `/midia/modelos/{arquivo}`. A rota de imagens
+aceita apenas imagens WebP.
+
+A migração `0011_arquivos_midia` adiciona o registro de titularidade e os vínculos
+com vagas. A limpeza remove uploads sem uso há mais de 24 horas, preservando
+arquivos associados a rascunhos, vagas ou avatares. A implantação atual usa um
+worker da API e compartilha a trava da limpeza com o salvamento e a publicação.
+Se um upload expirar, a API pede a seleção do arquivo novamente.
 
 ## Catálogo compartilhado de causas
 
@@ -193,7 +222,7 @@ exploração, nos detalhes públicos nem nos salvos.
 | Criar | `POST /api/v1/vagas/rascunhos` com os campos parciais. Aceita `{}`. |
 | Retomar | `GET /api/v1/vagas/rascunhos/{id}`. |
 | Salvar | `PATCH /api/v1/vagas/rascunhos/{id}` com `versao` e `dados`. Campos omitidos são preservados. |
-| Publicar | `POST /api/v1/vagas/rascunhos/{id}/publicar` com `versao` e `dados` opcionais. |
+| Publicar | `POST /api/v1/vagas/rascunhos/{id}/publicar` com `versao` obrigatória e `dados` opcionais. |
 | Listar no painel | `GET /api/v1/organizacoes/me/vagas?status=RASCUNHO`. Sem `status`, lista as vagas já publicadas. |
 
 `dados.ocorrencias` no rascunho guarda `data_inicio`, `hora_inicio`, `data_fim`
