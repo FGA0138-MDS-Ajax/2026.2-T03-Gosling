@@ -205,6 +205,26 @@ def test_modelo_pdf_publicado_tem_metadados_e_download_isolado(
     assert client.get(url.replace("/modelos", "")).status_code == 404
 
 
+def test_modelo_pdf_recusa_imagem_falsificada_e_tamanho_acima_do_limite(client, contas):
+    auth = autenticar(client, contas)
+    caminho = f"{VAGAS}/modelos-termo?nome=Termo.pdf"
+    headers = {**auth, "Content-Type": "application/pdf"}
+    falsificado = client.post(caminho, headers=headers, content=imagem())
+    assert falsificado.status_code == 422
+
+    pdf = imagem(formato="PDF")
+    limite = 5 * 1024 * 1024
+    corpo, marcador, fim = pdf.rpartition(b"startxref")
+    comentario = b"%" + b" " * (limite - len(pdf) - 2) + b"\n"
+    no_limite = corpo + comentario + marcador + fim
+    resposta = client.post(caminho, headers=headers, content=no_limite)
+    assert resposta.status_code == 201
+    assert resposta.json()["tamanho_bytes"] == limite
+
+    muito_grande = client.post(caminho, headers=headers, content=no_limite + b"\n")
+    assert muito_grande.status_code == 413
+
+
 def test_troca_modelo_preserva_arquivo_que_ainda_tem_outro_vinculo(
     client,
     db,
@@ -225,6 +245,8 @@ def test_troca_modelo_preserva_arquivo_que_ainda_tem_outro_vinculo(
             },
         )
         assert salvo.status_code == 201
+        documento = salvo.json()["dados"]["documentos_exigidos"][0]
+        assert documento["modelo"]["nome"] == "Anterior.pdf"
         ids.append(salvo.json()["id"])
 
     def trocar(vaga_id):
@@ -241,6 +263,8 @@ def test_troca_modelo_preserva_arquivo_que_ainda_tem_outro_vinculo(
             },
         )
         assert resposta.status_code == 200
+        documento = resposta.json()["dados"]["documentos_exigidos"][0]
+        assert documento["modelo"]["nome"] == "Atual.pdf"
 
     envelhecer(tmp_path, anterior["url"])
     trocar(ids[0])
