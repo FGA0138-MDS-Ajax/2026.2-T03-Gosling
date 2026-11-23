@@ -18,3 +18,4 @@ class StatusVaga(StrEnum):
     ABERTA = "ABERTA"
     ENCERRADA = "ENCERRADA"
     SUSPENSA = "SUSPENSA"
+    RASCUNHO = "RASCUNHO"
