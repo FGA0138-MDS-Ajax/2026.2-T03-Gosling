@@ -136,7 +136,7 @@ export default function VagaPhotoFields({ fotos, setFotos, onError }) {
                 <FotoRascunho foto={foto} numero={numero} />
                 <strong>{indice === 0 ? 'Capa' : `Foto ${numero}`}</strong>
                 {foto.arquivo && <span>{foto.arquivo.name}</span>}
-                <div className={s.fotoAcoes}>
+                <div className={s.midiaAcoes}>
                   <button type="button" disabled={indice === 0} onClick={() => mover(indice, 0)}>
                     Definir foto {numero} como capa
                   </button>

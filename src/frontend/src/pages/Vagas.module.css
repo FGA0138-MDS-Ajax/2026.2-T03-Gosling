@@ -133,10 +133,56 @@
   .formGrid { grid-template-columns: 1fr; }
   .formActions { align-items: stretch; flex-direction: column-reverse; }
 }
-.mediaFields { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 24px; }
+.mediaFields {
+  display: grid;
+  gap: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  margin-top: 24px;
+}
 .mediaFields h3 { font-size: 17px; margin: 0 0 16px; }
 .mediaFields small, .mediaFields li { font-size: 13px; color: var(--muted); line-height: 1.5; }
-.documentFields { border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
+.documentFields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  margin: 0 0 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.documentFields legend {
+  padding: 0 6px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.documentFields :is(input[type='text'], input[type='url'], input:not([type]), select, textarea) {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.documentRequired {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.nomeModelo {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 650;
+}
+
 .documentFields button { align-self: flex-start; }
 .fotosDaVaga {
   display: grid;
@@ -173,7 +219,7 @@
   object-fit: cover;
 }
 
-.fotoAcoes {
+.midiaAcoes {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;

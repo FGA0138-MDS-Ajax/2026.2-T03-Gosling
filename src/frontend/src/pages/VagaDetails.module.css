@@ -54,6 +54,16 @@
 .documents strong { font-size: 15px; font-weight: 600; }
 .documents small { display: block; color: #6e6e73; font-size: 12px; margin-top: 5px; }
 .documents a { margin-left: auto; font-size: 13px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+.docContent {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.docContent p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  white-space: pre-wrap;
+}
 .empty { font-size: 14px; padding: 20px; border-radius: 16px; background: #f5f5f7; color: #6e6e73; }
 .map { background: #e1ede4; min-height: 240px; border-radius: 20px; overflow: hidden; position: relative; padding: 160px 16px 16px; }
 .mapDecoration { position: absolute; inset: 0; background: repeating-linear-gradient(0deg,transparent,transparent 77px,#fff 77px,#fff 87px),repeating-linear-gradient(90deg,transparent,transparent 160px,#fff 160px,#fff 171px); }

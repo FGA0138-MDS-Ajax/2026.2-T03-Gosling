@@ -4,7 +4,8 @@ import EncontrosEditor from './EncontrosEditor'
 import LocationFields from './LocationFields'
 import VagaMediaFields from './VagaMediaFields'
 import { consultarRascunho, publicarRascunho, salvarRascunho } from '../services/rascunhosService'
-import { enviarFotoVaga, publicarVaga } from '../services/vagasService'
+import { enviarFotoVaga, enviarModeloTermo, publicarVaga } from '../services/vagasService'
+import { documentoDaVaga, linkModeloValido } from '../utils/documentosVaga'
 import { localizacaoInicial, validarLocalizacao } from '../utils/localizacao'
 import { fotosDoRascunho, MAX_FOTOS_VAGA } from '../utils/midia'
 import { prepararOcorrencias } from '../utils/ocorrencias'
@@ -129,14 +130,10 @@ function FormularioVaga({
   const envioPendente = useRef(false)
   const [fotos, setFotos] = useState(() => fotosDoRascunho(dadosIniciais))
   const [documentos, setDocumentos] = useState(() =>
-    (dadosIniciais.documentos_exigidos ?? []).map(documento => ({
-      id: crypto.randomUUID(),
-      nome: documento.nome,
-      modelo_url: documento.modelo_url ?? '',
-    })),
+    (dadosIniciais.documentos_exigidos ?? []).map(documentoDaVaga),
   )
   const [erroMidia, setErroMidia] = useState('')
-  const fotosEnviadas = useRef(new WeakMap())
+  const arquivosEnviados = useRef(new WeakMap())
   const [modalidadePublicacao, setModalidadePublicacao] = useState(
     dadosIniciais.modalidade ?? 'PRESENCIAL',
   )
@@ -188,18 +185,35 @@ function FormularioVaga({
     const urls = []
     const enquadramentos = {}
     for (const foto of fotos) {
-      let url = foto.url ?? fotosEnviadas.current.get(foto.arquivo)
+      let url = foto.url ?? arquivosEnviados.current.get(foto.arquivo)
       if (!url) {
         url = await enviarFotoVaga(foto.arquivo)
-        fotosEnviadas.current.set(foto.arquivo, url)
+        arquivosEnviados.current.set(foto.arquivo, url)
       }
       urls.push(url)
       enquadramentos[url] = foto.enquadramento
     }
-    const documentosExigidos = documentos.map(documento => ({
-      nome: documento.nome.trim(),
-      modelo_url: documento.modelo_url.trim() || null,
-    }))
+    const documentosExigidos = []
+    for (const documento of documentos) {
+      let link = documento.modelo_url.trim() || null
+      const arquivo = documento.arquivoModelo
+      if (arquivo) {
+        link = arquivosEnviados.current.get(arquivo)
+        if (!link) {
+          const enviado = await enviarModeloTermo(arquivo)
+          link = enviado.url
+          arquivosEnviados.current.set(arquivo, link)
+        }
+      }
+      documentosExigidos.push({
+        id: documento.id,
+        tipo: documento.tipo,
+        nome: documento.nome.trim(),
+        orientacao: documento.orientacao.trim(),
+        obrigatorio: documento.obrigatorio,
+        modelo_url: link,
+      })
+    }
     return {
       ...dados,
       fotos: urls,
@@ -254,6 +268,7 @@ function FormularioVaga({
       const salvo = await salvarRascunho(rascunho, payload)
       setRascunho(salvo)
       setFotos(fotosDoRascunho(salvo.dados))
+      setDocumentos((salvo.dados.documentos_exigidos ?? []).map(documentoDaVaga))
       if (!rascunho) onSalvo(salvo.id)
     } catch (failure) {
       informarFalha(failure, 'Não foi possível salvar o rascunho. Tente novamente.')
@@ -282,7 +297,7 @@ function FormularioVaga({
     const documentosInvalidos = documentos.some(
       doc =>
         doc.nome.trim().length < 2 ||
-        (doc.modelo_url && !/^https:\/\/[^\s]+$/.test(doc.modelo_url.trim())),
+        (doc.modelo_url.trim() && !linkModeloValido(doc.modelo_url.trim())),
     )
     if (fotosValidas && documentosInvalidos) {
       setErroMidia('Informe o nome de cada documento e um link HTTPS válido, quando houver modelo.')

@@ -9,7 +9,7 @@ import { detalharVaga, listarVagas } from '../services/vagasService'
 import { useSavedVagas } from '../hooks/useSavedVagas'
 import { formatarOcorrencia, horarioDoEncontro } from '../utils/ocorrencias'
 import { destinoMapa, textoEndereco } from '../utils/localizacao'
-import { posicaoDaFoto } from '../utils/midia'
+import { posicaoDaFoto, tamanhoDoArquivo } from '../utils/midia'
 import s from './VagaDetails.module.css'
 
 const modalities = { PRESENCIAL: 'Presencial', REMOTO: 'Remoto', HIBRIDO: 'Híbrido' }
@@ -387,24 +387,31 @@ function VagaDetails({ id }) {
                     <p className={s.hint}>Você envia no momento da candidatura.</p>
                     {vaga.documentos_exigidos?.length ? (
                       <ul className={s.documents}>
-                        {vaga.documentos_exigidos.map((doc, i) => (
-                          <li key={i}>
+                        {vaga.documentos_exigidos.map((doc, indice) => (
+                          <li key={doc.id ?? indice}>
                             <span className={s.docIcon}>
                               <Icon
                                 group="detalhe"
                                 name={doc.modelo_url ? 'imgIcon11' : 'imgIcon10'}
                               />
                             </span>
-                            <div>
+                            <div className={s.docContent}>
                               <strong>{doc.nome}</strong>
-                              <small>
-                                {doc.modelo_url
-                                  ? 'Modelo fornecido pela organização'
-                                  : 'Exigido para esta atividade'}
-                              </small>
+                              <small>{doc.obrigatorio === false ? 'Opcional' : 'Obrigatório'}</small>
+                              {doc.orientacao && <p>{doc.orientacao}</p>}
+                              {doc.modelo && (
+                                <small>
+                                  {doc.modelo.nome} · PDF · {tamanhoDoArquivo(doc.modelo.tamanho_bytes)}
+                                </small>
+                              )}
                             </div>
                             {doc.modelo_url && (
-                              <a href={doc.modelo_url} target="_blank" rel="noopener noreferrer">
+                              <a
+                                href={doc.modelo_url}
+                                download={doc.modelo?.nome}
+                                target={doc.modelo ? undefined : '_blank'}
+                                rel="noopener noreferrer"
+                              >
                                 <Icon group="detalhe" name="imgIcon12" />
                                 Baixar modelo
                               </a>
