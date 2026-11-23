@@ -181,6 +181,38 @@ antes de salvar. A localização do navegador depende de clique e permissão;
 recusar não impede o preenchimento manual. Alterar o endereço limpa um ponto
 anterior para evitar associá-lo a outro lugar.
 
+## Rascunhos de vagas
+
+Uma ONG pode salvar um formulário incompleto e retomá-lo em **Minhas vagas →
+Rascunhos**. A API registra o horário do último salvamento, exibido no fuso de
+Brasília. Rascunhos ficam disponíveis só para sua organização e não aparecem na
+exploração, nos detalhes públicos nem nos salvos.
+
+| Operação | Contrato |
+| --- | --- |
+| Criar | `POST /api/v1/vagas/rascunhos` com os campos parciais. Aceita `{}`. |
+| Retomar | `GET /api/v1/vagas/rascunhos/{id}`. |
+| Salvar | `PATCH /api/v1/vagas/rascunhos/{id}` com `versao` e `dados`. Campos omitidos são preservados. |
+| Publicar | `POST /api/v1/vagas/rascunhos/{id}/publicar` com `versao` e `dados` opcionais. |
+| Listar no painel | `GET /api/v1/organizacoes/me/vagas?status=RASCUNHO`. Sem `status`, lista as vagas já publicadas. |
+
+`dados.ocorrencias` no rascunho guarda `data_inicio`, `hora_inicio`, `data_fim`
+e `hora_fim` separadamente para preservar preenchimento parcial. Na publicação,
+o servidor converte para UTC e aplica os mesmos requisitos de uma vaga nova.
+Uma resposta 422 preserva a versão e os dados salvos. Uma aba desatualizada
+recebe 409 e pode carregar a versão atual. A publicação mantém o ID e remove o
+conteúdo de rascunho após preencher a vaga.
+
+A migração `0010_rascunhos_vagas` preserva as vagas e encontros anteriores.
+Datas antigas de criação que nunca foram registradas aparecem como indisponíveis.
+O retorno à versão anterior exige resolver os rascunhos existentes, pois aquela
+versão não consegue representá-los. A publicação direta continua disponível em
+`POST /api/v1/vagas`.
+
+RF24 trata a homologação da **organização**. Uma ONG sem homologação pode manter
+um rascunho, mas só publica quando o servidor libera o acesso. O rótulo “Em
+revisão” do Figma não representa um estado de vaga no fluxo atual.
+
 ## Calendário do voluntário
 
 `GET /api/v1/voluntarios/me/calendario?inicio=2026-11-16&fim=2026-11-23`
