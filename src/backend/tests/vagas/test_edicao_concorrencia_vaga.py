@@ -128,8 +128,9 @@ def test_edicao_negada_nao_altera_a_vaga(client, vaga_da_ong):
     headers_terceira = criar_organizacao_terceira(client)
 
     editar(client, vaga_id, {"titulo": "Tentativa de invasao"}, headers_terceira)
-    resposta = editar(client, vaga_id, {"descricao": "Descricao valida nova"}, headers_dono)
-
+    resposta = editar(
+        client, vaga_id, {"descricao": "Descricao valida nova"}, headers_dono
+    )
     assert resposta.status_code == status.HTTP_200_OK, resposta.text
     assert resposta.json()["titulo"] == "Vaga original"
 
