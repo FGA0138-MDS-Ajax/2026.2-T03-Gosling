@@ -112,6 +112,7 @@ function AreaOrganizacao({ usuario, logout }) {
         <div className={s.cardActions}>
           {ong && <Link className={s.primary} to="/vagas" state={{ abrirPublicacao: true }}>Publicar vaga</Link>}
           <Link className={ong ? s.secondary : s.primary} to="/organizacao/perfil">Editar perfil institucional</Link>
+          <Link className={s.secondary} to="/organizacao/vagas">Minhas vagas</Link>
           <button type="button" className={s.ghost} onClick={() => logout()}>Sair</button>
         </div>
       </section>
