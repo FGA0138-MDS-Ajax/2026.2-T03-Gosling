@@ -81,11 +81,11 @@ class Localizacao(BaseModel):
 
 def validar_regiao_compativel(dados):
     localizacao = dados.localizacao
-    if localizacao is not None:
+    if "localizacao" in dados.model_fields_set:
         for campo in ("cidade", "estado"):
             antigo = getattr(dados, campo, None)
-            novo = getattr(localizacao, campo)
-            if antigo is not None and novo is not None and antigo != novo:
+            novo = getattr(localizacao, campo, None)
+            if antigo is not None and antigo != novo:
                 raise ValueError(
                     "A cidade e a UF devem ser iguais nos dados de localização."
                 )

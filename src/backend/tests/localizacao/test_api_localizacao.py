@@ -33,6 +33,44 @@ def headers(conta):
     return {"Authorization": f"Bearer {create_access_token(conta.id, conta.perfil)}"}
 
 
+def test_cadastro_voluntario_guarda_endereco_sem_inclui_lo_na_sessao_publica(client):
+    resposta = client.post(
+        "/api/v1/voluntarios",
+        json={
+            "nome_completo": "Voluntária Localização",
+            "email": "local@example.com",
+            "identificacao": "52998224725",
+            "password": "SenhaDeTeste123!",
+            "consentimento_termos": True,
+            "localizacao": ENDERECO,
+        },
+    )
+    assert resposta.status_code == 201
+    assert "localizacao" not in resposta.json()["usuario"]
+    auth = {"Authorization": f"Bearer {resposta.json()['access_token']}"}
+    privado = client.get("/api/v1/voluntarios/me", headers=auth)
+    assert privado.json()["localizacao"]["cep"] == "72000001"
+    assert privado.json()["cidade"] == "Brasília"
+
+
+def test_administracao_tambem_persiste_endereco_estruturado_da_ong(
+    client,
+    contas,
+    dados,
+):
+    payload = {k: v for k, v in dados.items() if k != "consentimento_termos"}
+    resposta = client.post(
+        "/api/v1/admin/usuarios",
+        headers=headers(contas["administrador"]),
+        json={**payload, "perfil": "ORGANIZACAO", "localizacao": ENDERECO},
+    )
+    assert resposta.status_code == 201
+    privado = client.get(
+        "/api/v1/organizacoes/me", headers=autenticar(client, dados["email"])
+    )
+    assert privado.json()["localizacao"]["numero"] == "12"
+
+
 def test_ong_persiste_endereco_estruturado_e_preserva_omissao_no_cliente_antigo(
     client,
     db,
@@ -181,9 +219,7 @@ def test_localizacao_residencial_e_privada_e_persistida_no_perfil_do_titular(
         is None
     )
     assert "localizacao" not in client.get("/api/v1/auth/me", headers=auth).json()
-    publicada = client.post(
-        "/api/v1/vagas", json=dados_vaga, headers=auth_ong
-    )
+    publicada = client.post("/api/v1/vagas", json=dados_vaga, headers=auth_ong)
     assert publicada.status_code == 201
     assert publicada.json()["localizacao"] is None
     assert publicada.json()["organizacao"].keys() == {
