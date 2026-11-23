@@ -47,7 +47,7 @@ function AreaVoluntario({ usuario, logout }) {
   const [agora] = useState(() => Date.now())
   const validated = profile?.id === usuario.id
   const abertas = itens.filter((vaga) => proximoEncontro(vaga.ocorrencias, agora))
-  const combinam = validated ? abertas.filter((vaga) => causaCombina(profile.causas, vaga.causa.nome)) : []
+  const combinam = validated ? abertas.filter((vaga) => causaCombina(profile.causa_ids, vaga.causa.id)) : []
   const sugestoes = (combinam.length ? combinam : abertas).slice(0, 3)
   const turnos = validated ? weeklyAvailability(profile).length : 0
   const completo = validated ? profileCompletion({ ...profile, disponibilidade_semanal: weeklyAvailability(profile) }) : 0

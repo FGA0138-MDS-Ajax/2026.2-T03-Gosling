@@ -13,7 +13,7 @@ vi.mock('../services/authService', () => ({ getSession: vi.fn(), getProfile: vi.
 vi.mock('../services/voluntarioService', () => ({ getVolunteerProfile: vi.fn(), updateVolunteerProfile: vi.fn(), uploadVolunteerPhoto: vi.fn(), removeVolunteerPhoto: vi.fn() }))
 const usuario = { id: 3, nome: 'Maria da Silva', email: 'maria@example.com', perfil: 'VOLUNTARIO', tipo: null }
 const perfil = { ...usuario, identificacao: '12345678901', telefone: '61999999999', cidade: 'Brasília', estado: 'DF', biografia: 'Gosto de ensinar.',
-  causas: ['Educação'], disponibilidades: ['DIA:SABADO', 'PERIODO:MANHA', 'CARGA_HORARIA:4'] }
+  causas: ['Educação'], causa_ids: [1], causas_legadas: [], disponibilidades: ['DIA:SABADO', 'PERIODO:MANHA', 'CARGA_HORARIA:4'] }
 beforeEach(() => {
   vi.resetAllMocks()
   writeSession('token-teste', Math.floor(Date.now()/1000)+3600)
@@ -51,9 +51,10 @@ describe('perfil do voluntário — RF06', () => {
     await save(user)
     expect(await screen.findByText('Perfil atualizado com sucesso.')).toBeVisible()
     const payload=service.updateVolunteerProfile.mock.calls[0][0]
-    expect(payload).toMatchObject({nome_completo:'Maria Souza',causas:['Educação','Meio Ambiente'],
+    expect(payload).toMatchObject({nome_completo:'Maria Souza',causa_ids:[1,3],causas_legadas:[],
       disponibilidade_semanal:[{dia:'SABADO',periodo:'MANHA'},{dia:'SEGUNDA',periodo:'NOITE'}],carga_horaria_semanal:6})
     for(const key of ['email','identificacao','id','senha','password','perfil']) expect(payload).not.toHaveProperty(key)
+    expect(payload).not.toHaveProperty('causas')
     await user.click(screen.getByRole('link',{name:'Voltar para minha área'}))
     expect(await screen.findByText('Olá, Maria Souza.')).toBeVisible()
   })
@@ -65,10 +66,10 @@ describe('perfil do voluntário — RF06', () => {
     expect(service.updateVolunteerProfile).not.toHaveBeenCalled()
   })
   it('preserva interesses anteriores e não inclui dados legados no novo payload',async()=>{
-    service.getVolunteerProfile.mockResolvedValue({...perfil,causas:['Educação','Uma causa anterior'],disponibilidades:['Fins de Semana']})
+    service.getVolunteerProfile.mockResolvedValue({...perfil,causas:['Educação','Uma causa anterior'],causas_legadas:['Uma causa anterior'],disponibilidades:['Fins de Semana']})
     const user=userEvent.setup(); open(); await loaded(); await editName(user); await save(user)
     await screen.findByText('Perfil atualizado com sucesso.')
-    expect(service.updateVolunteerProfile.mock.calls[0][0].causas).toContain('Uma causa anterior')
+    expect(service.updateVolunteerProfile.mock.calls[0][0].causas_legadas).toContain('Uma causa anterior')
     expect(service.updateVolunteerProfile.mock.calls[0][0]).not.toHaveProperty('disponibilidades')
   })
   it('diferencia preferências de compromissos do calendário',async()=>{

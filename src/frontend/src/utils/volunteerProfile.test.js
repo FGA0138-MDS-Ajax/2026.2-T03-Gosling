@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { causaCombina, formatDisponibilidades, parseDisponibilidades, profileCompletion, validCpf } from './volunteerProfile'
+import { formatDisponibilidades, parseDisponibilidades, profileCompletion, validCpf } from './volunteerProfile'
 
 describe('formato da disponibilidade', () => {
   it('converte a lista da API em dias, períodos e carga horária', () => {
@@ -20,20 +20,6 @@ describe('validação de CPF', () => {
     expect(validCpf('52998224724')).toBe(false)
     expect(validCpf('11111111111')).toBe(false)
     expect(validCpf('123')).toBe(false)
-  })
-})
-
-describe('recomendação por causa', () => {
-  it('ignora maiúsculas e acentos e aceita os nomes usados no Figma', () => {
-    expect(causaCombina(['Meio Ambiente'], 'meio ambiente')).toBe(true)
-    expect(causaCombina(['Educação'], 'Educacao infantil')).toBe(true)
-    expect(causaCombina(['Animais'], 'Proteção animal')).toBe(true)
-    expect(causaCombina(['Idosos'], 'Pessoas idosas')).toBe(true)
-  })
-  it('não recomenda causas sem relação nem causas vazias', () => {
-    expect(causaCombina(['Cultura'], 'Meio ambiente')).toBe(false)
-    expect(causaCombina([], 'Cultura')).toBe(false)
-    expect(causaCombina(['Cultura'], '')).toBe(false)
   })
 })
 
