@@ -14,14 +14,18 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.core.datetime import UTCDateTime
+from app.localizacao.models import LocalizacaoMixin, restricao_coordenadas
 from app.usuarios.catalogos import Causa
 from app.usuarios.models import Organizacao
 from app.vagas.enums import Modalidade, Periodo, StatusVaga
 
 
-class Vaga(Base):
+class Vaga(LocalizacaoMixin, Base):
     __tablename__ = "vagas"
-    __table_args__ = (Index("ix_vagas_status_id", "status", "id"),)
+    __table_args__ = (
+        Index("ix_vagas_status_id", "status", "id"),
+        restricao_coordenadas("vagas"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     organizacao_id: Mapped[int] = mapped_column(
@@ -35,6 +39,9 @@ class Vaga(Base):
         Enum(Modalidade, name="modalidade_vaga")
     )
     local: Mapped[str] = mapped_column(String(500))
+    origem_localizacao: Mapped[str] = mapped_column(
+        String(20), default="LEGADO", server_default="LEGADO"
+    )
     periodo: Mapped[Periodo] = mapped_column(Enum(Periodo, name="periodo_vaga"))
     carga_horaria: Mapped[Decimal] = mapped_column(Numeric(7, 2))
     numero_vagas: Mapped[int]

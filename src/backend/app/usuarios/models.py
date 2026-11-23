@@ -14,6 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
+from app.localizacao.models import LocalizacaoMixin, restricao_coordenadas
 from app.usuarios.enums import Perfil, TipoOrganizacao
 
 
@@ -35,10 +36,11 @@ class Usuario(Base):
     }
 
 
-class Voluntario(Usuario):
+class Voluntario(LocalizacaoMixin, Usuario):
     __tablename__ = "voluntarios"
     __table_args__ = (
         UniqueConstraint("identificacao", name="uq_voluntarios_identificacao"),
+        restricao_coordenadas("voluntarios"),
     )
     id: Mapped[int] = mapped_column(
         ForeignKey("usuarios.id", ondelete="CASCADE"), primary_key=True
@@ -58,9 +60,12 @@ class Voluntario(Usuario):
     __mapper_args__ = {"polymorphic_identity": Perfil.VOLUNTARIO}
 
 
-class Organizacao(Usuario):
+class Organizacao(LocalizacaoMixin, Usuario):
     __tablename__ = "organizacoes"
-    __table_args__ = (UniqueConstraint("cnpj", name="uq_organizacoes_cnpj"),)
+    __table_args__ = (
+        UniqueConstraint("cnpj", name="uq_organizacoes_cnpj"),
+        restricao_coordenadas("organizacoes"),
+    )
 
     id: Mapped[int] = mapped_column(
         ForeignKey("usuarios.id", ondelete="CASCADE"), primary_key=True
