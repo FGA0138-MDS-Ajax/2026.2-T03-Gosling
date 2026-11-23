@@ -22,6 +22,8 @@ export default function VagasPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
+  const idRascunho = params.get('rascunho')
+  const rascunho = /^[1-9][0-9]*$/.test(idRascunho ?? '') ? idRascunho : null
   const catalogo = useCausas()
   const idNaUrl = Number(params.get('causa_id'))
   const causaLegada = (params.get('causa') || '').trim().slice(0, 100)
@@ -74,13 +76,25 @@ export default function VagasPage() {
 
   function fecharFormulario() {
     setFormularioAberto(false)
-    if (location.state?.abrirPublicacao) {
+    if (rascunho || location.state?.abrirPublicacao) {
+      const busca = new URLSearchParams(params)
+      busca.delete('rascunho')
       navigate(
-        { pathname: location.pathname, search: location.search },
+        { pathname: location.pathname, search: busca.toString() },
         { replace: true, state: null },
       )
     }
     botaoPublicar.current?.focus()
+  }
+
+  function abrirRascunho(id) {
+    const busca = new URLSearchParams(params)
+    busca.set('rascunho', String(id))
+    setFormularioAberto(false)
+    navigate(
+      { pathname: location.pathname, search: busca.toString() },
+      { replace: true, state: null },
+    )
   }
 
   function vagaPublicada() {
@@ -303,11 +317,14 @@ export default function VagasPage() {
 
       <Footer />
 
-      {podePublicar && (formularioAberto || location.state?.abrirPublicacao) && (
+      {podePublicar && (rascunho || formularioAberto || location.state?.abrirPublicacao) && (
         <PublicacaoVagaDialog
+          key={rascunho ?? 'novo'}
           catalogo={catalogo}
+          id={rascunho}
           onClose={fecharFormulario}
           onPublicada={vagaPublicada}
+          onSalvo={abrirRascunho}
         />
       )}
     </div>

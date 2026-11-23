@@ -138,3 +138,23 @@
 .mediaFields small, .mediaFields li { font-size: 13px; color: var(--muted); line-height: 1.5; }
 .documentFields { border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
 .documentFields button { align-self: flex-start; }
+.fotosSalvas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.fotosSalvas li {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+.fotosSalvas img {
+  width: 120px;
+  height: 72px;
+  border-radius: 8px;
+  object-fit: cover;
+}
