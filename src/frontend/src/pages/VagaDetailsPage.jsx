@@ -9,6 +9,7 @@ import { detalharVaga, listarVagas } from '../services/vagasService'
 import { useSavedVagas } from '../hooks/useSavedVagas'
 import { formatarOcorrencia, horarioDoEncontro } from '../utils/ocorrencias'
 import { destinoMapa, textoEndereco } from '../utils/localizacao'
+import { posicaoDaFoto } from '../utils/midia'
 import s from './VagaDetails.module.css'
 
 const modalities = { PRESENCIAL: 'Presencial', REMOTO: 'Remoto', HIBRIDO: 'Híbrido' }
@@ -120,6 +121,9 @@ function VagaDetails({ id }) {
     }
   }
   const fotos = vaga?.fotos || []
+  const capa = vaga?.foto_capa ?? fotos[0]
+  const fotosLaterais = fotos.slice(1, 3)
+  const rotuloGaleria = fotos.length === 1 ? 'Ver foto' : `Ver as ${fotos.length} fotos`
   const ocorrencias = [...(vaga?.ocorrencias || [])].sort(
     (a, b) => new Date(a.inicio) - new Date(b.inicio),
   )
@@ -233,27 +237,44 @@ function VagaDetails({ id }) {
                   {saveButton()}
                 </div>
               </div>
-              <div className={fotos.length ? s.gallery : `${s.gallery} ${s.galleryEmpty}`}>
+              <div
+                className={[
+                  s.gallery,
+                  fotos.length === 0 && s.galleryEmpty,
+                  fotos.length === 1 && s.gallerySingle,
+                ].filter(Boolean).join(' ')}
+              >
                 {fotos.length ? (
                   <>
                     <img
                       className={s.heroPhoto}
-                      src={fotos[0]}
+                      src={capa}
                       alt={`Atividade de voluntariado: ${vaga.titulo}`}
+                      style={posicaoDaFoto(vaga.enquadramento_fotos?.[capa])}
                     />
-                    <div className={s.gallerySide}>
-                      {[1, 2].map(n => (
-                        <img
-                          key={n}
-                          className={fotos[n] ? '' : s.crop}
-                          src={fotos[n] || fotos[0]}
-                          alt=""
-                        />
-                      ))}
-                    </div>
-                    <button className={s.allPhotos} type="button" onClick={() => setGallery(true)}>
+                    {fotosLaterais.length > 0 && (
+                      <div className={s.gallerySide}>
+                        {fotosLaterais.map((src, indice) => (
+                          <img
+                            key={`${src}-${indice}`}
+                            src={src}
+                            alt=""
+                            style={posicaoDaFoto(vaga.enquadramento_fotos?.[src])}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <button
+                      className={s.allPhotos}
+                      type="button"
+                      aria-label={rotuloGaleria}
+                      onClick={() => {
+                        setPhoto(0)
+                        setGallery(true)
+                      }}
+                    >
                       <Icon group="detalhe" name="imgIcon3" />
-                      <span className={s.desktopPhotoLabel}>Ver as {fotos.length} fotos</span>
+                      <span className={s.desktopPhotoLabel}>{rotuloGaleria}</span>
                       <span className={s.mobilePhotoLabel}>1 / {fotos.length}</span>
                     </button>
                   </>
@@ -468,7 +489,13 @@ function VagaDetails({ id }) {
                 <div>
                   {related.map(v => (
                     <article key={v.id} className={s.relatedCard}>
-                      {v.fotos?.[0] && <img src={v.fotos[0]} alt="" />}
+                      {v.fotos?.[0] && (
+                        <img
+                          src={v.fotos[0]}
+                          alt=""
+                          style={posicaoDaFoto(v.enquadramento_fotos?.[v.fotos[0]])}
+                        />
+                      )}
                       <div>
                         <small>{v.organizacao.nome}</small>
                         <h3>

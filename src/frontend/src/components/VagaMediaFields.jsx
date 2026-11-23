@@ -1,13 +1,13 @@
+import VagaPhotoFields from './VagaPhotoFields'
 import s from '../pages/Vagas.module.css'
 
 export default function VagaMediaFields({
   fotos,
   setFotos,
-  fotosSalvas,
-  onRemoverFoto,
   documentos,
   setDocumentos,
   error,
+  onError,
 }) {
   function alterarDocumento(id, campo, valor) {
     setDocumentos(lista =>
@@ -27,39 +27,7 @@ export default function VagaMediaFields({
   return (
     <section className={s.mediaFields} aria-labelledby="vaga-midia-title">
       <h3 id="vaga-midia-title">Fotos e documentos (opcional)</h3>
-      <div className={s.formField}>
-        <label htmlFor="vaga-fotos">Fotos da atividade</label>
-        <input
-          id="vaga-fotos"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          multiple
-          onChange={event => setFotos([...event.target.files])}
-          aria-describedby="vaga-fotos-hint"
-        />
-        <small id="vaga-fotos-hint">
-          Até 10 imagens JPG, PNG ou WebP, de até 5 MB cada. As fotos serão públicas.
-        </small>
-        {fotos.length > 0 && (
-          <ul>
-            {fotos.map((arquivo, indice) => (
-              <li key={indice}>{arquivo.name}</li>
-            ))}
-          </ul>
-        )}
-        {fotosSalvas.length > 0 && (
-          <ul className={s.fotosSalvas} aria-label="Fotos salvas no rascunho">
-            {fotosSalvas.map((url, indice) => (
-              <li key={`${url}-${indice}`}>
-                <img src={url} alt={`Foto salva ${indice + 1}`} loading="lazy" />
-                <button type="button" onClick={() => onRemoverFoto(indice)}>
-                  Remover foto {indice + 1}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <VagaPhotoFields fotos={fotos} setFotos={setFotos} onError={onError} />
       {documentos.map((documento, indice) => (
         <div key={documento.id} className={s.documentFields}>
           <div className={s.formField}>

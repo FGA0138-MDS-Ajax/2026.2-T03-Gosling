@@ -6,6 +6,7 @@ import { useVagas } from '../hooks/useVagas'
 import { useCausas } from '../hooks/useCausas'
 import { designAssets } from '../utils/designAssets'
 import { initials } from '../utils/initials'
+import { posicaoDaFoto } from '../utils/midia'
 import { proximoEncontro, resumoEncontro } from '../utils/ocorrencias'
 import { APRESENTACAO_CAUSAS, MODALIDADES, PERIODOS } from '../utils/vagaLabels'
 import s from './Home.module.css'
@@ -43,8 +44,9 @@ function Busca({ causas, carregando, erro }) {
 function Destaque({ vaga, agora }) {
   const proximo = proximoEncontro(vaga.ocorrencias, agora)
   const dia = proximo ? resumoEncontro(proximo).split(' · ')[0] : ''
+  const capa = vaga.foto_capa ?? vaga.fotos[0]
   return <article className={s.feature} aria-labelledby={`destaque-${vaga.id}`}>
-    <img src={vaga.fotos[0]} alt="" />
+    <img src={capa} alt="" style={posicaoDaFoto(vaga.enquadramento_fotos?.[capa])} />
     <div className={s.featureTags}><span>{vaga.causa.nome}</span>{dia && <span><Icon group="detalhe" name="imgIcon19" width="13" height="13" />{dia}</span>}</div>
     <div className={s.featureBody}>
       <p className={s.featureOrg}><span aria-hidden="true">{initials(vaga.organizacao.nome)}</span>{vaga.organizacao.nome}</p>
@@ -187,8 +189,22 @@ export default function HomePage() {
         </div>
         {painel.length > 0 ? <div className={s.panel} aria-hidden="true">
           <div className={s.panelHead}><strong>Suas vagas</strong><span>● {total} abertas</span></div>
-          {painel.map((vaga) => <div key={vaga.id} className={s.panelRow}><img src={vaga.fotos[0]} alt="" />
-            <div><strong>{vaga.titulo}</strong><small>{vaga.ocorrencias.length} {vaga.ocorrencias.length === 1 ? 'encontro' : 'encontros'} · {vaga.numero_vagas} vagas</small></div><span>{vaga.causa.nome}</span></div>)}
+          {painel.map(vaga => {
+            const capa = vaga.foto_capa ?? vaga.fotos[0]
+            const encontros = vaga.ocorrencias.length
+            return (
+              <div key={vaga.id} className={s.panelRow}>
+                <img src={capa} alt="" style={posicaoDaFoto(vaga.enquadramento_fotos?.[capa])} />
+                <div>
+                  <strong>{vaga.titulo}</strong>
+                  <small>
+                    {encontros} {encontros === 1 ? 'encontro' : 'encontros'} · {vaga.numero_vagas} vagas
+                  </small>
+                </div>
+                <span>{vaga.causa.nome}</span>
+              </div>
+            )
+          })}
         </div> : <img className={s.orgsImage} src={designAssets.escolha.imgContainer1} alt="" />}
       </section>
     </main>

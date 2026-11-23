@@ -138,23 +138,59 @@
 .mediaFields small, .mediaFields li { font-size: 13px; color: var(--muted); line-height: 1.5; }
 .documentFields { border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
 .documentFields button { align-self: flex-start; }
-.fotosSalvas {
-  display: flex;
-  flex-wrap: wrap;
+.fotosDaVaga {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 205px), 1fr));
   gap: 12px;
+  margin: 4px 0 8px;
   padding: 0;
   list-style: none;
 }
 
-.fotosSalvas li {
+.fotosDaVaga li {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+
+.fotoPrevia {
   display: grid;
-  justify-items: start;
+  place-items: center;
+  background: var(--surface);
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.fotoPrevia img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fotoAcoes {
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
-.fotosSalvas img {
-  width: 120px;
-  height: 72px;
-  border-radius: 8px;
-  object-fit: cover;
+.enquadramento summary {
+  cursor: pointer;
+}
+
+.enquadramento label {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.enquadramento input[type='range'] {
+  min-height: 24px;
+  padding: 0;
+  border: 0;
 }
