@@ -2,6 +2,8 @@
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import PasswordChecklist from '../components/PasswordChecklist'
 import PhoneInput from '../components/PhoneInput'
+import LocationFields from '../components/LocationFields'
+import { localizacaoInicial, localizacaoPayload, validarLocalizacao } from '../utils/localizacao'
 import { Availability, Interests } from '../components/VolunteerPreferences'
 import { Header, Icon } from '../components/ui/Layout'
 import { useAuth } from '../hooks/useAuth'
@@ -11,7 +13,7 @@ import { PASSWORD_ERROR, PHONE_ERROR, PHONE_HINT, phoneDigits, validPassword, va
 import { designAssets } from '../utils/designAssets'
 import s from './VolunteerSignup.module.css'
 
-const empty = { nome_completo: '', email: '', identificacao: '', telefone: '', cidade: '', estado: '', senha: '', consentimento_termos: false, causa_ids: [], disponibilidade_semanal: [], carga_horaria_semanal: null }
+const empty = { nome_completo: '', email: '', identificacao: '', telefone: '', cidade: '', estado: '', localizacao: localizacaoInicial(null), senha: '', consentimento_termos: false, causa_ids: [], disponibilidade_semanal: [], carga_horaria_semanal: null }
 
 export default function VolunteerSignupPage() {
   const { usuario, cadastrarVoluntario } = useAuth()
@@ -32,11 +34,13 @@ export default function VolunteerSignupPage() {
   if (usuario) return <Navigate to={/^\/vagas\/\d+$/.test(location.state?.from || '') ? location.state.from : '/voluntario'} replace />
 
   function change(name, value) {
-    setValues(v => ({ ...v, [name]: value }))
+    setValues(v => ({ ...v, [name]: value, ...(['cidade', 'estado'].includes(name) ? {
+      localizacao: { ...v.localizacao, [name]: value, latitude: '', longitude: '', origem_coordenadas: '' },
+    } : {}) }))
     setErrors(v => { const next = { ...v }; delete next[name]; return next })
   }
   function validate() {
-    const invalid = {}
+    const invalid = validarLocalizacao(values.localizacao)
     if (values.nome_completo.trim().length < 3) invalid.nome_completo = 'Informe seu nome completo.'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) invalid.email = 'Informe um e-mail válido.'
     if (!validCpf(values.identificacao.replace(/\D/g, ''))) invalid.identificacao = 'Informe um CPF válido.'
@@ -59,12 +63,15 @@ export default function VolunteerSignupPage() {
     try {
       const { senha, ...fields } = values
       await cadastrarVoluntario({ ...fields, nome_completo: values.nome_completo.trim(), email: values.email.trim().toLowerCase(),
-        identificacao: values.identificacao.replace(/\D/g, ''), telefone: phoneDigits(values.telefone), cidade: values.cidade.trim(), password: senha })
+        identificacao: values.identificacao.replace(/\D/g, ''), telefone: phoneDigits(values.telefone), cidade: values.cidade.trim(), password: senha,
+        localizacao: localizacaoPayload({ ...values.localizacao, cidade: values.cidade, estado: values.estado }) })
     } catch (failure) {
       const detail = failure.response?.data?.detail
       if (Array.isArray(detail)) {
         const invalid = {}
-        for (const issue of detail) { const name = issue.loc?.[1]; if (name) invalid[name === 'password' ? 'senha' : name] = issue.msg }
+        for (const issue of detail) { const name = issue.loc?.[1]; if (name) invalid[name === 'password' ? 'senha' : name === 'localizacao' ? issue.loc.slice(1).join('.') : name] = issue.msg }
+        if (Object.keys(invalid).some(name => name.startsWith('localizacao'))) setStep(1)
+        else
         setStep(invalid.causa_ids || invalid.causas ? 2 : Object.keys(invalid).some(k => k in empty && !['causa_ids', 'disponibilidade_semanal', 'carga_horaria_semanal'].includes(k)) ? 1 : 3)
         setErrors(invalid)
         setMessage('Confira os campos indicados e tente novamente.')
@@ -101,6 +108,10 @@ export default function VolunteerSignupPage() {
                 <input {...attrs('cidade')} aria-label="Cidade" autoComplete="address-level2" maxLength={100} placeholder="Sua cidade" required />
                 <select {...attrs('estado')} aria-label="Estado" autoComplete="address-level1" required><option value="">UF</option>{ESTADOS.map(uf => <option value={uf} key={uf}>{NOMES_ESTADOS[uf]} ({uf})</option>)}</select>
               </div>{error('cidade')}{error('estado')}<small>Usamos para mostrar vagas perto de você. Não aparece no seu perfil público.</small></div>
+              <details open={Object.keys(errors).some(name => name.startsWith('localizacao')) || undefined}><summary>Adicionar CEP, endereço ou coordenadas (opcional)</summary>
+                <LocationFields hideRegion allowBrowser value={{ ...values.localizacao, cidade: values.cidade, estado: values.estado }} errors={errors}
+                  onChange={value => { change('localizacao', value); setValues(v => ({ ...v, cidade: value.cidade || '', estado: value.estado || '' })) }} />
+              </details>
               <div className={s.field}><label htmlFor="senha">Senha</label><div className={s.password}><input {...attrs('senha')} type={show ? 'text' : 'password'} autoComplete="new-password" maxLength={1024} required aria-describedby={errors.senha ? 'senha-requisitos senha-error' : 'senha-requisitos'} />
                 <button type="button" aria-pressed={show} aria-label={show ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShow(!show)}><Icon group="cadastro" name="imgIcon1" />{show ? 'Ocultar' : 'Mostrar'}</button>
               </div><PasswordChecklist value={values.senha} id="senha-requisitos" />{error('senha')}</div>

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PasswordChecklist from '../components/PasswordChecklist'
 import PhoneInput from '../components/PhoneInput'
+import LocationFields from '../components/LocationFields'
+import { localizacaoPayload, validarLocalizacao } from '../utils/localizacao'
 import { registerOrganization } from '../services/organizationService'
 import styles from './OrganizationSignup.module.css'
 import { organizationFields as fields, validCnpj } from '../utils/organizationFields'
@@ -43,7 +45,9 @@ export default function OrganizationSignupPage() {
     payload.email = payload.email.toLowerCase()
     payload.descricao = (values.descricao ?? '').trim()
     payload.consentimento_termos = Boolean(values.consentimento_termos)
-    const invalid = {}
+    const endereco = localizacaoPayload(values.localizacao)
+    if (endereco) payload.localizacao = endereco
+    const invalid = validarLocalizacao(values.localizacao)
     for (const field of fields) {
       const value = payload[field.name]
       if (!value) invalid[field.name] = 'Preencha este campo.'
@@ -74,7 +78,8 @@ export default function OrganizationSignupPage() {
         const serverErrors = {}
         for (const issue of detail) {
           const name = issue.loc?.[1]
-          if (fields.some((field) => field.name === name) || ['descricao', 'consentimento_termos'].includes(name)) serverErrors[name] = issue.msg
+          if (name === 'localizacao') serverErrors[issue.loc.slice(1).join('.')] = issue.msg
+          else if (fields.some((field) => field.name === name) || ['descricao', 'consentimento_termos'].includes(name)) serverErrors[name] = issue.msg
         }
         focusErrors.current = true
         setErrors(serverErrors)
@@ -104,7 +109,7 @@ export default function OrganizationSignupPage() {
         <section className={styles.card}>
           <h1>Cadastro de organização</h1>
           <p>Cadastre sua ONG para conectar sua causa a pessoas dispostas a ajudar.</p>
-          <p>Todos os campos são obrigatórios, exceto a descrição.</p>
+          <p>Os dados institucionais são obrigatórios. Descrição e endereço detalhado são opcionais.</p>
           <form ref={formRef} noValidate onSubmit={submit} aria-label="Cadastrar organização" aria-busy={pending}>
             <fieldset disabled={pending}>
               <legend>Dados institucionais e acesso</legend>
@@ -126,6 +131,7 @@ export default function OrganizationSignupPage() {
                   </div>
                 ))}
               </div>
+              <LocationFields value={values.localizacao} onChange={value => change('localizacao', value)} errors={errors} disabled={pending} />
               <div className={styles.field}>
                 <label htmlFor="descricao">Descrição (opcional)</label>
                 <textarea id="descricao" name="descricao" maxLength={5000} rows={4} value={values.descricao ?? ''}

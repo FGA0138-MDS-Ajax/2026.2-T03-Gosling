@@ -10,7 +10,8 @@ export default function LocationFields({ value, onChange, errors = {}, disabled 
   const revisao = useRef(0)
   const [consultando, setConsultando] = useState(false)
   const [aviso, setAviso] = useState(null)
-  useEffect(() => () => { controle.current?.abort(); revisao.current++ }, [])
+  const conteudo = JSON.stringify(value || {})
+  useEffect(() => () => { controle.current?.abort(); revisao.current++ }, [conteudo, disabled])
 
   function cancelar() { controle.current?.abort(); revisao.current++; setConsultando(false) }
   function mudar(campo, novo) {
@@ -32,7 +33,7 @@ export default function LocationFields({ value, onChange, errors = {}, disabled 
       setAviso({ texto: 'CEP consultado. Confira e corrija os campos antes de salvar.' })
     } catch (erro) {
       if (!controller.signal.aborted && atual === revisao.current) setAviso({ erro: true, texto: erro.message })
-    } finally { if (atual === revisao.current) setConsultando(false) }
+    } finally { if (controle.current === controller) setConsultando(false) }
   }
   function usarLocalizacao() {
     cancelar()
@@ -73,7 +74,7 @@ export default function LocationFields({ value, onChange, errors = {}, disabled 
       {!hideRegion && campo('cidade', cityLabel, { autoComplete: 'address-level2' })}
       {!hideRegion && campo('estado', stateLabel)}
     </div>
-    <details className={s.coordinates}><summary>Coordenadas para distância e mapa (opcional)</summary>
+    <details className={s.coordinates} open={Boolean(errors['localizacao.latitude'] || errors['localizacao.longitude']) || undefined}><summary>Coordenadas para distância e mapa (opcional)</summary>
       <p className={s.hint}>Informe um ponto confirmado. Deixe em branco se não souber; o endereço pode ser salvo sem ele.</p>
       <div className={s.grid}>{campo('latitude', 'Latitude', { inputMode: 'decimal', maxLength: 12 })}{campo('longitude', 'Longitude', { inputMode: 'decimal', maxLength: 13 })}</div>
       {allowBrowser && <button type="button" onClick={usarLocalizacao}>Usar minha localização (opcional)</button>}

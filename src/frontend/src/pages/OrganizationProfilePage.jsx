@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PhoneInput from '../components/PhoneInput'
+import LocationFields from '../components/LocationFields'
+import { localizacaoPayload, validarLocalizacao } from '../utils/localizacao'
 import { useAuth } from '../hooks/useAuth'
 import { getOrganization, updateOrganization } from '../services/organizationService'
 import { organizationFields, validCnpj } from '../utils/organizationFields'
@@ -59,7 +61,8 @@ export default function OrganizationProfilePage() {
     payload.telefone = phoneDigits(payload.telefone)
     payload.email = payload.email.toLowerCase()
     payload.descricao = (values.descricao ?? '').trim()
-    const invalid = {}
+    if (Object.hasOwn(values, 'localizacao')) payload.localizacao = localizacaoPayload(values.localizacao)
+    const invalid = validarLocalizacao(values.localizacao)
     for (const field of fields) {
       const value = payload[field.name]
       const optional = organization.tipo !== 'ONG' && ['cnpj', 'razao_social'].includes(field.name)
@@ -94,7 +97,8 @@ export default function OrganizationProfilePage() {
         const invalidFields = {}
         for (const issue of detail) {
           const name = issue.loc?.[1]
-          if (fields.some((field) => field.name === name) || name === 'descricao') invalidFields[name] = issue.msg
+          if (name === 'localizacao') invalidFields[issue.loc.slice(1).join('.')] = issue.msg
+          else if (fields.some((field) => field.name === name) || name === 'descricao') invalidFields[name] = issue.msg
         }
         setErrors(invalidFields)
         setMessage('Confira os campos indicados e tente novamente.')
@@ -147,6 +151,7 @@ export default function OrganizationProfilePage() {
                   </div>
                 })}
               </div>
+              <LocationFields value={values.localizacao} onChange={value => change('localizacao', value)} errors={errors} disabled={pending} />
               <div className={styles.field}>
                 <label htmlFor="descricao">Descrição (opcional)</label>
                 <textarea id="descricao" name="descricao" rows={4} maxLength={5000} value={values.descricao ?? ''}

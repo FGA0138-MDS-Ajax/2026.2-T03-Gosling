@@ -1,6 +1,8 @@
 ﻿import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import PhoneInput from '../components/PhoneInput'
+import LocationFields from '../components/LocationFields'
+import { localizacaoInicial, localizacaoPayload, validarLocalizacao } from '../utils/localizacao'
 import { Availability, Interests } from '../components/VolunteerPreferences'
 import { BottomNav, Header, Icon } from '../components/ui/Layout'
 import { initials } from '../utils/initials'
@@ -9,7 +11,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useCausas } from '../hooks/useCausas'
 import { getVolunteerProfile, updateVolunteerProfile, uploadVolunteerPhoto, removeVolunteerPhoto } from '../services/voluntarioService'
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../utils/accountFields'
-import { ESTADOS, NOMES_ESTADOS, parseDisponibilidades, privateCpf, profileCompletion, weeklyAvailability } from '../utils/volunteerProfile'
+import { parseDisponibilidades, privateCpf, profileCompletion, weeklyAvailability } from '../utils/volunteerProfile'
 import s from './VolunteerAccount.module.css'
 
 const TONES = { 'Dados pessoais': '#0f766e', Interesses: '#ff2d55', Disponibilidade: '#ff9500', 'Senha e segurança': '#8e8e93',
@@ -18,6 +20,7 @@ const tile = (label, icon, group = 'perfil') => <span className={s.menuIcon} sty
 
 function initialValues(p) {
   return { nome_completo: p.nome || '', telefone: p.telefone || '', cidade: p.cidade || '', estado: p.estado || '', biografia: p.biografia || '',
+    localizacao: localizacaoInicial(p.localizacao, p.cidade, p.estado),
     causa_ids: p.causa_ids || [], causas_legadas: p.causas_legadas || [], disponibilidade_semanal: weeklyAvailability(p), carga_horaria_semanal: p.carga_horaria_semanal ?? (Number(parseDisponibilidades(p.disponibilidades).cargaHoraria) || null) }
 }
 export default function VolunteerProfilePage() {
@@ -61,10 +64,10 @@ export default function VolunteerProfilePage() {
 
   const dirty = Boolean(perfil && values && JSON.stringify(values) !== JSON.stringify(initialValues(perfil)))
   const interesses = (values?.causa_ids.length || 0) + (values?.causas_legadas.length || 0)
-  function change(name, value) { setValues(v => ({ ...v, [name]: value })); setSaved(false); setMessage(''); setErrors({}) }
+  function change(name, value) { setValues(v => ({ ...v, [name]: value, ...(name === 'localizacao' ? { cidade: value.cidade || '', estado: value.estado || '' } : {}) })); setSaved(false); setMessage(''); setErrors({}) }
   function discard() { setValues(initialValues(perfil)); setErrors({}); setMessage(''); setSaved(false) }
   function validate() {
-    const invalid = {}
+    const invalid = validarLocalizacao(values.localizacao)
     if (values.nome_completo.trim().length < 2) invalid.nome_completo = 'Informe seu nome completo.'
     if (values.telefone && !validPhone(values.telefone)) invalid.telefone = PHONE_ERROR
     if (values.cidade.length > 100) invalid.cidade = 'Use até 100 caracteres.'
@@ -76,10 +79,11 @@ export default function VolunteerProfilePage() {
     if (submitting.current) return
     const invalid = validate()
     setErrors(invalid)
-    if (Object.keys(invalid).length) { setEditing(Object.keys(invalid)[0]); return }
+    if (Object.keys(invalid).length) { const primeiro = Object.keys(invalid)[0]; setEditing(primeiro.startsWith('localizacao') ? 'local' : primeiro); return }
     submitting.current = true; setPending(true); setSaved(false); setMessage('')
     const payload = { ...values, nome_completo: values.nome_completo.trim(), telefone: phoneDigits(values.telefone) || null,
-      cidade: values.cidade.trim() || null, estado: values.estado || null, biografia: values.biografia.trim() || null }
+      cidade: values.cidade.trim() || null, estado: values.estado || null, biografia: values.biografia.trim() || null,
+      localizacao: localizacaoPayload(values.localizacao) }
     try {
       const result = await updateVolunteerProfile(payload)
       if (!mounted.current) return
@@ -88,10 +92,11 @@ export default function VolunteerProfilePage() {
       if (!mounted.current) return
       const detail = failure.response?.data?.detail
       if (Array.isArray(detail)) {
-        const invalid = Object.fromEntries(detail.filter(i => i.loc?.[1]).map(i => [i.loc[1], i.msg]))
+        const invalid = Object.fromEntries(detail.filter(i => i.loc?.[1]).map(i => [i.loc[1] === 'localizacao' ? i.loc.slice(1).join('.') : i.loc[1], i.msg]))
         setErrors(invalid)
         const field = Object.keys(invalid).find(name => ['nome_completo','telefone','cidade','estado','biografia'].includes(name))
-        if (field) setEditing(field)
+        if (Object.keys(invalid).some(name => name.startsWith('localizacao'))) setEditing('local')
+        else if (field) setEditing(field)
         setMessage('Confira os campos indicados e tente novamente.')
       } else setMessage(typeof detail === 'string' ? detail : 'Não foi possível salvar o perfil. Tente novamente.')
     } finally { submitting.current = false; if (mounted.current) setPending(false) }
@@ -182,7 +187,7 @@ export default function VolunteerProfilePage() {
           <Link className={s.area} to="/voluntario">Voltar para minha área</Link>
           {editing && <Modal title={editTitle[editing] || 'Editar dados pessoais'} onClose={() => setEditing(null)}>
             <form noValidate onSubmit={e => { e.preventDefault(); const invalid = validate(); setErrors(invalid); if (!Object.keys(invalid).length) setEditing(null) }}>
-              {['local','cidade','estado'].includes(editing) ? <>{input('cidade','Cidade (opcional)')}<div className={s.field}><label htmlFor="estado">Estado (opcional)</label><select id="estado" value={values.estado} onChange={e => change('estado',e.target.value)}><option value="">Não informado</option>{ESTADOS.map(uf => <option key={uf} value={uf}>{NOMES_ESTADOS[uf]} ({uf})</option>)}</select></div></> : input(editing,editLabel[editing] || editing)}
+              {['local','cidade','estado'].includes(editing) ? <LocationFields value={values.localizacao} onChange={value => change('localizacao', value)} errors={errors} disabled={pending} allowBrowser cityLabel="Cidade (opcional)" stateLabel="Estado (opcional)" /> : input(editing,editLabel[editing] || editing)}
               <p className={s.hint}>Confirme e depois salve as alterações no perfil.</p><button className={s.confirm} type="submit">Confirmar</button>
             </form>
           </Modal>}

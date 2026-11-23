@@ -13,6 +13,7 @@ vi.mock('../services/authService', () => ({ getSession: vi.fn(), getProfile: vi.
 vi.mock('../services/voluntarioService', () => ({ getVolunteerProfile: vi.fn(), updateVolunteerProfile: vi.fn(), uploadVolunteerPhoto: vi.fn(), removeVolunteerPhoto: vi.fn() }))
 const usuario = { id: 3, nome: 'Maria da Silva', email: 'maria@example.com', perfil: 'VOLUNTARIO', tipo: null }
 const perfil = { ...usuario, identificacao: '12345678901', telefone: '61999999999', cidade: 'Brasília', estado: 'DF', biografia: 'Gosto de ensinar.',
+  localizacao: { cep: '70000123', logradouro: 'Rua residencial privada', numero: '7', cidade: 'Brasília', estado: 'DF', latitude: '-15.1234567', longitude: '-47.7654321', origem_coordenadas: 'MANUAL' },
   causas: ['Educação'], causa_ids: [1], causas_legadas: [], disponibilidades: ['DIA:SABADO', 'PERIODO:MANHA', 'CARGA_HORARIA:4'] }
 beforeEach(() => {
   vi.resetAllMocks()
@@ -127,6 +128,20 @@ describe('perfil do voluntário — RF06', () => {
     expect(modal.getByRole('heading',{name:'Maria da Silva'})).toBeVisible()
     expect(modal.queryByText(perfil.email)).not.toBeInTheDocument()
     expect(modal.queryByText('Brasília')).not.toBeInTheDocument()
+    expect(modal.queryByText('Rua residencial privada')).not.toBeInTheDocument()
+    expect(modal.queryByText('70000123')).not.toBeInTheDocument()
+    expect(modal.queryByText('-15.1234567')).not.toBeInTheDocument()
+  })
+  it('salva endereço detalhado privado e limpa coordenadas ao corrigir o endereço',async()=>{
+    const user=userEvent.setup(); open(); await loaded()
+    await user.click(screen.getByRole('button',{name:/^Editar Onde mora:/}))
+    expect(screen.getByLabelText('Logradouro')).toHaveValue('Rua residencial privada')
+    fireEvent.change(screen.getByLabelText('Número ou S/N'),{target:{value:'88'}})
+    await user.click(screen.getByRole('button',{name:'Confirmar'})); await save(user)
+    expect(await screen.findByText('Perfil atualizado com sucesso.')).toBeVisible()
+    expect(service.updateVolunteerProfile).toHaveBeenCalledWith(expect.objectContaining({
+      localizacao: expect.objectContaining({numero:'88',cep:'70000123',latitude:null,longitude:null}),
+    }))
   })
   it('envia a foto pelo serviço e mantém alterações ainda não salvas',async()=>{
     service.uploadVolunteerPhoto.mockResolvedValue({...perfil,foto_url:'/api/v1/midia/foto.webp'})
