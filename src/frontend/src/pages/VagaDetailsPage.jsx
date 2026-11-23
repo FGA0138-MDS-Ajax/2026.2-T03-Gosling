@@ -6,7 +6,7 @@ import { initials } from '../utils/initials'
 import Modal from '../components/ui/Modal'
 import { useAuth } from '../hooks/useAuth'
 import { detalharVaga, listarVagas } from '../services/vagasService'
-import { readSavedVagas, toggleSavedVaga } from '../services/savedVagas'
+import { useSavedVagas } from '../hooks/useSavedVagas'
 import { formatarOcorrencia, horarioDoEncontro } from '../utils/ocorrencias'
 import s from './VagaDetails.module.css'
 
@@ -33,7 +33,9 @@ function VagaDetails({ id }) {
   const [attempt, setAttempt] = useState(0)
   const [related, setRelated] = useState([])
   const [message, setMessage] = useState('')
-  const isSaved = readSavedVagas(usuario?.id).includes(Number(id))
+  const saved = useSavedVagas()
+  const isSaved = saved.ids.includes(Number(id))
+  const [saveFeedback, setSaveFeedback] = useState(null)
   const [now] = useState(() => Date.now())
   const [gallery, setGallery] = useState(false)
   const [photo, setPhoto] = useState(0)
@@ -61,9 +63,11 @@ function VagaDetails({ id }) {
     } catch (failure) { if (failure.name !== 'AbortError') setMessage('Não foi possível copiar o link. Copie o endereço na barra do navegador.') }
     finally { sharePending.current = false }
   }
-  function save() {
-    try { const saved = toggleSavedVaga(Number(id), usuario?.id); setMessage(saved ? 'Vaga salva neste navegador.' : 'Vaga removida das salvas neste navegador.') }
-    catch { setMessage('Não foi possível salvar neste navegador.') }
+  async function save() {
+    try {
+      const result = await saved.toggle(Number(id))
+      setSaveFeedback({ key: saved.key, message: result ? (saved.visitor ? 'Vaga salva neste navegador.' : 'Vaga salva na sua conta.') : 'Vaga removida das salvas.', error: false })
+    } catch (failure) { setSaveFeedback({ key: saved.key, message: failure.message, error: true }) }
   }
   const fotos = vaga?.fotos || []
   const ocorrencias = [...(vaga?.ocorrencias || [])].sort((a,b) => new Date(a.inicio) - new Date(b.inicio))
@@ -77,7 +81,11 @@ function VagaDetails({ id }) {
     return <><button className={s.apply} type="button" disabled aria-describedby={mobile ? 'application-status-mobile' : 'application-status'}>{usuario.perfil === 'VOLUNTARIO' ? 'Candidaturas em breve' : 'Exclusivo para voluntários'}</button>
       <p id={mobile ? 'application-status-mobile' : 'application-status'} className={s.applicationStatus}>{usuario.perfil === 'VOLUNTARIO' ? 'O envio de candidaturas ainda não está disponível.' : 'Entre com uma conta de voluntário para se candidatar.'}</p></>
   }
-  const saveButton = (compact = false) => <button type="button" aria-pressed={isSaved} onClick={save} className={compact ? s.round : s.secondary}><Icon group="detalhe" name="imgIcon2" />{!compact && (isSaved ? 'Vaga salva' : 'Salvar vaga')}</button>
+  const saveButton = (compact = false) => <button type="button" aria-pressed={saved.ready ? isSaved : undefined} aria-busy={saved.pending.includes(Number(id)) || saved.loading}
+    disabled={!saved.allowed || saved.pending.includes(Number(id)) || (saved.loading && !saved.ready)}
+    aria-label={compact ? (isSaved ? 'Remover dos salvos' : 'Salvar vaga') : undefined}
+    title={!saved.ready ? 'Clique para consultar ou tentar novamente.' : saved.visitor ? 'Salvo somente neste navegador. Entre para vincular à sua conta.' : undefined}
+    onClick={save} className={compact ? s.round : s.secondary}><Icon group="detalhe" name="imgIcon2" />{!compact && (isSaved ? 'Vaga salva' : 'Salvar vaga')}</button>
   return <div className={s.page}><Header />
     {loading ? <main className={s.state}><p role="status">Carregando vaga…</p></main> : error ? <main className={s.state}><h1>{error}</h1>{!error.startsWith('Vaga não') && <button type="button" onClick={() => { setLoading(true); setError(''); setAttempt(v => v+1) }}>Tentar novamente</button>}<Link to="/vagas">Explorar outras vagas</Link></main> : vaga && <>
       <main className={s.main}>
@@ -111,6 +119,7 @@ function VagaDetails({ id }) {
           </aside>
         </div>
         {message && <p className={s.message} role="status">{message}</p>}
+        {saveFeedback?.key === saved.key && <p className={s.message} role={saveFeedback.error ? 'alert' : 'status'}>{saveFeedback.message}</p>}
       </main>
       {related.length > 0 && <section className={s.related}><h2>Você também pode gostar</h2><div>{related.map(v => <article key={v.id} className={s.relatedCard}>{v.fotos?.[0] && <img src={v.fotos[0]} alt="" />}<div><small>{v.organizacao.nome}</small><h3><Link to={`/vagas/${v.id}`}>{v.titulo}</Link></h3>{v.ocorrencias[0] && <p><Icon group="detalhe" name="imgIcon19" />{formatarOcorrencia(v.ocorrencias[0])}</p>}<p><Icon group="detalhe" name="imgIcon20" />{v.local}</p><span className={s.relatedCause}>{v.causa.nome}</span></div></article>)}</div></section>}
       <Footer /><div className={s.mobileCta}><span><strong>{vaga.numero_vagas} vagas ofertadas</strong><small>{modalities[vaga.modalidade]} · {Number(vaga.carga_horaria).toLocaleString('pt-BR')} h</small></span>{application(true)}</div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import VagaCard from '../components/VagaCard'
+import SavedVagasImport from '../components/SavedVagasImport'
 import { BottomNav, Footer, Header } from '../components/ui/Layout'
 import { useAuth } from '../hooks/useAuth'
 import { useVagas } from '../hooks/useVagas'
@@ -79,6 +80,7 @@ function AreaVoluntario({ usuario, logout }) {
         <div className={s.cardActions}><Link className={s.primary} to="/voluntario/perfil">Editar meu perfil</Link><button type="button" className={s.ghost} onClick={() => logout()}>Sair</button></div>
       </section>
     </div>
+    <SavedVagasImport />
     <section className={s.section} aria-labelledby="sugestoes">
       <div className={s.sectionHead}>
         <div><h2 id="sugestoes">{combinam.length ? 'Recomendadas para você' : 'Vagas abertas agora'}</h2>
