@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 import jwt
 import pytest
 from fastapi import status
+from fastapi.testclient import TestClient
 
 from app.candidaturas.enums import StatusCandidatura
 from app.candidaturas.models import Candidatura
@@ -19,6 +20,7 @@ from app.vagas.schemas import (
 
 URL = "/api/v1/organizacoes/me/vagas"
 SENHA = "SenhaDeTeste123!"
+CHAVE_INCORRETA = "chave-incorreta-de-teste-com-32-caracteres"
 
 
 def autenticar(client, email: str) -> dict[str, str]:
@@ -63,7 +65,8 @@ def service_mock(client) -> MagicMock:
     mock = MagicMock()
     mock.listar_vagas_da_organizacao.return_value = resposta_paginada()
     client.app.dependency_overrides[get_vaga_service] = lambda: mock
-    return mock
+    yield mock
+    client.app.dependency_overrides.pop(get_vaga_service, None)
 
 
 def test_listar_vagas_retorna_dados_da_organizacao_autenticada(
@@ -153,6 +156,18 @@ def test_listar_vagas_com_perfil_voluntario_retorna_403(
 
     assert resposta.status_code == status.HTTP_403_FORBIDDEN
     service_mock.listar_vagas_da_organizacao.assert_not_called()
+
+
+def test_listar_vagas_erro_no_banco_retorna_500(client, contas, service_mock):
+    headers = autenticar(client, "ong@example.com")
+    service_mock.listar_vagas_da_organizacao.side_effect = Exception(
+        "Erro de conexão com o banco"
+    )
+
+    with TestClient(client.app, raise_server_exceptions=False) as client_500:
+        resposta = client_500.get(URL, headers=headers)
+
+    assert resposta.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
 def publicar(client, headers, titulo):
@@ -274,4 +289,17 @@ def test_listagem_rejeita_token_expirado_com_assinatura_valida(
     expirado = jwt.encode(claims, jwt_secret, algorithm=JWT_ALGORITHM)
 
     resposta = client.get(URL, headers={"Authorization": f"Bearer {expirado}"})
+    assert resposta.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_listagem_rejeita_token_com_assinatura_invalida(
+    client, contas, jwt_secret
+):
+    headers = autenticar(client, contas["organizacao"].email)
+    token = headers["Authorization"].removeprefix("Bearer ")
+    claims = jwt.decode(token, jwt_secret, algorithms=[JWT_ALGORITHM])
+    adulterado = jwt.encode(claims, CHAVE_INCORRETA, algorithm=JWT_ALGORITHM)
+
+    resposta = client.get(URL, headers={"Authorization": f"Bearer {adulterado}"})
+
     assert resposta.status_code == status.HTTP_401_UNAUTHORIZED
