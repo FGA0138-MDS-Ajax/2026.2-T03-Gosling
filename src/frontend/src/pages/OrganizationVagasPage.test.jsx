@@ -12,7 +12,13 @@ vi.mock('../services/authService', () => ({ getProfile: vi.fn() }))
 
 const ong = { id: 1, nome: 'ONG Teste', perfil: 'ORGANIZACAO', tipo: 'ONG' }
 const vagas = [
-  { id: 1, titulo: 'Oficina de leitura', status: 'ABERTA', local: 'Brasília', total_candidaturas: 4 },
+  {
+    id: 1,
+    titulo: 'Oficina de leitura',
+    status: 'ABERTA',
+    local: 'Brasília',
+    total_candidaturas: 4,
+  },
   { id: 2, titulo: 'Apoio escolar', estado_vaga: 'ENCERRADA', total_candidaturas: 0 },
   { id: 3, titulo: 'Mutirão de limpeza', status: 'SUSPENSA', total_candidaturas: null },
 ]
@@ -23,7 +29,11 @@ function resposta(itens, pagina = 1, totalPaginas = 1) {
 
 function abrir(caminho = '/organizacao/vagas', usuario = ong) {
   useAuth.mockReturnValue({ usuario, loading: false })
-  return render(<MemoryRouter initialEntries={[caminho]}><App /></MemoryRouter>)
+  return render(
+    <MemoryRouter initialEntries={[caminho]}>
+      <App />
+    </MemoryRouter>,
+  )
 }
 
 beforeEach(() => {
@@ -58,7 +68,8 @@ describe('painel de vagas da organização', () => {
 
   it('navega entre páginas e repete a página solicitada em caso de falha', async () => {
     const user = userEvent.setup()
-    const listar = vi.spyOn(http, 'get')
+    const listar = vi
+      .spyOn(http, 'get')
       .mockResolvedValueOnce(resposta([vagas[0]], 1, 2))
       .mockRejectedValueOnce(new Error('Sem conexão'))
       .mockResolvedValueOnce(resposta([vagas[1]], 2, 2))
@@ -92,5 +103,34 @@ describe('painel de vagas da organização', () => {
     abrir('/organizacao/vagas', { ...ong, perfil: 'VOLUNTARIO' })
     expect(await screen.findByRole('heading', { name: 'Área de Voluntário' })).toBeVisible()
     expect(listar).not.toHaveBeenCalledWith('/organizacoes/me/vagas', expect.anything())
+  })
+
+  it('consulta rascunhos na primeira página e oferece a retomada', async () => {
+    const user = userEvent.setup()
+    const rascunho = {
+      id: 19,
+      titulo: 'Mutirão em preparo',
+      estado_vaga: 'RASCUNHO',
+      atualizado_em: '2026-11-23T18:40:00Z',
+    }
+    const listar = vi
+      .spyOn(http, 'get')
+      .mockResolvedValueOnce(resposta(vagas))
+      .mockResolvedValueOnce(resposta([rascunho]))
+    abrir()
+    await screen.findByRole('row', { name: 'Oficina de leitura' })
+
+    await user.click(screen.getByRole('button', { name: 'Rascunhos' }))
+
+    const linha = await screen.findByRole('row', { name: 'Mutirão em preparo' })
+    expect(linha).toHaveTextContent('15:40')
+    expect(within(linha).getByRole('link', { name: 'Editar rascunho' })).toHaveAttribute(
+      'href',
+      '/vagas?rascunho=19',
+    )
+    expect(listar).toHaveBeenLastCalledWith('/organizacoes/me/vagas', {
+      params: { pagina: 1, tamanho_pagina: 10, status: 'RASCUNHO' },
+      signal: expect.any(AbortSignal),
+    })
   })
 })

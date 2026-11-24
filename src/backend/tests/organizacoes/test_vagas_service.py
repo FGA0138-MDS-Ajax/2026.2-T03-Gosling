@@ -41,7 +41,7 @@ def test_repassa_organizacao_e_paginacao_ao_repository():
     )
 
     repo.listar_vagas_por_organizacao.assert_called_once_with(
-        organizacao_id=10, pagina=3, tamanho_pagina=5
+        organizacao_id=10, pagina=3, tamanho_pagina=5, estado=None
     )
 
 

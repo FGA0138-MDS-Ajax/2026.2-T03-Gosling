@@ -15,9 +15,12 @@ export async function updateOrganization(payload) {
   return data
 }
 
-export async function listOrganizationVagas({ pagina, signal }) {
+export async function listOrganizationVagas({ pagina, estado, signal }) {
+  const params = { pagina, tamanho_pagina: 10 }
+  if (estado) params.status = estado
+
   const { data } = await http.get('/organizacoes/me/vagas', {
-    params: { pagina, tamanho_pagina: 10 },
+    params,
     signal,
   })
   return data

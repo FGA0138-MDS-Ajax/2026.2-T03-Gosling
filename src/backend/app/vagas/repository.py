@@ -1,8 +1,8 @@
 import unicodedata
 from typing import Any, Dict, Optional
 
-from sqlalchemy import func, select, text
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select, text, update
+from sqlalchemy.orm import Session, lazyload
 
 from app.candidaturas.enums import STATUS_ATIVOS
 from app.candidaturas.models import Candidatura
@@ -80,33 +80,74 @@ class VagaRepository:
             )
         )
 
+    def buscar_vaga_do_titular(self, vaga_id: int, organizacao_id: int) -> Vaga | None:
+        return self.session.scalar(
+            select(Vaga)
+            .options(lazyload("*"))
+            .where(Vaga.id == vaga_id, Vaga.organizacao_id == organizacao_id)
+        )
+
+    def reservar_edicao_rascunho(self, vaga: Vaga, versao: int) -> bool:
+        alteracao = self.session.execute(
+            update(Vaga)
+            .where(
+                Vaga.id == vaga.id,
+                Vaga.organizacao_id == vaga.organizacao_id,
+                Vaga.status == StatusVaga.RASCUNHO,
+                Vaga.versao == versao,
+            )
+            .values(versao=versao + 1)
+            .execution_options(synchronize_session=False)
+        )
+        if alteracao.rowcount != 1:
+            return False
+
+        self.session.refresh(vaga, attribute_names=["versao", "atualizado_em"])
+        return True
+
     def listar_vagas_por_organizacao(
-        self, organizacao_id: int, pagina: int = 1, tamanho_pagina: int = 10
+        self,
+        organizacao_id: int,
+        pagina: int = 1,
+        tamanho_pagina: int = 10,
+        estado: StatusVaga | None = None,
     ) -> tuple[list[dict[str, Any]], int]:
-        da_organizacao = Vaga.organizacao_id == organizacao_id
+        filtros = [Vaga.organizacao_id == organizacao_id]
+        if estado is None:
+            filtros.append(Vaga.status != StatusVaga.RASCUNHO)
+        else:
+            filtros.append(Vaga.status == estado)
         total_itens = self.session.execute(
-            select(func.count(Vaga.id)).where(da_organizacao)
+            select(func.count(Vaga.id)).where(*filtros)
         ).scalar_one()
-        total_candidaturas = (
+
+        candidaturas = (
             select(func.count(Candidatura.id))
             .where(Candidatura.vaga_id == Vaga.id)
             .scalar_subquery()
         )
-        consulta = (
-            select(
-                Vaga.id,
-                Vaga.titulo,
-                Vaga.descricao,
-                Vaga.status.label("estado_vaga"),
-                Vaga.local,
-                total_candidaturas.label("total_candidaturas"),
+        consulta = select(
+            Vaga.id,
+            Vaga.titulo,
+            Vaga.descricao,
+            Vaga.status.label("estado_vaga"),
+            Vaga.local,
+            Vaga.cidade,
+            Vaga.estado.label("estado_uf"),
+            Vaga.criado_em.label("data_criacao"),
+            Vaga.atualizado_em,
+            Vaga.rascunho,
+            candidaturas.label("total_candidaturas"),
+        ).where(*filtros)
+        linhas = (
+            self.session.execute(
+                consulta.order_by(Vaga.atualizado_em.desc(), Vaga.id.desc())
+                .limit(tamanho_pagina)
+                .offset((pagina - 1) * tamanho_pagina)
             )
-            .where(da_organizacao)
-            .order_by(Vaga.id.desc())
-            .offset((pagina - 1) * tamanho_pagina)
-            .limit(tamanho_pagina)
+            .mappings()
+            .all()
         )
-        linhas = self.session.execute(consulta).mappings().all()
         return [dict(linha) for linha in linhas], total_itens
 
     def confirmar(self) -> None:

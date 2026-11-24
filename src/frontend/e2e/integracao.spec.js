@@ -1,4 +1,5 @@
 import { randomInt, randomUUID } from 'node:crypto'
+import { fileURLToPath } from 'node:url'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test as base } from '@playwright/test'
 
@@ -347,4 +348,132 @@ test('publicação mostra erros por campo e salva local longo, carga decimal e e
   await expect(linha.getByText('0', { exact: true })).toBeVisible()
   await linha.locator('summary').click()
   await expect(linha.getByText('Leitura compartilhada com a comunidade.')).toBeVisible()
+})
+
+test('salva rascunho incompleto, protege edição em duas abas e publica o mesmo ID', async ({
+  page,
+  request,
+  ambiente,
+}) => {
+  const cadastro = await request.post(`${api}/api/v1/admin/usuarios`, {
+    headers: ambiente.headers,
+    data: {
+      perfil: 'ORGANIZACAO',
+      nome: 'ONG Rascunhos Teste',
+      email: `rascunhos-${randomUUID()}@example.com`,
+      senha: ambiente.senha,
+      razao_social: 'ONG Rascunhos Teste',
+      cnpj: cnpjFicticio(),
+      area_atuacao: 'Educação',
+      endereco: 'Brasília, Distrito Federal',
+      responsavel: 'Responsável Teste',
+      telefone: '61999990000',
+    },
+  })
+  expect(cadastro.status()).toBe(201)
+  const conta = await cadastro.json()
+  ambiente.criados.push(conta.id)
+
+  const login = await request.post(`${api}/api/v1/auth/login`, {
+    data: { email: conta.email, senha: ambiente.senha },
+  })
+  expect(login.status()).toBe(200)
+  const { access_token, expires_at } = await login.json()
+  await page.context().addInitScript(sessao => {
+    sessionStorage.setItem('volunja:session', JSON.stringify(sessao))
+  }, { access_token, expires_at })
+
+  const titulo = `Rascunho de oficina ${randomUUID().slice(0, 8)}`
+  const data = '2099-11-16'
+  const modal = page.getByRole('dialog')
+
+  const rascunho = await test.step('Salvar o formulário parcial com foto e encontro incompleto', async () => {
+    await page.goto('/organizacao/vagas')
+    await page.getByRole('link', { name: 'Publicar vaga', exact: true }).click()
+    await modal.getByLabel('Título da vaga', { exact: true }).fill(titulo)
+    await modal.getByLabel('Data de início do encontro 1', { exact: true }).fill(data)
+    const foto = fileURLToPath(new URL('../public/design/home-hero.jpg', import.meta.url))
+    await modal.getByLabel('Fotos da atividade', { exact: true }).setInputFiles(foto)
+    await modal.getByRole('button', { name: 'Adicionar documento exigido' }).click()
+    await modal.getByLabel('Link do modelo 1 (opcional)', { exact: true }).fill('https://example.com/modelo.pdf')
+
+    const resposta = page.waitForResponse(response =>
+      response.request().method() === 'POST' && response.url().endsWith('/vagas/rascunhos'),
+    )
+    await modal.getByRole('button', { name: 'Salvar rascunho', exact: true }).click()
+    const resultado = await resposta
+    expect(resultado.status()).toBe(201)
+    const salvo = await resultado.json()
+    expect(salvo.dados.fotos).toHaveLength(1)
+    await expect(modal.getByRole('status')).toContainText('Rascunho salvo em')
+    expect((await request.get(`${api}/api/v1/vagas/${salvo.id}`)).status()).toBe(404)
+    return salvo
+  })
+
+  await test.step('Reabrir pelo painel e preservar a versão salva em outra aba', async () => {
+    await page.goto('/organizacao/vagas')
+    await page.getByRole('button', { name: 'Rascunhos', exact: true }).click()
+    const linha = page.getByRole('row', { name: titulo })
+    await expect(linha.locator('time')).toBeVisible()
+    await captura(page, 'rascunhos-no-painel.png')
+    await linha.getByRole('link', { name: 'Editar rascunho' }).click()
+    await expect(modal.getByLabel('Data de início do encontro 1')).toHaveValue(data)
+    await expect(modal.getByRole('img', { name: 'Foto salva 1' })).toBeVisible()
+    await expect(modal.getByLabel('Link do modelo 1 (opcional)')).toHaveValue('https://example.com/modelo.pdf')
+
+    const outra = await page.context().newPage()
+    try {
+      await outra.goto(page.url())
+      const editor = outra.getByRole('dialog')
+      await editor.getByLabel('Descrição', { exact: true }).fill('Descrição salva pela outra aba.')
+      const alteracao = outra.waitForResponse(response =>
+        response.request().method() === 'PATCH' && response.url().endsWith(`/rascunhos/${rascunho.id}`),
+      )
+      await editor.getByRole('button', { name: 'Salvar rascunho', exact: true }).click()
+      expect((await alteracao).status()).toBe(200)
+
+      await modal.getByLabel('Descrição', { exact: true }).fill('Alteração ainda aberta nesta aba.')
+      await modal.getByRole('button', { name: 'Salvar rascunho', exact: true }).click()
+      await expect(modal.getByRole('alert')).toContainText('alterado em outra aba')
+      await expect(modal.getByLabel('Descrição', { exact: true })).toHaveValue('Alteração ainda aberta nesta aba.')
+      await modal.getByRole('button', { name: 'Carregar versão salva' }).click()
+      await expect(modal.getByLabel('Descrição', { exact: true })).toHaveValue('Descrição salva pela outra aba.')
+    } finally {
+      await outra.close()
+    }
+  })
+
+  await test.step('Concluir as informações e tornar a mesma vaga pública', async () => {
+    const campos = [
+      ['Atividades do voluntário', 'Apoiar a oficina de leitura da comunidade.'],
+      ['Local ou atividade remota', 'Biblioteca comunitária'],
+      ['Carga horária (horas)', '3'],
+      ['Número de vagas', '2'],
+      ['Hora de início do encontro 1', '09:00'],
+      ['Data de término do encontro 1', data],
+      ['Hora de término do encontro 1', '12:00'],
+      ['Nome do documento 1', 'Termo de participação'],
+    ]
+    for (const [rotulo, valor] of campos) {
+      await modal.getByLabel(rotulo, { exact: true }).fill(valor)
+    }
+    await modal.getByLabel('Causa', { exact: true }).selectOption({ label: 'Educação' })
+
+    const publicacao = page.waitForResponse(response =>
+      response.request().method() === 'POST' && response.url().endsWith(`/rascunhos/${rascunho.id}/publicar`),
+    )
+    await modal.getByRole('button', { name: 'Publicar vaga', exact: true }).click()
+    expect((await publicacao).status()).toBe(200)
+    const publica = await request.get(`${api}/api/v1/vagas/${rascunho.id}`)
+    expect(publica.status()).toBe(200)
+    expect(await publica.json()).toMatchObject({
+      id: rascunho.id,
+      titulo,
+      status: 'ABERTA',
+      fotos: rascunho.dados.fotos,
+      documentos_exigidos: [{ nome: 'Termo de participação' }],
+    })
+    await expect(modal).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: titulo, exact: true })).toBeVisible()
+  })
 })

@@ -140,9 +140,51 @@
 .feedback { margin: 0; padding: 20px 24px; border-top: 1px solid #f0f0f2; }
 .paginacao { margin: 0; padding: 16px; border-top: 1px solid #f0f0f2; }
 
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  margin: 0 24px 16px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #eeeef2;
+}
+
+.filtros button {
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #343438;
+  font: inherit;
+  cursor: pointer;
+}
+
+.filtros button[aria-pressed='true'] {
+  background: #fff;
+  color: #0f615b;
+  box-shadow: 0 1px 2px #0002;
+  font-weight: 650;
+}
+
+.filtros button:focus-visible,
+.editar:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 2px;
+}
+
+.editar {
+  color: #0f615b;
+  font-weight: 650;
+}
+
 @media (max-width: 680px) {
   .painel { width: calc(100% - 32px); margin-block: 24px; border-radius: 16px; }
   .heading { padding: 12px; }
+  .filtros { margin-inline: 12px; }
   .tabela, .tabela tbody { display: block; }
 
   .tabela thead {
