@@ -1,181 +1,276 @@
-import os
-import uuid
 from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
 
+import jwt
 import pytest
-from fastapi.testclient import TestClient
+from fastapi import status
 
-from app.main import app
+from app.candidaturas.enums import StatusCandidatura
+from app.candidaturas.models import Candidatura
+from app.core.config import JWT_ALGORITHM
+from app.jwt_geraçao.dependencies import get_vaga_service
+from app.usuarios.models import Organizacao
+from app.vagas.enums import StatusVaga
+from app.vagas.models import Vaga
+from app.vagas.schemas import (
+    PaginatedResponseVagas,
+    VagaResumoResponse,
+)
 
 URL = "/api/v1/organizacoes/me/vagas"
-SENHA = "Senha@123"
+SENHA = "SenhaDeTeste123!"
 
 
-@pytest.fixture(scope="module", autouse=True)
-def _exige_banco_migrado():
-    if os.getenv("DATABASE_URL"):
-        return
-    if os.getenv("CI"):
-        pytest.fail(
-            "DATABASE_URL não definido na CI: o teste de integração "
-            "da listagem de vagas não pode ser ignorado.",
-            pytrace=False,
-        )
-    pytest.skip("Requer DATABASE_URL apontando para um banco migrado")
-
-
-def _cnpj_valido(base12: str) -> str:
-    def dv(digitos: str, pesos: list[int]) -> str:
-        soma = sum(int(d) * p for d, p in zip(digitos, pesos))
-        resto = soma % 11
-        return "0" if resto < 2 else str(11 - resto)
-
-    d1 = dv(base12, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2])
-    d2 = dv(base12 + d1, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2])
-    return base12 + d1 + d2
-
-
-def _cnpj_unico() -> str:
-    base = f"{uuid.uuid4().int % 10**8:08d}0001"
-    return _cnpj_valido(base)
-
-
-@pytest.fixture(scope="module")
-def client():
-    return TestClient(app)
-
-
-def _criar_organizacao_e_logar(client: TestClient, rotulo: str) -> dict:
-    sufixo = uuid.uuid4().hex[:8]
-    email = f"{rotulo}.{sufixo}@teste.com"
-    resp = client.post(
-        "/api/v1/organizacoes",
-        json={
-            "nome": f"Org {rotulo} {sufixo}",
-            "email": email,
-            "razao_social": f"Org {rotulo} Ltda",
-            "cnpj": _cnpj_unico(),
-            "area_atuacao": "Educação",
-            "endereco": "Rua Exemplo, 100, Gama, Brasília",
-            "responsavel": "Maria Silva",
-            "descricao": "Organização de teste",
-            "telefone": "61999998888",
-            "senha": SENHA,
-            "consentimento_termos": True,
-        },
-    )
-    assert resp.status_code in (200, 201), resp.text
-
-    login = client.post(
+def autenticar(client, email: str) -> dict[str, str]:
+    resposta = client.post(
         "/api/v1/auth/login", json={"email": email, "senha": SENHA}
     )
-    assert login.status_code == 200, login.text
-    token = login.json()["access_token"]
-    return {"email": email, "headers": {"Authorization": f"Bearer {token}"}}
+    assert resposta.status_code == status.HTTP_200_OK
+    return {"Authorization": f"Bearer {resposta.json()['access_token']}"}
 
 
-def _criar_vaga(client: TestClient, org: dict, titulo: str) -> None:
-    inicio = datetime.now(timezone.utc) + timedelta(days=30)
-    fim = inicio + timedelta(hours=4)
-    payload = {
-        "titulo": titulo,
-        "descricao": "Vaga criada pelo teste de integração",
-        "atividades": "Atividades de apoio realizadas pelo voluntário",
-        "causa": "Educação",
-        "modalidade": "PRESENCIAL",
-        "local": "Brasília - DF",
-        "periodo": "MANHA",
-        "carga_horaria": 4,
-        "numero_vagas": 3,
-        "ocorrencias": [
-            {"inicio": inicio.isoformat(), "fim": fim.isoformat()}
+def resposta_paginada() -> PaginatedResponseVagas:
+    return PaginatedResponseVagas(
+        itens=[
+            VagaResumoResponse(
+                id="1",
+                titulo="Instrutor de Programação Java",
+                estado_vaga="ABERTA",
+                cidade="São Paulo",
+                estado_uf="SP",
+                data_criacao=datetime.now(timezone.utc),
+                total_candidaturas=12,
+            ),
+            VagaResumoResponse(
+                id="2",
+                titulo="Auxiliar de Logística Social",
+                estado_vaga="ENCERRADA",
+                cidade="Campinas",
+                estado_uf="SP",
+                data_criacao=datetime.now(timezone.utc),
+                total_candidaturas=5,
+            ),
         ],
-    }
-    resp = client.post("/api/v1/vagas", json=payload, headers=org["headers"])
-    assert resp.status_code in (200, 201), resp.text
-
-
-def _listar(client: TestClient, org: dict, pagina: int, tamanho: int):
-    return client.get(
-        f"{URL}?pagina={pagina}&tamanho_pagina={tamanho}",
-        headers=org["headers"],
+        pagina=1,
+        tamanho_pagina=10,
+        total_itens=2,
+        total_paginas=1,
     )
 
 
-@pytest.fixture(scope="module")
-def cenario(client):
-    org_a = _criar_organizacao_e_logar(client, "a")
-    org_b = _criar_organizacao_e_logar(client, "b")
-    for i in range(5):
-        _criar_vaga(client, org_a, f"A-{i}")
-    for i in range(2):
-        _criar_vaga(client, org_b, f"B-{i}")
-    return org_a, org_b
+@pytest.fixture
+def service_mock(client) -> MagicMock:
+    mock = MagicMock()
+    mock.listar_vagas_da_organizacao.return_value = resposta_paginada()
+    client.app.dependency_overrides[get_vaga_service] = lambda: mock
+    return mock
 
 
-def test_listagem_retorna_so_vagas_da_organizacao_com_paginacao(
-    client, cenario
+def test_listar_vagas_retorna_dados_da_organizacao_autenticada(
+    client, contas, service_mock
 ):
-    org_a, _ = cenario
+    headers = autenticar(client, "ong@example.com")
 
-    r1 = _listar(client, org_a, pagina=1, tamanho=3)
-    assert r1.status_code == 200, r1.text
-    corpo1 = r1.json()
-    assert len(corpo1["itens"]) == 3
-    assert corpo1["pagina"] == 1
-    assert corpo1["tamanho_pagina"] == 3
-    assert corpo1["total_itens"] == 5
-    assert corpo1["total_paginas"] == 2
+    resposta = client.get(URL, headers=headers)
 
-    r2 = _listar(client, org_a, pagina=2, tamanho=3)
-    assert r2.status_code == 200, r2.text
-    corpo2 = r2.json()
-    assert len(corpo2["itens"]) == 2
-    assert corpo2["pagina"] == 2
-
-    titulos = [v["titulo"] for v in corpo1["itens"] + corpo2["itens"]]
-    assert sorted(titulos) == [f"A-{i}" for i in range(5)]
-    assert len(set(titulos)) == 5
+    assert resposta.status_code == status.HTTP_200_OK
+    dados = resposta.json()
+    assert dados["pagina"] == 1
+    assert dados["tamanho_pagina"] == 10
+    assert dados["total_itens"] == 2
+    assert dados["total_paginas"] == 1
+    assert len(dados["itens"]) == 2
+    primeira = dados["itens"][0]
+    assert primeira["titulo"] == "Instrutor de Programação Java"
+    assert primeira["estado_vaga"] == "ABERTA"
+    assert primeira["total_candidaturas"] == 12
 
 
-def test_listagem_expoe_campos_essenciais_da_vaga(client, cenario):
-    org_a, _ = cenario
+def test_listar_vagas_usa_o_id_da_organizacao_do_jwt(
+    client, contas, service_mock
+):
+    headers = autenticar(client, "ong@example.com")
 
-    r = _listar(client, org_a, pagina=1, tamanho=10)
-    assert r.status_code == 200, r.text
+    client.get(URL, headers=headers)
 
-    for item in r.json()["itens"]:
-        assert item["id"]
-        assert item["titulo"].startswith("A-")
-        assert item["estado_vaga"] is not None
-        assert "data_criacao" in item
-        assert "total_candidaturas" in item
-
-
-def test_listagem_da_outra_organizacao_nao_mistura(client, cenario):
-    _, org_b = cenario
-
-    r = _listar(client, org_b, pagina=1, tamanho=10)
-    assert r.status_code == 200, r.text
-    corpo = r.json()
-    assert corpo["total_itens"] == 2
-    assert len(corpo["itens"]) == 2
-    assert all(v["titulo"].startswith("B-") for v in corpo["itens"])
+    service_mock.listar_vagas_da_organizacao.assert_called_once_with(
+        organizacao_id=contas["organizacao"].id,
+        pagina=1,
+        tamanho_pagina=10,
+    )
 
 
-def test_pagina_alem_do_fim_retorna_lista_vazia(client, cenario):
-    org_a, _ = cenario
+def test_listar_vagas_repassa_parametros_de_paginacao(
+    client, contas, service_mock
+):
+    headers = autenticar(client, "ong@example.com")
 
-    r = _listar(client, org_a, pagina=99, tamanho=3)
-    assert r.status_code == 200, r.text
-    corpo = r.json()
-    assert corpo["itens"] == []
-    assert corpo["total_itens"] == 5
+    resposta = client.get(f"{URL}?pagina=2&tamanho_pagina=5", headers=headers)
+
+    assert resposta.status_code == status.HTTP_200_OK
+    service_mock.listar_vagas_da_organizacao.assert_called_once_with(
+        organizacao_id=contas["organizacao"].id,
+        pagina=2,
+        tamanho_pagina=5,
+    )
 
 
-def test_contagem_indisponivel_retorna_null(client, cenario):
-    org_a, _ = cenario
+@pytest.mark.parametrize(
+    "query",
+    ["pagina=0", "pagina=-1", "tamanho_pagina=0", "tamanho_pagina=101"],
+)
+def test_listar_vagas_parametros_invalidos_retornam_422(
+    client, contas, service_mock, query
+):
+    headers = autenticar(client, "ong@example.com")
 
-    r = _listar(client, org_a, pagina=1, tamanho=3)
-    assert r.status_code == 200, r.text
-    assert all(v["total_candidaturas"] is None for v in r.json()["itens"])
+    resposta = client.get(f"{URL}?{query}", headers=headers)
+
+    assert resposta.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+    service_mock.listar_vagas_da_organizacao.assert_not_called()
+
+
+def test_listar_vagas_sem_autenticacao_retorna_401(client, service_mock):
+    resposta = client.get(URL)
+
+    assert resposta.status_code == status.HTTP_401_UNAUTHORIZED
+    service_mock.listar_vagas_da_organizacao.assert_not_called()
+
+
+def test_listar_vagas_com_token_invalido_retorna_401(client, service_mock):
+    resposta = client.get(URL, headers={"Authorization": "Bearer token-invalido"})
+
+    assert resposta.status_code == status.HTTP_401_UNAUTHORIZED
+    service_mock.listar_vagas_da_organizacao.assert_not_called()
+
+
+def test_listar_vagas_com_perfil_voluntario_retorna_403(
+    client, contas, service_mock
+):
+    headers = autenticar(client, "voluntario@example.com")
+
+    resposta = client.get(URL, headers=headers)
+
+    assert resposta.status_code == status.HTTP_403_FORBIDDEN
+    service_mock.listar_vagas_da_organizacao.assert_not_called()
+
+
+def publicar(client, headers, titulo):
+    resposta = client.post(
+        "/api/v1/vagas",
+        headers=headers,
+        json={
+            "titulo": titulo,
+            "descricao": "Descrição da atividade na organização",
+            "atividades": "Atividades de apoio realizadas pelo voluntário",
+            "causa": "Educação",
+            "modalidade": "PRESENCIAL",
+            "local": "Brasília - DF",
+            "periodo": "MANHA",
+            "carga_horaria": 4,
+            "numero_vagas": 3,
+            "ocorrencias": [
+                {
+                    "inicio": "2028-03-10T08:00:00-03:00",
+                    "fim": "2028-03-10T12:00:00-03:00",
+                }
+            ],
+        },
+    )
+    assert resposta.status_code == status.HTTP_201_CREATED, resposta.text
+    return resposta.json()["id"]
+
+
+def test_listagem_real_isola_organizacoes_e_mantem_a_ordem_das_paginas(
+    client, db, contas, senha_hash
+):
+    outra = Organizacao(
+        nome="Outra organização",
+        email="outra-org@example.com",
+        senha_hash=senha_hash,
+    )
+    db.add(outra)
+    db.flush()
+    headers_a = autenticar(client, contas["organizacao"].email)
+    headers_b = autenticar(client, outra.email)
+
+    aberta = publicar(client, headers_a, "Oficina de leitura")
+    outra_vaga = publicar(client, headers_b, "Vaga da outra organização")
+    encerrada = publicar(client, headers_a, "Reforço escolar")
+    suspensa = publicar(client, headers_a, "Mutirão voluntário")
+    db.get(Vaga, encerrada).status = StatusVaga.ENCERRADA
+    db.get(Vaga, suspensa).status = StatusVaga.SUSPENSA
+    db.add_all(
+        [
+            Candidatura(voluntario_id=contas["voluntario"].id, vaga_id=aberta),
+            Candidatura(
+                voluntario_id=contas["voluntario"].id,
+                vaga_id=outra_vaga,
+                status=StatusCandidatura.CANCELADA,
+            ),
+        ]
+    )
+    db.flush()
+
+    primeira = client.get(f"{URL}?pagina=1&tamanho_pagina=2", headers=headers_a)
+    segunda = client.get(f"{URL}?pagina=2&tamanho_pagina=2", headers=headers_a)
+    ultima = client.get(f"{URL}?pagina=3&tamanho_pagina=2", headers=headers_a)
+    lista_b = client.get(URL, headers=headers_b)
+    for resposta in (primeira, segunda, ultima, lista_b):
+        assert resposta.status_code == status.HTTP_200_OK, resposta.text
+
+    pagina = primeira.json()
+    assert (pagina["pagina"], pagina["tamanho_pagina"]) == (1, 2)
+    assert (pagina["total_itens"], pagina["total_paginas"]) == (3, 2)
+    assert [
+        (vaga["id"], vaga["estado_vaga"], vaga["total_candidaturas"])
+        for vaga in pagina["itens"]
+    ] == [(str(suspensa), "SUSPENSA", 0), (str(encerrada), "ENCERRADA", 0)]
+
+    assert segunda.json()["pagina"] == 2
+    assert segunda.json()["itens"] == [{
+        "id": str(aberta),
+        "titulo": "Oficina de leitura",
+        "estado_vaga": "ABERTA",
+        "local": "Brasília - DF",
+        "descricao": "Descrição da atividade na organização",
+        "cidade": None,
+        "estado_uf": None,
+        "data_criacao": None,
+        "total_candidaturas": 1,
+    }]
+    assert ultima.json()["itens"] == []
+    assert ultima.json()["total_itens"] == 3
+    assert [(v["id"], v["total_candidaturas"]) for v in lista_b.json()["itens"]] == [
+        (str(outra_vaga), 1)
+    ]
+
+
+def test_listagem_real_de_organizacao_sem_vagas(client, contas):
+    headers = autenticar(client, contas["organizacao"].email)
+
+    resposta = client.get(URL, headers=headers)
+
+    assert resposta.status_code == status.HTTP_200_OK
+    assert resposta.json() == {
+        "itens": [],
+        "pagina": 1,
+        "tamanho_pagina": 10,
+        "total_itens": 0,
+        "total_paginas": 0,
+    }
+
+
+def test_listagem_rejeita_token_expirado_com_assinatura_valida(
+    client, contas, jwt_secret
+):
+    headers = autenticar(client, contas["organizacao"].email)
+    assert client.get(URL, headers=headers).status_code == status.HTTP_200_OK
+
+    token = headers["Authorization"].removeprefix("Bearer ")
+    claims = jwt.decode(token, jwt_secret, algorithms=[JWT_ALGORITHM])
+    claims["exp"] = datetime.now(timezone.utc) - timedelta(minutes=1)
+    expirado = jwt.encode(claims, jwt_secret, algorithm=JWT_ALGORITHM)
+
+    resposta = client.get(URL, headers={"Authorization": f"Bearer {expirado}"})
+    assert resposta.status_code == status.HTTP_401_UNAUTHORIZED

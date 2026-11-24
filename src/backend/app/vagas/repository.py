@@ -5,6 +5,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.candidaturas.models import Candidatura
 from app.usuarios.catalogos import Causa
 from app.usuarios.models import Organizacao
 from app.vagas.enums import StatusVaga
@@ -91,36 +92,31 @@ class VagaRepository:
     def listar_vagas_por_organizacao(
         self, organizacao_id: int, pagina: int = 1, tamanho_pagina: int = 10
     ) -> tuple[list[dict[str, Any]], int]:
-        offset = (pagina - 1) * tamanho_pagina
-
+        da_organizacao = Vaga.organizacao_id == organizacao_id
         total_itens = self.session.execute(
-            text("SELECT COUNT(*) FROM vagas WHERE organizacao_id = :organizacao_id"),
-            {"organizacao_id": organizacao_id},
+            select(func.count(Vaga.id)).where(da_organizacao)
         ).scalar_one()
-
-        linhas = (
-            self.session.execute(
-                text(
-                    "SELECT v.id, v.titulo, v.status AS estado_vaga, "
-                    "NULL AS cidade, NULL AS estado_uf, "
-                    "NULL AS data_criacao "
-                    "FROM vagas v "
-                    "WHERE v.organizacao_id = :organizacao_id "
-                    "ORDER BY v.id DESC "
-                    "LIMIT :limite OFFSET :offset"
-                ),
-                {
-                    "organizacao_id": organizacao_id,
-                    "limite": tamanho_pagina,
-                    "offset": offset,
-                },
-            )
-            .mappings()
-            .all()
+        total_candidaturas = (
+            select(func.count(Candidatura.id))
+            .where(Candidatura.vaga_id == Vaga.id)
+            .scalar_subquery()
         )
-
-        itens = [{**linha, "total_candidaturas": None} for linha in linhas]
-        return itens, total_itens
+        consulta = (
+            select(
+                Vaga.id,
+                Vaga.titulo,
+                Vaga.descricao,
+                Vaga.status.label("estado_vaga"),
+                Vaga.local,
+                total_candidaturas.label("total_candidaturas"),
+            )
+            .where(da_organizacao)
+            .order_by(Vaga.id.desc())
+            .offset((pagina - 1) * tamanho_pagina)
+            .limit(tamanho_pagina)
+        )
+        linhas = self.session.execute(consulta).mappings()
+        return [dict(linha) for linha in linhas], total_itens
 
     def confirmar(self) -> None:
         self.session.commit()

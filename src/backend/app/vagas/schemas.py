@@ -184,13 +184,16 @@ class VagaResumoResponse(BaseModel):
     id: str
     titulo: str
     estado_vaga: str
+    local: str | None = None
+    descricao: str | None = None
     cidade: Optional[str] = None
     estado_uf: Optional[str] = None
     data_criacao: Optional[datetime] = None
-    total_candidaturas: Optional[int] = Field(
-        default=None,
-        description="Contagem de inscritos; null enquanto indisponível",
+    total_candidaturas: int = Field(
+        default=0,
+        description="Contagem acumulada de inscritos na vaga",
     )
+
 
 class PaginatedResponseVagas(BaseModel):
     itens: List[VagaResumoResponse]
