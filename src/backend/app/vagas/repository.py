@@ -6,13 +6,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.candidaturas.enums import STATUS_ATIVOS
+from app.candidaturas.models import Candidatura
 from app.usuarios.catalogos import Causa
 from app.usuarios.models import Organizacao
 from app.vagas.enums import StatusVaga
 from app.vagas.models import Vaga
 
 
- 
 _CAMPO_PARA_COLUNA = {
     "estado_vaga": "status",
 }
@@ -93,36 +93,30 @@ class VagaRepository:
     def listar_vagas_por_organizacao(
         self, organizacao_id: int, pagina: int = 1, tamanho_pagina: int = 10
     ) -> tuple[list[dict[str, Any]], int]:
-        offset = (pagina - 1) * tamanho_pagina
-
+        da_organizacao = Vaga.organizacao_id == organizacao_id
         total_itens = self.session.execute(
-            text("SELECT COUNT(*) FROM vagas WHERE organizacao_id = :organizacao_id"),
-            {"organizacao_id": organizacao_id},
+            select(func.count(Vaga.id)).where(da_organizacao)
         ).scalar_one()
-
-        linhas = (
-            self.session.execute(
-                text(
-                    "SELECT v.id, v.titulo, v.estado_vaga, v.cidade, v.estado_uf, "
-                    "v.data_criacao, COUNT(c.id) AS total_candidaturas "
-                    "FROM vagas v "
-                    "LEFT JOIN candidaturas c ON c.vaga_id = v.id "
-                    "WHERE v.organizacao_id = :organizacao_id "
-                    "GROUP BY v.id, v.titulo, v.estado_vaga, v.cidade, "
-                    "v.estado_uf, v.data_criacao "
-                    "ORDER BY v.data_criacao DESC, v.id DESC "
-                    "LIMIT :limite OFFSET :offset"
-                ),
-                {
-                    "organizacao_id": organizacao_id,
-                    "limite": tamanho_pagina,
-                    "offset": offset,
-                },
-            )
-            .mappings()
-            .all()
+        total_candidaturas = (
+            select(func.count(Candidatura.id))
+            .where(Candidatura.vaga_id == Vaga.id)
+            .scalar_subquery()
         )
-
+        consulta = (
+            select(
+                Vaga.id,
+                Vaga.titulo,
+                Vaga.descricao,
+                Vaga.status.label("estado_vaga"),
+                Vaga.local,
+                total_candidaturas.label("total_candidaturas"),
+            )
+            .where(da_organizacao)
+            .order_by(Vaga.id.desc())
+            .offset((pagina - 1) * tamanho_pagina)
+            .limit(tamanho_pagina)
+        )
+        linhas = self.session.execute(consulta).mappings().all()
         return [dict(linha) for linha in linhas], total_itens
 
     def confirmar(self) -> None:
@@ -155,8 +149,6 @@ class VagaRepository:
 
     def tem_candidaturas_ativas(self, vaga_id: str) -> bool:
         """Verifica se a vaga possui candidaturas em status PENDENTE ou ACEITA."""
-        from app.candidaturas.models import Candidatura
-
         consulta = (
             select(Candidatura.id)
             .where(
