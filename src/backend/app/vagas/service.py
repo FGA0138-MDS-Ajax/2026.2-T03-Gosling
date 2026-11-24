@@ -109,9 +109,11 @@ class VagaService:
                 id=str(vaga["id"]),
                 titulo=vaga["titulo"],
                 estado_vaga=vaga["estado_vaga"],
+                local=vaga.get("local"),
+                descricao=vaga.get("descricao"),
                 cidade=vaga.get("cidade"),
                 estado_uf=vaga.get("estado_uf"),
-                data_criacao=vaga["data_criacao"],
+                data_criacao=vaga.get("data_criacao"),
                 total_candidaturas=int(vaga["total_candidaturas"]),
             )
             for vaga in vagas
