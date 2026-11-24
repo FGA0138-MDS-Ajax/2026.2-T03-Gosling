@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Enum, ForeignKey, Index, UniqueConstraint, func
+from sqlalchemy import Enum, ForeignKey, Index, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.candidaturas.enums import StatusCandidatura
@@ -37,3 +37,18 @@ class Candidatura(Base):
     )
 
     vaga: Mapped[Vaga] = relationship()
+
+
+class DocumentoCandidatura(Base):
+    __tablename__ = "documentos_candidatura"
+    __table_args__ = (
+        UniqueConstraint("candidatura_id", "indice", name="uq_documento_candidatura"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    candidatura_id: Mapped[int] = mapped_column(
+        ForeignKey("candidaturas.id", ondelete="CASCADE")
+    )
+    indice: Mapped[int]
+    nome: Mapped[str] = mapped_column(String(150))
+    arquivo: Mapped[str] = mapped_column(String(36))
