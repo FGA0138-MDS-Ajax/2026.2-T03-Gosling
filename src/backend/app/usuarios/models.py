@@ -51,6 +51,9 @@ class Voluntario(Usuario):
     biografia: Mapped[str | None] = mapped_column(String(500))
     causas: Mapped[list[str] | None] = mapped_column(JSON)
     disponibilidades: Mapped[list[str] | None] = mapped_column(JSON)
+    disponibilidade_semanal: Mapped[list[dict[str, str]] | None] = mapped_column(JSON)
+    carga_horaria_semanal: Mapped[int | None]
+    foto_url: Mapped[str | None] = mapped_column(String(500))
     __mapper_args__ = {"polymorphic_identity": Perfil.VOLUNTARIO}
 
 

@@ -25,3 +25,4 @@ websockets==17.3
 pwdlib[argon2]
 PyJWT==2.15.1
 email-validator==2.3.0
+Pillow==13.0.0

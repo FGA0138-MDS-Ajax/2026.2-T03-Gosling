@@ -4,20 +4,15 @@ import SessionStatus from '../components/SessionStatus'
 import { useAuth } from '../hooks/useAuth'
 import { profileRoute } from '../utils/profileRoutes'
 import styles from './Auth.module.css'
-
-const CADASTROS_PADRAO = [
-  { pergunta: 'Ainda não tem conta?', texto: 'Cadastre-se como voluntário', to: '/cadastro/voluntario' },
-  { pergunta: 'Representa uma ONG?', texto: 'Cadastre sua organização', to: '/cadastro/organizacao' },
-  { pergunta: 'Responsável por um projeto social?', texto: 'Entre como projeto social', to: '/login/projeto-social' },
-]
+import { Header, Icon } from '../components/ui/Layout'
+import { designAssets } from '../utils/designAssets'
+import layout from './Login.module.css'
 
 export default function LoginPage({
-  titulo = 'Entre no VolunJá',
-  subtitulo = 'Acesse sua conta para continuar.',
-  cadastros = CADASTROS_PADRAO,
+  titulo = 'Entrar no VolunJá',
+  subtitulo = 'Use seu e-mail e senha. Você entra direto na área do seu perfil.',
+  cadastros,
   autenticar,
-  introducaoTitulo = 'Seu tempo pode fazer a diferença.',
-  introducaoTexto = 'Encontre uma causa para apoiar e as pessoas certas para ajudar sua organização.',
 }) {
   const { usuario, loading, restoreError, sessionExpired, login } = useAuth()
   const location = useLocation()
@@ -27,14 +22,16 @@ export default function LoginPage({
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState({})
   const [error, setError] = useState('')
+  const [remember, setRemember] = useState(false)
+  const [recovery, setRecovery] = useState(false)
   const pending = useRef(false)
   const emailInput = useRef(null)
   const passwordInput = useRef(null)
 
   if (loading || restoreError) return <SessionStatus />
   if (usuario) {
-    const destino = location.state?.from === '/vagas'
-      ? '/vagas'
+    const destino = /^\/vagas(?:\/\d+)?$/.test(location.state?.from ?? '')
+      ? location.state.from
       : profileRoute(usuario.perfil)
     return <Navigate to={destino} replace />
   }
@@ -58,7 +55,7 @@ export default function LoginPage({
     pending.current = true
     setSubmitting(true)
     try {
-      await (autenticar ?? login)(email, senha)
+      await (autenticar ?? login)(email, senha, remember)
     } catch (failure) {
       const status = failure.response?.status
       const messages = {
@@ -75,20 +72,14 @@ export default function LoginPage({
   }
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <Link className={styles.brand} to="/">VolunJá</Link>
-        <Link to="/">Voltar para o início</Link>
-      </header>
-      <main className={styles.card}>
-        <section className={styles.intro} aria-label="Sobre o VolunJá">
-          <h2>{introducaoTitulo}</h2>
-          <p>{introducaoTexto}</p>
-          <p className={styles.signature}>Pessoas e causas, mais próximas.</p>
-        </section>
-        <section className={styles.formPanel}>
+    <div className={layout.page}>
+      <Header minimal />
+      <Link className={layout.mobileBack} to="/"><Icon group="mobile_login" name="imgIcon3" />Voltar</Link>
+      <main className={layout.main}>
+        <section className={layout.card}>
+          <img className={layout.logo} src={designAssets.login.imgImageVolunJa} width="71" height="56" alt="" />
           <h1>{titulo}</h1>
-          <p className={styles.subtitle}>{subtitulo}</p>
+          <p className={layout.subtitle}>{subtitulo}</p>
           {sessionExpired && (
             <p role="status" className={styles.notice}>
               Sua sessão expirou. Entre novamente.
@@ -96,7 +87,8 @@ export default function LoginPage({
           )}
           <form aria-label="Entrar na conta" noValidate onSubmit={handleSubmit} aria-busy={submitting}>
             <fieldset disabled={submitting}>
-              <div className={styles.field}>
+              <div className={layout.credentials}>
+              <div className={layout.field}>
                 <label htmlFor="email">E-mail</label>
                 <input
                   ref={emailInput}
@@ -113,8 +105,9 @@ export default function LoginPage({
                 />
                 {errors.email && <span id="email-error" className={styles.error}>{errors.email}</span>}
               </div>
-              <div className={styles.field}>
+              <div className={layout.field}>
                 <label htmlFor="senha">Senha</label>
+                <div className={layout.password}>
                 <input
                   ref={passwordInput}
                   id="senha"
@@ -128,32 +121,42 @@ export default function LoginPage({
                   aria-describedby={errors.senha ? 'senha-error' : undefined}
                   placeholder="Sua senha"
                 />
-                {errors.senha && <span id="senha-error" className={styles.error}>{errors.senha}</span>}
-              </div>
               <button
-                className={styles.passwordToggle}
+                className={layout.passwordToggle}
                 type="button"
                 aria-controls="senha"
                 aria-pressed={showPassword}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                <Icon group="login" name="imgIcon1" />{showPassword ? 'Ocultar' : 'Mostrar'}
               </button>
+                </div>
+                {errors.senha && <span id="senha-error" className={styles.error}>{errors.senha}</span>}
+              </div>
+              </div>
+              <div className={layout.options}>
+                <label><input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />Manter conectado</label>
+                <button type="button" onClick={() => setRecovery(!recovery)}>Esqueceu a senha?</button>
+              </div>
+              {recovery && <p className={layout.recovery} role="status">A recuperação de senha ainda não está disponível. Procure a administração da plataforma para recuperar seu acesso.</p>}
               {error && <p className={styles.error} role="alert">{error}</p>}
-              <button className={styles.submit} type="submit">
+              <button className={layout.submit} type="submit">
                 {submitting ? 'Entrando…' : 'Entrar'}
               </button>
             </fieldset>
           </form>
-          {cadastros.map(({ pergunta, texto, to }) => (
-            <p key={to} className={styles.signup}>
+          <div className={layout.separator}>ou</div>
+          {cadastros ? cadastros.map(({ pergunta, texto, to }) => (
+            <p key={to} className={layout.signup}>
               {pergunta}{' '}
               <Link className={styles.signupLink} to={to}>{texto}</Link>
             </p>
-          ))}
+          )) : <p className={layout.signup}>Ainda não tem conta? <Link to="/cadastro" state={location.state}>Criar conta</Link></p>}
+          <Link className={layout.explore} to="/vagas">Explorar vagas sem entrar<Icon group="login" name="imgIcon3" /></Link>
         </section>
+        {!autenticar && <p className={layout.admin}>Área administrativa? <Link to="/admin/login">Acesse pelo login do administrador</Link></p>}
       </main>
-      <footer className={styles.footer}>VolunJá · Conectando pessoas e causas</footer>
     </div>
   )
 }

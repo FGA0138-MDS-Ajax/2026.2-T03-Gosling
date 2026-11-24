@@ -1,0 +1,25 @@
+.chips { display: flex; flex-wrap: wrap; gap: 10px; background: white; border: 1px solid #ededf1; border-radius: 24px; padding: 20px; }
+.chips button { border: 1px solid #d2d2d7; border-radius: 999px; padding: 9px 14px; background: white; color: #1d1d1f; font-size: 14px; display: flex; gap: 6px; align-items: center; }
+.chips .selected { color: white; background: #0f766e; border-color: #0f766e; }
+.availability { border: 1px solid #ededf1; background: white; border-radius: 24px; padding: 24px; }
+.matrix { display: grid; grid-template-columns: 72px repeat(7,minmax(28px,64px)); gap: 8px; }
+.row { display: contents; }
+.day { font-size: 13px; color: #6e6e73; text-align: center; padding-bottom: 4px; }
+.period { display: flex; align-items: center; font-size: 14px; }
+.matrix button { border: 1px solid #e3e3eb; background: #f5f5f7; border-radius: 12px; height: 44px; display: flex; align-items: center; justify-content: center; padding: 0; }
+.matrix .active { background: #0f766e; border-color: #0f766e; }
+.hours { border-top: 1px solid #e8e8ed; padding-top: 20px; margin-top: 20px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.hours label { font-size: 14px; font-weight: 600; }
+.hours small { display: block; margin-top: 5px; font-size: 13px; color: #6e6e73; font-weight: 400; }
+.hours input { accent-color: #0f766e; flex: 1; min-width: 80px; }
+.hours output { font-size: 14px; font-weight: 600; min-width: 70px; text-align: right; }
+.clear { border: 0; background: none; padding: 0; font-size: 12px; color: #0f766e; margin-left: auto; }
+@media(max-width:760px) {
+ .availability { padding: 16px 12px; }
+ .matrix { grid-template-columns: 42px repeat(7,minmax(24px,1fr)); gap: 5px; }
+ .period { font-size: 12px; }
+ .day { font-size: 11px; }
+ .matrix button { height: 40px; border-radius: 10px; }
+ .hours { gap: 12px; }
+ .hours label { width: 100%; }
+}
