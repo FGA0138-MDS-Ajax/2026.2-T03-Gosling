@@ -134,7 +134,7 @@ class VagaResumoResponse(BaseModel):
     estado_vaga: str
     cidade: Optional[str] = None
     estado_uf: Optional[str] = None
-    data_criacao: datetime
+    data_criacao: Optional[datetime] = None
     total_candidaturas: Optional[int] = Field(
         default=None,
         description="Contagem de inscritos; null enquanto indisponível",
