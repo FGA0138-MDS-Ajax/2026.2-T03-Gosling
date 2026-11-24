@@ -58,7 +58,7 @@ class VagaRepository:
         ).all()
         return vagas, total
 
-        def listar_vagas_por_organizacao(
+            def listar_vagas_por_organizacao(
         self, organizacao_id: int, pagina: int = 1, tamanho_pagina: int = 10
     ) -> tuple[list[dict[str, Any]], int]:
         offset = (pagina - 1) * tamanho_pagina
@@ -71,11 +71,12 @@ class VagaRepository:
         linhas = (
             self.session.execute(
                 text(
-                    "SELECT v.id, v.titulo, v.status AS estado_vaga, v.cidade, "
-                    "v.estado_uf, v.data_criacao "
+                    "SELECT v.id, v.titulo, v.status AS estado_vaga, "
+                    "NULL AS cidade, NULL AS estado_uf, "
+                    "NULL AS data_criacao "
                     "FROM vagas v "
                     "WHERE v.organizacao_id = :organizacao_id "
-                    "ORDER BY v.data_criacao DESC, v.id DESC "
+                    "ORDER BY v.id DESC "
                     "LIMIT :limite OFFSET :offset"
                 ),
                 {
