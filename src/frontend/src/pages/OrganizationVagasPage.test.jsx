@@ -99,7 +99,7 @@ describe('painel de vagas da organização', () => {
   })
 
   it('redireciona o voluntário sem consultar as vagas institucionais', async () => {
-    const listar = vi.spyOn(http, 'get')
+    const listar = vi.spyOn(http, 'get').mockResolvedValue(resposta([]))
     abrir('/organizacao/vagas', { ...ong, perfil: 'VOLUNTARIO' })
     expect(await screen.findByRole('heading', { name: 'Área de Voluntário' })).toBeVisible()
     expect(listar).not.toHaveBeenCalledWith('/organizacoes/me/vagas', expect.anything())

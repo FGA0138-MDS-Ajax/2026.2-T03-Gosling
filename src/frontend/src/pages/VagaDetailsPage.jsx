@@ -4,6 +4,8 @@ import { Footer, Header, Icon } from '../components/ui/Layout'
 import { designAssets } from '../utils/designAssets'
 import { initials } from '../utils/initials'
 import Modal from '../components/ui/Modal'
+import CandidaturaModal from '../components/CandidaturaModal'
+import ConflitoAgendaModal from '../components/ConflitoAgendaModal'
 import { useAuth } from '../hooks/useAuth'
 import { detalharVaga, listarVagas } from '../services/vagasService'
 import { useSavedVagas } from '../hooks/useSavedVagas'
@@ -59,6 +61,9 @@ function VagaDetails({ id }) {
   const [gallery, setGallery] = useState(false)
   const [photo, setPhoto] = useState(0)
   const [report, setReport] = useState(false)
+  const [candidatando, setCandidatando] = useState(false)
+  const [enviada, setEnviada] = useState(false)
+  const [conflito, setConflito] = useState(null)
   const sharePending = useRef(false)
 
   useEffect(() => {
@@ -148,6 +153,21 @@ function VagaDetails({ id }) {
         <Link className={s.apply} to="/login" state={{ from: location.pathname }}>
           Quero me candidatar
         </Link>
+      )
+    if (usuario.perfil === 'VOLUNTARIO' && enviada)
+      return (
+        <>
+          <button className={s.apply} type="button" disabled>Candidatura enviada</button>
+          <button className={s.secondary} type="button" onClick={() => setCandidatando(true)}>
+            Ver comprovante
+          </button>
+        </>
+      )
+    if (usuario.perfil === 'VOLUNTARIO' && vaga.candidaturas_disponiveis)
+      return (
+        <button className={s.apply} type="button" onClick={() => setCandidatando(true)}>
+          Quero me candidatar
+        </button>
       )
     return (
       <>
@@ -556,6 +576,32 @@ function VagaDetails({ id }) {
                   </div>
                 </div>
               </Modal>
+            )}
+            {usuario?.perfil === 'VOLUNTARIO' && (
+              <CandidaturaModal
+                key={usuario.id}
+                aberto={candidatando}
+                vaga={vaga}
+                ocorrencias={ocorrencias}
+                onClose={() => setCandidatando(false)}
+                onEnviada={() => setEnviada(true)}
+                onConflito={dados => {
+                  setCandidatando(false)
+                  setConflito(dados)
+                }}
+              />
+            )}
+            {conflito && (
+              <ConflitoAgendaModal
+                conflito={conflito}
+                vaga={vaga}
+                origem={location.pathname}
+                onClose={() => setConflito(null)}
+                onTentarNovamente={() => {
+                  setConflito(null)
+                  setCandidatando(true)
+                }}
+              />
             )}
             {report && (
               <Modal title="Denunciar esta vaga" onClose={() => setReport(false)}>

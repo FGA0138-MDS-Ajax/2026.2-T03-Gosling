@@ -11,6 +11,7 @@ from pydantic import (
     Field,
     HttpUrl,
     TypeAdapter,
+    computed_field,
     field_validator,
     model_validator,
 )
@@ -212,7 +213,14 @@ class VagaPublica(BaseModel):
     foto_capa: str | None = None
     enquadramento_fotos: dict[str, EnquadramentoFoto] = Field(default_factory=dict)
     documentos_exigidos: list[DocumentoExigidoPublico] = Field(default_factory=list)
-    candidaturas_disponiveis: bool = False
+
+    @computed_field
+    @property
+    def candidaturas_disponiveis(self) -> bool:
+        agora = datetime.now(UTC)
+        return self.status == StatusVaga.ABERTA and any(
+            encontro.fim > agora for encontro in self.ocorrencias
+        )
 
     @field_validator("fotos", mode="before")
     @classmethod
@@ -244,23 +252,37 @@ class ListaVagasResponse(BaseModel):
 
 
 class AtualizarVagaRequest(BaseModel):
-    titulo: Optional[str] = Field(None, min_length=3, max_length=100)
+    model_config = ConfigDict(extra="forbid")
+
+    titulo: Optional[str] = Field(None, min_length=3, max_length=150)
     descricao: Optional[str] = Field(None, min_length=10)
     cidade: Optional[str] = None
     estado_uf: Optional[str] = Field(None, min_length=2, max_length=2)
     data_inicio: Optional[datetime] = None
     data_fim: Optional[datetime] = None
-    estado_vaga: Optional[str] = Field(
+    ocorrencias: Optional[list[OcorrenciaRequest]] = Field(
+        None, min_length=1, max_length=100
+    )
+    estado_vaga: Optional[StatusVaga] = Field(
         None,
         description="Estado da vaga publicada: ABERTA, ENCERRADA ou SUSPENSA",
     )
 
+    @model_validator(mode="after")
+    def validar_ocorrencias(self):
+        if self.ocorrencias:
+            self.ocorrencias.sort(key=lambda item: item.inicio)
+            for anterior, atual in zip(self.ocorrencias, self.ocorrencias[1:]):
+                if atual.inicio < anterior.fim:
+                    raise ValueError("Os encontros da vaga têm horários sobrepostos.")
+        return self
 
 class VagaResumoResponse(BaseModel):
     id: str
     titulo: str | None
     estado_vaga: str
     local: str | None = None
+    descricao: str | None = None
     cidade: Optional[str] = None
     estado_uf: Optional[str] = None
     data_criacao: datetime | None

@@ -101,6 +101,12 @@
 .tabela thead th:first-child { width: 48%; }
 .tabela thead th:nth-child(2) { width: 18%; }
 .titulo { font-size: 15px; font-weight: 650; }
+.detalhes summary {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.descricao { margin: 6px 0 0; font-size: 14px; font-weight: 400; white-space: pre-wrap; }
 .local { display: block; margin-top: 4px; }
 .local, .data, .rotuloMobile { color: #626267; font-size: 13px; font-weight: 400; }
 

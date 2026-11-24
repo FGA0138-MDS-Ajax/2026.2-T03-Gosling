@@ -208,6 +208,32 @@ def test_listar_publicas_pagina_alem_do_fim_retorna_vazio(repo, cinco_vagas):
     assert total == 5
 
 
+def repo_com_sessao_simulada(total=5, linhas=None):
+    session = MagicMock()
+    resultado = session.execute.return_value
+    resultado.scalar_one.return_value = total
+    resultado.mappings.return_value.all.return_value = linhas or []
+    return VagaRepository(session), session
+
+
+def test_listar_vagas_por_organizacao_retorna_linhas_como_dicts_e_total():
+    repo, _ = repo_com_sessao_simulada(total=5, linhas=[{"id": 1, "titulo": "Vaga A"}])
+
+    vagas, total = repo.listar_vagas_por_organizacao(organizacao_id=10)
+
+    assert vagas == [{"id": 1, "titulo": "Vaga A"}]
+    assert total == 5
+
+
+def test_listar_vagas_por_organizacao_sem_vagas_retorna_vazio_e_total_zero():
+    repo, _ = repo_com_sessao_simulada(total=0, linhas=[])
+
+    vagas, total = repo.listar_vagas_por_organizacao(organizacao_id=10)
+
+    assert vagas == []
+    assert total == 0
+
+
 def test_confirmar_faz_commit_da_sessao():
     session = MagicMock()
 
