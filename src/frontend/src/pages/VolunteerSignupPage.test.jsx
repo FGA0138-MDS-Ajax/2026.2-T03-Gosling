@@ -8,6 +8,7 @@ import * as auth from '../services/authService'
 import * as service from '../services/voluntarioService'
 import { clearSession, readSession } from '../services/sessionStore'
 
+vi.mock('../services/vagasService', () => ({ listarVagas: async () => ({ itens: [], total: 0, pagina: 1, por_pagina: 20 }) }))
 vi.mock('../services/authService', () => ({ login: vi.fn(), getSession: vi.fn(), getProfile: vi.fn() }))
 vi.mock('../services/voluntarioService', () => ({
   registerVolunteer: vi.fn(), getVolunteerProfile: vi.fn(), updateVolunteerProfile: vi.fn(),
@@ -34,23 +35,29 @@ async function preencher(user, extras = {}) {
     'Nome completo': ' Maria da Silva ', CPF: '529.982.247-25', 'E-mail': 'Maria@Example.com',
     Telefone: '(61) 99999-9999', Cidade: 'Brasília', Senha: 'SenhaForte@2026', ...extras,
   }
-  await screen.findByRole('heading', { name: 'Cadastro de voluntário' })
+  await screen.findByRole('heading', { name: 'Crie sua conta de voluntário' })
   for (const [label, value] of Object.entries(dados)) {
     if (value) fireEvent.change(screen.getByLabelText(label), { target: { value } })
   }
   await user.selectOptions(screen.getByLabelText('Estado'), 'DF')
   await user.click(screen.getByRole('checkbox'))
 }
-const enviar = (user) => user.click(screen.getByRole('button', { name: 'Criar conta de voluntário' }))
+async function enviar(user) {
+  await user.click(screen.getByRole('button', { name: 'Continuar', exact: true }))
+  if (screen.queryByRole('heading', { name: 'O que move você?' })) {
+    await user.click(screen.getByRole('button', { name: 'Continuar', exact: true }))
+    await user.click(screen.getByRole('button', { name: 'Criar conta de voluntário' }))
+  }
+}
 
 describe('cadastro de voluntário — RF01', () => {
   it('coleta nome, e-mail, senha, CPF, localização, contato e consentimento', async () => {
     open()
-    await screen.findByRole('heading', { name: 'Cadastro de voluntário' })
+    await screen.findByRole('heading', { name: 'Crie sua conta de voluntário' })
     for (const label of ['Nome completo', 'CPF', 'E-mail', 'Telefone', 'Cidade', 'Estado', 'Senha']) {
       expect(screen.getByLabelText(label)).toBeVisible()
     }
-    expect(screen.getByRole('checkbox', { name: /Concordo com o uso dos meus dados/ })).not.toBeChecked()
+    expect(screen.getByRole('checkbox', { name: /Li e aceito/ })).not.toBeChecked()
   })
 
   it('cadastra, abre a sessão de Voluntário e encaminha ao fluxo do voluntário', async () => {
@@ -63,6 +70,7 @@ describe('cadastro de voluntário — RF01', () => {
       nome_completo: 'Maria da Silva', email: 'maria@example.com', identificacao: '52998224725',
       password: 'SenhaForte@2026', consentimento_termos: true,
       telefone: '61999999999', cidade: 'Brasília', estado: 'DF',
+      causas: [], disponibilidade_semanal: [], carga_horaria_semanal: null,
     })
     expect(auth.login).not.toHaveBeenCalled()
     expect(service.updateVolunteerProfile).not.toHaveBeenCalled()
@@ -73,7 +81,7 @@ describe('cadastro de voluntário — RF01', () => {
   it('valida os campos e o consentimento antes de chamar a API', async () => {
     const user = userEvent.setup()
     open()
-    await screen.findByRole('heading', { name: 'Cadastro de voluntário' })
+    await screen.findByRole('heading', { name: 'Crie sua conta de voluntário' })
     fireEvent.change(screen.getByLabelText('CPF'), { target: { value: '111.111.111-11' } })
     fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'sem-arroba' } })
     fireEvent.change(screen.getByLabelText('Senha'), { target: { value: '123' } })
@@ -107,7 +115,7 @@ describe('cadastro de voluntário — RF01', () => {
     await enviar(user)
     expect(await screen.findByRole('alert')).toHaveTextContent('E-mail já cadastrado.')
     expect(auth.login).not.toHaveBeenCalled()
-    expect(screen.getByRole('heading', { name: 'Cadastro de voluntário' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Crie sua conta de voluntário' })).toBeVisible()
   })
 
   it('aponta campos recusados pela validação da API (422)', async () => {

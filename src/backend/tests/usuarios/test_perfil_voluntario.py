@@ -117,6 +117,7 @@ def test_revalida_conta_desativada_e_nao_expoe_segredos(client, db, contas):
     assert set(resposta.json()) == {
         "id", "nome", "email", "perfil", "tipo", "identificacao", "telefone",
         "cidade", "estado", "biografia", "causas", "disponibilidades",
+        "disponibilidade_semanal", "carga_horaria_semanal", "foto_url",
     }
     titular.ativo = False
     db.flush()

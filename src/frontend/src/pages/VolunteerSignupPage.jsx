@@ -1,187 +1,123 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+﻿import { useEffect, useRef, useState } from 'react'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import PasswordChecklist from '../components/PasswordChecklist'
 import PhoneInput from '../components/PhoneInput'
+import { Availability, Interests } from '../components/VolunteerPreferences'
+import { Header, Icon } from '../components/ui/Layout'
 import { useAuth } from '../hooks/useAuth'
-import { ESTADOS, NOMES_ESTADOS, validCpf } from '../utils/volunteerProfile'
+import { ESTADOS, NOMES_ESTADOS, maskCpf, validCpf } from '../utils/volunteerProfile'
 import { PASSWORD_ERROR, PHONE_ERROR, PHONE_HINT, phoneDigits, validPassword, validPhone } from '../utils/accountFields'
-import base from './OrganizationSignup.module.css'
-import styles from './VolunteerProfile.module.css'
+import { designAssets } from '../utils/designAssets'
+import s from './VolunteerSignup.module.css'
 
-const CAMPOS = [
-  { name: 'nome_completo', label: 'Nome completo', autoComplete: 'name', minLength: 3, maxLength: 150 },
-  { name: 'identificacao', label: 'CPF', inputMode: 'numeric', autoComplete: 'off', maxLength: 14, hint: 'Somente os 11 números, com ou sem pontuação.' },
-  { name: 'email', label: 'E-mail', type: 'email', autoComplete: 'email', maxLength: 254 },
-  { name: 'telefone', label: 'Telefone', type: 'tel', autoComplete: 'tel', maxLength: 15, hint: PHONE_HINT },
-  { name: 'cidade', label: 'Cidade', autoComplete: 'address-level2', minLength: 2, maxLength: 100 },
-  { name: 'senha', label: 'Senha', type: 'password', autoComplete: 'new-password', minLength: 8, maxLength: 1024 },
-]
+const empty = { nome_completo: '', email: '', identificacao: '', telefone: '', cidade: '', estado: '', senha: '', consentimento_termos: false, causas: [], disponibilidade_semanal: [], carga_horaria_semanal: null }
 
 export default function VolunteerSignupPage() {
   const { usuario, cadastrarVoluntario } = useAuth()
-  const [values, setValues] = useState({ consentimento_termos: false })
+  const location = useLocation()
+  const [values, setValues] = useState(empty)
+  const [step, setStep] = useState(1)
   const [errors, setErrors] = useState({})
   const [message, setMessage] = useState('')
   const [pending, setPending] = useState(false)
+  const [show, setShow] = useState(false)
+  const [policy, setPolicy] = useState(false)
   const submitting = useRef(false)
-  const formRef = useRef(null)
-  const focusErrors = useRef(false)
-
-  useEffect(() => {
-    const first = Object.keys(errors)[0]
-    if (!pending && focusErrors.current) {
-      formRef.current?.elements.namedItem(first)?.focus()
-      focusErrors.current = false
-    }
-  }, [errors, pending])
-
-  if (usuario) return <Navigate to="/voluntario" replace />
+  const form = useRef(null)
+  const title = useRef(null)
+  useEffect(() => { if (Object.keys(errors).length) form.current?.querySelector('[aria-invalid="true"]')?.focus() }, [errors])
+  useEffect(() => { if (step > 1) title.current?.focus() }, [step])
+  if (usuario) return <Navigate to={/^\/vagas\/\d+$/.test(location.state?.from || '') ? location.state.from : '/voluntario'} replace />
 
   function change(name, value) {
-    setValues((current) => ({ ...current, [name]: value }))
-    setErrors((current) => {
-      const next = { ...current }
-      delete next[name]
-      return next
-    })
+    setValues(v => ({ ...v, [name]: value }))
+    setErrors(v => { const next = { ...v }; delete next[name]; return next })
   }
-
-  function validar(dados) {
+  function validate() {
     const invalid = {}
-    for (const { name, minLength, maxLength } of CAMPOS) {
-      const value = dados[name]
-      if (!value) invalid[name] = 'Preencha este campo.'
-      else if (minLength && value.length < minLength) invalid[name] = `Use pelo menos ${minLength} caracteres.`
-      else if (maxLength && value.length > maxLength) invalid[name] = `Use até ${maxLength} caracteres.`
-    }
-    if (dados.identificacao && !validCpf(dados.identificacao)) invalid.identificacao = 'Informe um CPF válido.'
-    if (dados.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dados.email)) invalid.email = 'Informe um e-mail válido.'
-    if (dados.telefone && !validPhone(dados.telefone)) invalid.telefone = PHONE_ERROR
-    if (dados.senha && !validPassword(dados.senha)) invalid.senha = PASSWORD_ERROR
-    if (!dados.estado) invalid.estado = 'Selecione o estado.'
-    if (!dados.consentimento_termos) invalid.consentimento_termos = 'Confirme o consentimento para continuar.'
+    if (values.nome_completo.trim().length < 3) invalid.nome_completo = 'Informe seu nome completo.'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) invalid.email = 'Informe um e-mail válido.'
+    if (!validCpf(values.identificacao.replace(/\D/g, ''))) invalid.identificacao = 'Informe um CPF válido.'
+    if (!validPhone(values.telefone)) invalid.telefone = PHONE_ERROR
+    if (values.cidade.trim().length < 2) invalid.cidade = 'Informe sua cidade.'
+    if (!values.estado) invalid.estado = 'Selecione o estado.'
+    if (!validPassword(values.senha)) invalid.senha = PASSWORD_ERROR
+    if (!values.consentimento_termos) invalid.consentimento_termos = 'Confirme o consentimento para continuar.'
     return invalid
   }
-
-  async function submit(event) {
-    event.preventDefault()
+  async function submit(e) {
+    e.preventDefault()
     if (submitting.current) return
-    const dados = {
-      nome_completo: (values.nome_completo ?? '').trim(),
-      identificacao: (values.identificacao ?? '').replace(/[.\- ]/g, ''),
-      email: (values.email ?? '').trim().toLowerCase(),
-      telefone: phoneDigits(values.telefone),
-      cidade: (values.cidade ?? '').trim(),
-      estado: values.estado ?? '',
-      senha: values.senha ?? '',
-      consentimento_termos: Boolean(values.consentimento_termos),
-    }
-    const invalid = validar(dados)
-    focusErrors.current = Object.keys(invalid).length > 0
-    setErrors(invalid)
     setMessage('')
-    if (Object.keys(invalid).length) return
-
+    const invalid = validate()
+    if (Object.keys(invalid).length) { setStep(1); setErrors(invalid); return }
+    if (step < 3) { setStep(step + 1); return }
     submitting.current = true
     setPending(true)
     try {
-      await cadastrarVoluntario({
-        nome_completo: dados.nome_completo,
-        email: dados.email,
-        identificacao: dados.identificacao,
-        password: dados.senha,
-        telefone: dados.telefone,
-        cidade: dados.cidade,
-        estado: dados.estado,
-        consentimento_termos: true,
-      })
+      const { senha, ...fields } = values
+      await cadastrarVoluntario({ ...fields, nome_completo: values.nome_completo.trim(), email: values.email.trim().toLowerCase(),
+        identificacao: values.identificacao.replace(/\D/g, ''), telefone: phoneDigits(values.telefone), cidade: values.cidade.trim(), password: senha })
     } catch (failure) {
-      submitting.current = false
-      setPending(false)
-      const status = failure.response?.status
       const detail = failure.response?.data?.detail
-      if (status === 409) {
-        setMessage(typeof detail === 'string' ? detail : 'Já existe uma conta com este e-mail ou CPF.')
-      } else if (Array.isArray(detail)) {
-        const nomes = { password: 'senha' }
-        const serverErrors = {}
-        for (const issue of detail) {
-          const name = nomes[issue.loc?.[1]] ?? issue.loc?.[1]
-          if (name) serverErrors[name] = issue.msg
-        }
-        focusErrors.current = true
-        setErrors(serverErrors)
+      if (Array.isArray(detail)) {
+        const invalid = {}
+        for (const issue of detail) { const name = issue.loc?.[1]; if (name) invalid[name === 'password' ? 'senha' : name] = issue.msg }
+        setStep(Object.keys(invalid).some(k => k in empty && !['causas', 'disponibilidade_semanal', 'carga_horaria_semanal'].includes(k)) ? 1 : 3)
+        setErrors(invalid)
         setMessage('Confira os campos indicados e tente novamente.')
       } else {
+        if (failure.response?.status === 409) setStep(1)
         setMessage(typeof detail === 'string' ? detail : 'Não foi possível concluir o cadastro. Tente novamente.')
       }
-    }
+    } finally { submitting.current = false; setPending(false) }
   }
-
-  function descricao(name, hint) {
-    return [hint ? `${name}-hint` : '', errors[name] ? `${name}-error` : ''].filter(Boolean).join(' ') || undefined
+  function attrs(name) {
+    return { id: name, name, value: values[name], onChange: e => change(name, e.target.value),
+      'aria-invalid': Boolean(errors[name]), 'aria-describedby': errors[name] ? name + '-error' : undefined }
   }
-
-  function campo({ name, label, hint, ...props }) {
-    return (
-      <div className={base.field} key={name}>
-        <label htmlFor={name}>{label}</label>
-        {name === 'telefone' ? <PhoneInput {...props} id={name} name={name} required value={values[name] ?? ''}
-          onValueChange={(value) => change(name, value)}
-          aria-invalid={Boolean(errors[name])} aria-describedby={descricao(name, hint)} /> :
-        <input {...props} id={name} name={name} required value={values[name] ?? ''}
-          onChange={(event) => change(name, event.target.value)}
-          aria-invalid={Boolean(errors[name])} aria-describedby={[descricao(name, hint), name === 'senha' ? 'senha-requisitos' : ''].filter(Boolean).join(' ') || undefined} />}
-        {hint && <small id={`${name}-hint`}>{hint}</small>}
-        {name === 'senha' && <PasswordChecklist id="senha-requisitos" value={values.senha ?? ''} />}
-        {errors[name] && <span className={base.error} id={`${name}-error`}>{errors[name]}</span>}
-      </div>
-    )
-  }
-
-  return (
-    <main className={base.page}>
-      <header className={base.header}>
-        <Link to="/">VolunJá</Link>
-        <Link to="/login">Entrar na minha conta</Link>
-      </header>
-      <section className={base.card}>
-        <h1>Cadastro de voluntário</h1>
-        <p>Crie sua conta para encontrar oportunidades de voluntariado perto de você.</p>
-        <p>Todos os campos são obrigatórios.</p>
-        <form ref={formRef} noValidate onSubmit={submit} aria-label="Cadastrar voluntário" aria-busy={pending}>
+  const error = name => errors[name] && <span className={s.error} id={name + '-error'}>{errors[name]}</span>
+  return <div className={s.page}>
+    <Header><ol className={s.steps} aria-label="Etapas do cadastro">{['Seus dados', 'Interesses', 'Disponibilidade'].map((label, i) =>
+      <li aria-current={step === i + 1 ? 'step' : undefined} key={label}><span>{i + 1}</span>{label}</li>)}</ol>
+      <span className={s.login}>Já tem conta? <Link to="/login" state={location.state}>Entrar</Link></span></Header>
+    <main className={s.main}>
+      <section className={s.card}>
+        <p className={s.eyebrow}>Etapa {step} de 3</p>
+        <h1 ref={title} tabIndex={-1}>{step === 1 ? 'Crie sua conta de voluntário' : step === 2 ? 'O que move você?' : 'Quando você pode ajudar?'}</h1>
+        <p className={s.subtitle}>{step === 1 ? 'Leva menos de dois minutos. Interesses e horários vêm nas próximas etapas.' : step === 2 ? 'Escolha as causas com que você se identifica. Você pode mudar depois.' : 'Selecione dias e turnos. Estas preferências não reservam compromissos na sua agenda.'}</p>
+        <form ref={form} noValidate aria-label="Cadastrar voluntário" aria-busy={pending} onSubmit={submit}>
           <fieldset disabled={pending}>
-            <legend>Dados pessoais, localização e acesso</legend>
-            <div className={base.grid}>
-              {CAMPOS.filter(({ name }) => name !== 'senha').map(campo)}
-              <div className={`${base.field} ${styles.field}`}>
-                <label htmlFor="estado">Estado</label>
-                <select id="estado" name="estado" required value={values.estado ?? ''} autoComplete="address-level1"
-                  onChange={(event) => change('estado', event.target.value)}
-                  aria-invalid={Boolean(errors.estado)} aria-describedby={descricao('estado')}>
-                  <option value="">Selecione</option>
-                  {ESTADOS.map((uf) => <option key={uf} value={uf}>{NOMES_ESTADOS[uf]} ({uf})</option>)}
-                </select>
-                {errors.estado && <span className={base.error} id="estado-error">{errors.estado}</span>}
+            {step === 1 && <div className={s.fields}>
+              <div className={s.field}><label htmlFor="nome_completo">Nome completo</label><input {...attrs('nome_completo')} autoComplete="name" maxLength={150} required placeholder="Seu nome completo" />{error('nome_completo')}</div>
+              <div className={s.field}><label htmlFor="email">E-mail</label><input {...attrs('email')} type="email" autoComplete="email" maxLength={254} required placeholder="voce@email.com" />{error('email')}</div>
+              <div className={s.two}>
+                <div className={s.field}><label htmlFor="identificacao">CPF</label><input {...attrs('identificacao')} onChange={e => change('identificacao', maskCpf(e.target.value))} inputMode="numeric" autoComplete="off" maxLength={14} required placeholder="000.000.000-00" />{error('identificacao')}</div>
+                <div className={s.field}><label htmlFor="telefone">Telefone</label><div className={s.phone}><span>BR +55</span><PhoneInput id="telefone" name="telefone" required value={values.telefone} onValueChange={v => change('telefone', v)} aria-invalid={Boolean(errors.telefone)} aria-describedby={errors.telefone ? 'telefone-error' : 'telefone-hint'} /></div><small id="telefone-hint">{PHONE_HINT}</small>{error('telefone')}</div>
               </div>
-              {CAMPOS.filter(({ name }) => name === 'senha').map(campo)}
-            </div>
-            <label className={base.consent}>
-              <input type="checkbox" name="consentimento_termos" required checked={Boolean(values.consentimento_termos)}
-                onChange={(event) => change('consentimento_termos', event.target.checked)}
-                aria-invalid={Boolean(errors.consentimento_termos)}
-                aria-describedby={errors.consentimento_termos ? 'consentimento_termos-error' : undefined} />
-              Concordo com o uso dos meus dados para criar e manter minha conta de voluntário no VolunJá.
-            </label>
-            {errors.consentimento_termos && (
-              <p className={base.error} id="consentimento_termos-error">{errors.consentimento_termos}</p>
-            )}
-            {message && <p role="alert" className={base.error}>{message}</p>}
-            <button className={base.submit} type="submit">{pending ? 'Cadastrando…' : 'Criar conta de voluntário'}</button>
+              <div className={s.field}><label htmlFor="cidade">Onde você mora</label><div className={s.location}>
+                <input {...attrs('cidade')} aria-label="Cidade" autoComplete="address-level2" maxLength={100} placeholder="Sua cidade" required />
+                <select {...attrs('estado')} aria-label="Estado" autoComplete="address-level1" required><option value="">UF</option>{ESTADOS.map(uf => <option value={uf} key={uf}>{NOMES_ESTADOS[uf]} ({uf})</option>)}</select>
+              </div>{error('cidade')}{error('estado')}<small>Usamos para mostrar vagas perto de você. Não aparece no seu perfil público.</small></div>
+              <div className={s.field}><label htmlFor="senha">Senha</label><div className={s.password}><input {...attrs('senha')} type={show ? 'text' : 'password'} autoComplete="new-password" maxLength={1024} required aria-describedby={errors.senha ? 'senha-requisitos senha-error' : 'senha-requisitos'} />
+                <button type="button" aria-pressed={show} aria-label={show ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShow(!show)}><Icon group="cadastro" name="imgIcon1" />{show ? 'Ocultar' : 'Mostrar'}</button>
+              </div><PasswordChecklist value={values.senha} id="senha-requisitos" />{error('senha')}</div>
+              <div><label className={s.consent}><input type="checkbox" name="consentimento_termos" required checked={values.consentimento_termos} onChange={e => change('consentimento_termos', e.target.checked)} aria-invalid={Boolean(errors.consentimento_termos)} aria-describedby={errors.consentimento_termos ? 'consentimento_termos-error' : undefined} /><span>Li e aceito os <button type="button" onClick={() => setPolicy(!policy)}>Termos de uso</button> e a <button type="button" onClick={() => setPolicy(!policy)}>Política de privacidade</button>.</span></label>{error('consentimento_termos')}
+                {policy && <p className={s.policy} role="status">Os dados informados serão usados para criar e manter sua conta, apresentar oportunidades e registrar suas preferências. Seus contatos e seu CPF ficam reservados à sua conta; contatos são compartilhados com a organização somente após o aceite de uma candidatura. Você pode atualizar seu perfil ou solicitar a exclusão à administração.</p>}</div>
+            </div>}
+            {step === 2 && <Interests value={values.causas} onChange={v => change('causas', v)} />}
+            {step === 3 && <Availability value={values.disponibilidade_semanal} onChange={v => change('disponibilidade_semanal', v)} hours={values.carga_horaria_semanal} onHoursChange={v => change('carga_horaria_semanal', v)} />}
+            {message && <p role="alert" className={s.error}>{message}</p>}
+            <div className={s.formFooter}>{step === 1 ? <Link to="/cadastro" state={location.state}><Icon group="cadastro" name="imgIcon5" />Voltar</Link> : <button type="button" className={s.back} onClick={() => setStep(step - 1)}><Icon group="cadastro" name="imgIcon5" />Voltar</button>}
+              <button className={s.submit} type="submit">{pending ? 'Cadastrando…' : step === 3 ? 'Criar conta de voluntário' : 'Continuar'}</button></div>
             {pending && <p role="status">Enviando cadastro…</p>}
           </fieldset>
         </form>
       </section>
+      <aside className={s.aside}><div className={s.testimonial}><img src={designAssets.cadastro.imgContainer} alt="Voluntária acompanhando a leitura de crianças" />
+        <blockquote>“Comecei com duas horas por semana. Hoje é a melhor parte dela.”<cite>Júlia, voluntária no Reforço de leitura · Taguatinga</cite></blockquote></div>
+        <div className={s.benefits}>{[['imgIcon6', 'Seus dados protegidos'], ['imgIcon7', 'Agenda sem conflitos'], ['imgIcon8', 'Comprovante de horas']].map(([icon, text]) => <div key={icon}><span><Icon group="cadastro" name={icon} /></span>{text}</div>)}</div>
+      </aside>
     </main>
-  )
+  </div>
 }

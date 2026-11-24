@@ -8,6 +8,7 @@ import * as auth from '../services/authService'
 import * as service from '../services/organizationService'
 import { writeSession } from '../services/sessionStore'
 
+vi.mock('../services/vagasService', () => ({ listarVagas: async () => ({ itens: [], total: 0, pagina: 1, por_pagina: 20 }) }))
 vi.mock('../services/authService', () => ({ getSession: vi.fn(), getProfile: vi.fn() }))
 vi.mock('../services/organizationService', () => ({ getOrganization: vi.fn(), updateOrganization: vi.fn(), registerOrganization: vi.fn() }))
 const organization = {
@@ -142,7 +143,7 @@ describe('perfil institucional — RF07', () => {
   it('protege a rota de acesso sem sessão', async () => {
     sessionStorage.clear()
     open()
-    expect(await screen.findByRole('heading', { name: 'Entre no VolunJá' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'Entrar no VolunJá' })).toBeVisible()
     expect(service.getOrganization).not.toHaveBeenCalled()
   })
 

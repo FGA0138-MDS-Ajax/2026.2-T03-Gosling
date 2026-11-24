@@ -45,12 +45,25 @@ class VagaRepository:
         self.session.add(vaga)
         self.session.flush()
 
-    def listar_publicas(self, pagina: int, por_pagina: int):
-        filtros = (
+    def listar_publicas(
+        self, pagina: int, por_pagina: int, causa=None, modalidade=None, periodo=None
+    ):
+        filtros = [
             Vaga.status == StatusVaga.ABERTA,
             Organizacao.ativo.is_(True),
             Organizacao.homologada.is_(True),
-        )
+        ]
+        if causa:
+            normalizado = unicodedata.normalize("NFKC", causa.strip()).casefold()
+            filtros.append(
+                Vaga.causa_id.in_(
+                    select(Causa.id).where(Causa.nome_normalizado == normalizado)
+                )
+            )
+        if modalidade:
+            filtros.append(Vaga.modalidade == modalidade)
+        if periodo:
+            filtros.append(Vaga.periodo == periodo)
         total = self.session.scalar(
             select(func.count(Vaga.id)).join(Vaga.organizacao).where(*filtros)
         )
@@ -63,6 +76,18 @@ class VagaRepository:
             .limit(por_pagina)
         ).all()
         return vagas, total
+
+    def buscar_publica(self, vaga_id: int) -> Vaga | None:
+        return self.session.scalar(
+            select(Vaga)
+            .join(Vaga.organizacao)
+            .where(
+                Vaga.id == vaga_id,
+                Vaga.status == StatusVaga.ABERTA,
+                Organizacao.ativo.is_(True),
+                Organizacao.homologada.is_(True),
+            )
+        )
 
     def listar_vagas_por_organizacao(
         self, organizacao_id: int, pagina: int = 1, tamanho_pagina: int = 10

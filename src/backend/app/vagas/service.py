@@ -3,6 +3,7 @@ from typing import Any, Dict
 
 from fastapi import HTTPException
 
+from app.core.midia import bloqueio_midia, pasta_midia
 from app.usuarios.enums import TipoOrganizacao
 from app.vagas.enums import StatusVaga
 from app.vagas.models import OcorrenciaVaga, Vaga
@@ -33,7 +34,7 @@ class VagaService:
     def __init__(self, repository: VagaRepository):
         self.repository = repository
 
-    def publicar(self, usuario_id: int, dados: CadastroVagaRequest) -> VagaPublica:
+    def validar_publicador(self, usuario_id: int):
         organizacao = self.repository.buscar_organizacao(usuario_id)
         if (
             organizacao is None
@@ -45,35 +46,53 @@ class VagaService:
                 status_code=403,
                 detail="Somente uma ONG com acesso liberado pode publicar vagas.",
             )
+        return organizacao
 
-        try:
-            causa = self.repository.obter_ou_criar_causa(dados.causa)
-            vaga = Vaga(
-                **dados.model_dump(exclude={"causa", "ocorrencias"}),
-                organizacao=organizacao,
-                causa=causa,
-                status=StatusVaga.ABERTA,
-                ocorrencias=[
-                    OcorrenciaVaga(inicio=item.inicio, fim=item.fim)
-                    for item in dados.ocorrencias
-                ],
-            )
-            self.repository.adicionar(vaga)
-            resposta = VagaPublica.model_validate(vaga)
-            self.repository.confirmar()
-            return resposta
-        except Exception:
-            self.repository.desfazer()
-            raise
+    def publicar(self, usuario_id: int, dados: CadastroVagaRequest) -> VagaPublica:
+        organizacao = self.validar_publicador(usuario_id)
 
-    def listar(self, pagina: int, por_pagina: int) -> ListaVagasResponse:
-        vagas, total = self.repository.listar_publicas(pagina, por_pagina)
+        with bloqueio_midia:
+            for foto in dados.fotos:
+                if foto.startswith("/api/v1/midia/") and not (
+                    pasta_midia() / foto.rsplit("/", 1)[1]
+                ).is_file():
+                    raise HTTPException(
+                        422, "Uma das fotos expirou. Selecione as imagens novamente."
+                    )
+            try:
+                causa = self.repository.obter_ou_criar_causa(dados.causa)
+                vaga = Vaga(
+                    **dados.model_dump(exclude={"causa", "ocorrencias"}),
+                    organizacao=organizacao,
+                    causa=causa,
+                    status=StatusVaga.ABERTA,
+                    ocorrencias=[
+                        OcorrenciaVaga(inicio=item.inicio, fim=item.fim)
+                        for item in dados.ocorrencias
+                    ],
+                )
+                self.repository.adicionar(vaga)
+                resposta = VagaPublica.model_validate(vaga)
+                self.repository.confirmar()
+                return resposta
+            except Exception:
+                self.repository.desfazer()
+                raise
+
+    def listar(self, pagina: int, por_pagina: int, **filtros) -> ListaVagasResponse:
+        vagas, total = self.repository.listar_publicas(pagina, por_pagina, **filtros)
         return ListaVagasResponse(
             itens=[VagaPublica.model_validate(vaga) for vaga in vagas],
             total=total,
             pagina=pagina,
             por_pagina=por_pagina,
         )
+
+    def detalhar(self, vaga_id: int) -> VagaPublica:
+        vaga = self.repository.buscar_publica(vaga_id)
+        if vaga is None:
+            raise HTTPException(404, "Vaga não encontrada ou indisponível.")
+        return VagaPublica.model_validate(vaga)
 
     def listar_vagas_da_organizacao(
         self, organizacao_id: int, pagina: int, tamanho_pagina: int
