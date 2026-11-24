@@ -17,7 +17,13 @@ from pydantic import (
 from app.causas.schemas import IdCausa
 from app.localizacao.schemas import Localizacao
 from app.vagas.enums import Modalidade, Periodo
-from app.vagas.schemas import CadastroVagaRequest, validar_url_publica
+from app.vagas.schemas import (
+    CadastroVagaRequest,
+    DocumentoExigido,
+    EnquadramentoFoto,
+    ModeloTermoPublico,
+    validar_url_publica,
+)
 
 BRASILIA = ZoneInfo("America/Sao_Paulo")
 
@@ -59,11 +65,14 @@ def horario_brasilia(dia: date, hora: time) -> datetime:
     return utc
 
 
-class DocumentoRascunho(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class DocumentoRascunho(DocumentoExigido):
     nome: str = Field(default="", max_length=150)
-    modelo_url: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("modelo_url")
+    @classmethod
+    def url_segura(cls, valor):
+        # O link incompleto pode ser salvo e será validado ao publicar.
+        return valor or None
 
 
 class DadosRascunho(BaseModel):
@@ -84,6 +93,7 @@ class DadosRascunho(BaseModel):
     fotos: list[Annotated[str, Field(max_length=2000)]] = Field(
         default_factory=list, max_length=10
     )
+    enquadramento_fotos: dict[str, EnquadramentoFoto] = Field(default_factory=dict)
     documentos_exigidos: list[DocumentoRascunho] = Field(
         default_factory=list, max_length=20
     )
@@ -135,13 +145,21 @@ class AtualizarRascunhoRequest(PublicarRascunhoRequest):
     dados: DadosRascunho
 
 
+class DocumentoRascunhoResponse(DocumentoRascunho):
+    modelo: ModeloTermoPublico | None = None
+
+
+class DadosRascunhoResponse(DadosRascunho):
+    documentos_exigidos: list[DocumentoRascunhoResponse] = Field(default_factory=list)
+
+
 class RascunhoResponse(BaseModel):
     id: int
     status: Literal["RASCUNHO"] = "RASCUNHO"
     versao: int
     criado_em: datetime
     atualizado_em: datetime
-    dados: DadosRascunho
+    dados: DadosRascunhoResponse
 
 
 def erro_versao() -> HTTPException:

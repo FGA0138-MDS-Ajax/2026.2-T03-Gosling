@@ -59,7 +59,7 @@ it('permite salvar a vaga neste navegador e remover depois', async () => {
 })
 it('abre e fecha a galeria sem trocar a vaga', async () => {
   const user=userEvent.setup(); open(); await loaded()
-  await user.click(screen.getByRole('button',{name:/Ver as 1 fotos/}))
+  await user.click(screen.getByRole('button', { name: 'Ver foto' }))
   const dialog=screen.getByRole('dialog',{name:'Fotos da atividade'})
   expect(within(dialog).getByRole('img')).toHaveAttribute('src',vaga.fotos[0])
   await user.click(within(dialog).getByRole('button',{name:'Fechar'}))

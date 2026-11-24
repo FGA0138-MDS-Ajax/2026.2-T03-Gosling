@@ -9,10 +9,9 @@
 .secondary[aria-pressed=true] { background: #e3f4f1; border-color: #0f766e; color: #0f766e; }
 .gallery { height: 470px; display: grid; grid-template-columns: 2fr 1fr; gap: 8px; border-radius: 24px; overflow: hidden; position: relative; margin-bottom: 40px; }
 .heroPhoto { width: 100%; height: 100%; object-fit: cover; min-height: 0; }
-.gallerySide { display: grid; grid-template-rows: 1fr 1fr; gap: 8px; overflow: hidden; }
+.gallerySingle { grid-template-columns: minmax(0, 1fr); }
+.gallerySide { display: grid; grid-auto-rows: minmax(0, 1fr); gap: 8px; overflow: hidden; }
 .gallerySide img { width: 100%; height: 100%; min-height: 0; object-fit: cover; }
-.gallerySide .crop { object-position: 25% 50%; }
-.gallerySide .crop:last-child { object-position: 70% 80%; }
 .allPhotos { position: absolute; bottom: 16px; right: 16px; display: flex; align-items: center; gap: 6px; border-radius: 999px; border: 0; background: #ffffffd9; backdrop-filter: blur(20px); font-weight: 600; padding: 12px 16px; font-size: 13px; }
 .noPhoto { background: linear-gradient(135deg,#e3f4f1,#bfe9e3); display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; padding: 32px; color: #0f766e; grid-column: 1 / -1; text-align: center; font-size: 15px; font-weight: 500; }
 .gallery.galleryEmpty { height: 200px; }
@@ -55,6 +54,16 @@
 .documents strong { font-size: 15px; font-weight: 600; }
 .documents small { display: block; color: #6e6e73; font-size: 12px; margin-top: 5px; }
 .documents a { margin-left: auto; font-size: 13px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+.docContent {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.docContent p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  white-space: pre-wrap;
+}
 .empty { font-size: 14px; padding: 20px; border-radius: 16px; background: #f5f5f7; color: #6e6e73; }
 .map { background: #e1ede4; min-height: 240px; border-radius: 20px; overflow: hidden; position: relative; padding: 160px 16px 16px; }
 .mapDecoration { position: absolute; inset: 0; background: repeating-linear-gradient(0deg,transparent,transparent 77px,#fff 77px,#fff 87px),repeating-linear-gradient(90deg,transparent,transparent 160px,#fff 160px,#fff 171px); }

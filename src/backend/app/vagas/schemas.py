@@ -1,6 +1,8 @@
+import re
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated, List, Literal, Optional
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 from pydantic import (
     AwareDatetime,
@@ -8,6 +10,7 @@ from pydantic import (
     ConfigDict,
     Field,
     HttpUrl,
+    TypeAdapter,
     computed_field,
     field_validator,
     model_validator,
@@ -34,11 +37,8 @@ class OcorrenciaRequest(BaseModel):
 
 
 def validar_url_publica(valor: str) -> str:
-    import re
-
     if re.fullmatch(r"/api/v1/midia/[a-f0-9]{32}\.webp", valor):
         return valor
-    from pydantic import TypeAdapter
 
     url = TypeAdapter(HttpUrl).validate_python(valor)
     if url.scheme != "https":
@@ -46,15 +46,40 @@ def validar_url_publica(valor: str) -> str:
     return str(url)
 
 
+class EnquadramentoFoto(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    x: float = Field(ge=0, le=100, allow_inf_nan=False)
+    y: float = Field(ge=0, le=100, allow_inf_nan=False)
+
+
 class DocumentoExigido(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    id: UUID | None = None
+    tipo: Literal["IDENTIDADE", "RESIDENCIA", "TERMO", "PERSONALIZADO"] = (
+        "PERSONALIZADO"
+    )
     nome: str = Field(min_length=2, max_length=150)
+    orientacao: str = Field(default="", max_length=1000)
+    obrigatorio: bool = Field(default=True, strict=True)
     modelo_url: str | None = Field(default=None, max_length=2000)
 
     @field_validator("modelo_url")
     @classmethod
     def url_segura(cls, valor):
+        if valor and re.fullmatch(r"/api/v1/midia/modelos/[a-f0-9]{32}\.pdf", valor):
+            return valor
         return validar_url_publica(valor) if valor else None
+
+
+class ModeloTermoPublico(BaseModel):
+    nome: str
+    formato: Literal["application/pdf"]
+    tamanho_bytes: int
+
+
+class DocumentoExigidoPublico(DocumentoExigido):
+    modelo: ModeloTermoPublico | None = None
 
 
 class CadastroVagaRequest(BaseModel):
@@ -74,8 +99,9 @@ class CadastroVagaRequest(BaseModel):
     numero_vagas: int = Field(gt=0, strict=True)
     ocorrencias: list[OcorrenciaRequest] = Field(min_length=1, max_length=100)
     fotos: list[Annotated[str, Field(max_length=2000)]] = Field(
-        default_factory=list, max_length=10
+        default_factory=list, max_length=8
     )
+    enquadramento_fotos: dict[str, EnquadramentoFoto] = Field(default_factory=dict)
     documentos_exigidos: list[DocumentoExigido] = Field(
         default_factory=list, max_length=20
     )
@@ -84,6 +110,14 @@ class CadastroVagaRequest(BaseModel):
     @classmethod
     def urls_seguras(cls, valor):
         return [validar_url_publica(url) for url in valor]
+
+    @model_validator(mode="after")
+    def enquadramento_da_galeria(self):
+        if not self.enquadramento_fotos.keys() <= set(self.fotos):
+            raise ValueError("O enquadramento deve apontar para uma das fotos da vaga.")
+        if len(self.fotos) != len(set(self.fotos)):
+            raise ValueError("Inclua cada foto uma única vez.")
+        return self
 
     @field_validator("causa_id", mode="before")
     @classmethod
@@ -176,7 +210,10 @@ class VagaPublica(BaseModel):
     status: StatusVaga
     ocorrencias: list[OcorrenciaPublica]
     fotos: list[str] = Field(default_factory=list)
-    documentos_exigidos: list[DocumentoExigido] = Field(default_factory=list)
+    foto_capa: str | None = None
+    enquadramento_fotos: dict[str, EnquadramentoFoto] = Field(default_factory=dict)
+    documentos_exigidos: list[DocumentoExigidoPublico] = Field(default_factory=list)
+
     @computed_field
     @property
     def candidaturas_disponiveis(self) -> bool:
@@ -185,10 +222,26 @@ class VagaPublica(BaseModel):
             encontro.fim > agora for encontro in self.ocorrencias
         )
 
-    @field_validator("fotos", "documentos_exigidos", mode="before")
+    @field_validator("fotos", mode="before")
     @classmethod
     def listas_existentes(cls, valor):
         return [] if valor is None else valor
+
+    @field_validator("documentos_exigidos", mode="before")
+    @classmethod
+    def documentos_legados(cls, valor, info):
+        documentos = []
+        for indice, item in enumerate(valor or []):
+            if isinstance(item, dict) and not item.get("id"):
+                chave = f"volunja:vagas:{info.data.get('id')}:documento:{indice}"
+                item = {**item, "id": uuid5(NAMESPACE_URL, chave)}
+            documentos.append(item)
+        return documentos
+
+    @field_validator("enquadramento_fotos", mode="before")
+    @classmethod
+    def enquadramento_legado(cls, valor):
+        return {} if valor is None else valor
 
 
 class ListaVagasResponse(BaseModel):

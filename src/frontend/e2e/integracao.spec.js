@@ -1,5 +1,5 @@
 import { randomInt, randomUUID } from 'node:crypto'
-import { fileURLToPath } from 'node:url'
+import { readFile } from 'node:fs/promises'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test as base } from '@playwright/test'
 
@@ -50,6 +50,25 @@ async function captura(page, nome) {
   const path = test.info().outputPath(nome)
   await page.screenshot({ path, fullPage: true })
   await test.info().attach(nome, { path, contentType: 'image/png' })
+}
+
+function modeloTermo(nome) {
+  const objetos = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << >> >>',
+  ]
+  let conteudo = '%PDF-1.4\n'
+  const offsets = []
+  for (const [indice, objeto] of objetos.entries()) {
+    offsets.push(conteudo.length)
+    conteudo += `${indice + 1} 0 obj\n${objeto}\nendobj\n`
+  }
+  const inicioXref = conteudo.length
+  const registros = offsets.map(offset => `${String(offset).padStart(10, '0')} 00000 n \n`)
+  conteudo += `xref\n0 4\n0000000000 65535 f \n${registros.join('')}`
+  conteudo += `trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n${inicioXref}\n%%EOF\n`
+  return { name: nome, mimeType: 'application/pdf', buffer: Buffer.from(conteudo, 'ascii') }
 }
 
 async function cargaSemanal(page, horas) {
@@ -387,15 +406,39 @@ test('salva rascunho incompleto, protege edição em duas abas e publica o mesmo
   const data = '2099-11-16'
   const modal = page.getByRole('dialog')
 
-  const rascunho = await test.step('Salvar o formulário parcial com foto e encontro incompleto', async () => {
+  const rascunho = await test.step('Salvar a galeria, o termo e o encontro incompleto', async () => {
     await page.goto('/organizacao/vagas')
     await page.getByRole('link', { name: 'Publicar vaga', exact: true }).click()
     await modal.getByLabel('Título da vaga', { exact: true }).fill(titulo)
     await modal.getByLabel('Data de início do encontro 1', { exact: true }).fill(data)
-    const foto = fileURLToPath(new URL('../public/design/home-hero.jpg', import.meta.url))
-    await modal.getByLabel('Fotos da atividade', { exact: true }).setInputFiles(foto)
+    const fotos = [
+      {
+        name: 'comunidade.jpg',
+        mimeType: 'image/jpeg',
+        buffer: await readFile(new URL('../public/design/home-hero.jpg', import.meta.url)),
+      },
+      {
+        name: 'oficina.jpg',
+        mimeType: 'image/jpeg',
+        buffer: await readFile(new URL('../public/design/detalhe-imgImagemDaVaga.png', import.meta.url)),
+      },
+    ]
+    await modal.getByLabel('Fotos da atividade', { exact: true }).setInputFiles(fotos)
+    await modal.getByRole('button', { name: 'Definir foto 2 como capa' }).click()
+    const galeria = modal.getByRole('list', { name: 'Ordem das fotos da vaga' })
+    await expect(galeria.getByRole('listitem').first()).toContainText('oficina.jpg')
+    const capa = modal.getByRole('img', { name: 'Prévia da foto 1' })
+    await expect(capa).toHaveJSProperty('complete', true)
+    await modal.getByText('Ajustar enquadramento da foto 1', { exact: true }).click()
+    await modal.getByRole('slider', { name: 'Posição horizontal da foto 1' }).press('Home')
+    await expect(capa).toHaveCSS('object-position', '0% 50%')
     await modal.getByRole('button', { name: 'Adicionar documento exigido' }).click()
-    await modal.getByLabel('Link do modelo 1 (opcional)', { exact: true }).fill('https://example.com/modelo.pdf')
+    await modal.getByLabel('Tipo do documento 1', { exact: true }).selectOption('TERMO')
+    await modal.getByLabel('Orientação para o documento 1', { exact: true }).fill('Assine o termo.')
+    await modal.getByLabel('Documento 1 obrigatório', { exact: true }).uncheck()
+    await modal.getByLabel('Anexar PDF do termo 1', { exact: true }).setInputFiles(
+      modeloTermo('modelo-inicial.pdf'),
+    )
 
     const resposta = page.waitForResponse(response =>
       response.request().method() === 'POST' && response.url().endsWith('/vagas/rascunhos'),
@@ -404,9 +447,19 @@ test('salva rascunho incompleto, protege edição em duas abas e publica o mesmo
     const resultado = await resposta
     expect(resultado.status()).toBe(201)
     const salvo = await resultado.json()
-    expect(salvo.dados.fotos).toHaveLength(1)
+    expect(salvo.dados.fotos).toHaveLength(2)
+    expect(salvo.dados.enquadramento_fotos[salvo.dados.fotos[0]]).toEqual({ x: 0, y: 50 })
+    const termo = salvo.dados.documentos_exigidos[0]
+    expect(termo).toMatchObject({
+      tipo: 'TERMO',
+      obrigatorio: false,
+      orientacao: 'Assine o termo.',
+      modelo: { nome: 'modelo-inicial.pdf', formato: 'application/pdf' },
+    })
     await expect(modal.getByRole('status')).toContainText('Rascunho salvo em')
     expect((await request.get(`${api}/api/v1/vagas/${salvo.id}`)).status()).toBe(404)
+    expect((await request.get(`${api}${salvo.dados.fotos[0]}`)).status()).toBe(404)
+    expect((await request.get(`${api}${termo.modelo_url}`)).status()).toBe(404)
     return salvo
   })
 
@@ -418,8 +471,21 @@ test('salva rascunho incompleto, protege edição em duas abas e publica o mesmo
     await captura(page, 'rascunhos-no-painel.png')
     await linha.getByRole('link', { name: 'Editar rascunho' }).click()
     await expect(modal.getByLabel('Data de início do encontro 1')).toHaveValue(data)
-    await expect(modal.getByRole('img', { name: 'Foto salva 1' })).toBeVisible()
-    await expect(modal.getByLabel('Link do modelo 1 (opcional)')).toHaveValue('https://example.com/modelo.pdf')
+    const capa = modal.getByRole('img', { name: 'Foto salva 1' })
+    await expect.poll(() => capa.evaluate(img => img.naturalWidth)).toBeGreaterThan(0)
+    await expect(capa).toHaveCSS('object-position', '0% 50%')
+    await expect(modal.getByText(/modelo-inicial\.pdf/)).toBeVisible()
+    const download = page.waitForEvent('download')
+    await modal.getByRole('button', { name: 'Baixar modelo 1', exact: true }).click()
+    expect((await download).suggestedFilename()).toBe('modelo-inicial.pdf')
+
+    const desktop = page.viewportSize()
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect
+      .poll(() => modal.evaluate(dialogo => dialogo.scrollWidth <= dialogo.clientWidth))
+      .toBe(true)
+    await captura(page, 'edicao-midia-mobile.png')
+    await page.setViewportSize(desktop)
 
     const outra = await page.context().newPage()
     try {
@@ -458,6 +524,9 @@ test('salva rascunho incompleto, protege edição em duas abas e publica o mesmo
       await modal.getByLabel(rotulo, { exact: true }).fill(valor)
     }
     await modal.getByLabel('Causa', { exact: true }).selectOption({ label: 'Educação' })
+    await modal.getByLabel('Trocar PDF do termo 1', { exact: true }).setInputFiles(
+      modeloTermo('modelo-atualizado.pdf'),
+    )
 
     const publicacao = page.waitForResponse(response =>
       response.request().method() === 'POST' && response.url().endsWith(`/rascunhos/${rascunho.id}/publicar`),
@@ -471,9 +540,36 @@ test('salva rascunho incompleto, protege edição em duas abas e publica o mesmo
       titulo,
       status: 'ABERTA',
       fotos: rascunho.dados.fotos,
-      documentos_exigidos: [{ nome: 'Termo de participação' }],
+      foto_capa: rascunho.dados.fotos[0],
+      documentos_exigidos: [
+        {
+          id: rascunho.dados.documentos_exigidos[0].id,
+          nome: 'Termo de participação',
+          orientacao: 'Assine o termo.',
+          obrigatorio: false,
+          modelo: { nome: 'modelo-atualizado.pdf' },
+        },
+      ],
     })
     await expect(modal).toHaveCount(0)
     await expect(page.getByRole('heading', { name: titulo, exact: true })).toBeVisible()
+  })
+
+  await test.step('Ver a galeria publicada e baixar o termo atualizado', async () => {
+    await page.goto(`/vagas/${rascunho.id}`)
+    const capa = page.getByRole('img', { name: `Atividade de voluntariado: ${titulo}` })
+    await expect.poll(() => capa.evaluate(img => img.naturalWidth)).toBeGreaterThan(0)
+    await expect(capa).toHaveCSS('object-position', '0% 50%')
+    await page.getByRole('button', { name: 'Ver as 2 fotos' }).click()
+    const galeria = page.getByRole('dialog')
+    await expect(galeria.getByRole('img')).toHaveAttribute('src', rascunho.dados.fotos[0])
+    await galeria.getByRole('button', { name: 'Próxima' }).click()
+    await expect(galeria.getByRole('img')).toHaveAttribute('src', rascunho.dados.fotos[1])
+    await page.keyboard.press('Escape')
+    await expect(page.getByText('Assine o termo.', { exact: true })).toBeVisible()
+    const download = page.waitForEvent('download')
+    await page.getByRole('link', { name: 'Baixar modelo', exact: true }).click()
+    expect((await download).suggestedFilename()).toBe('modelo-atualizado.pdf')
+    await captura(page, 'galeria-e-termo-publicados.png')
   })
 })

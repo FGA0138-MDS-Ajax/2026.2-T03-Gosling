@@ -133,28 +133,110 @@
   .formGrid { grid-template-columns: 1fr; }
   .formActions { align-items: stretch; flex-direction: column-reverse; }
 }
-.mediaFields { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 24px; }
+.mediaFields {
+  display: grid;
+  gap: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  margin-top: 24px;
+}
 .mediaFields h3 { font-size: 17px; margin: 0 0 16px; }
 .mediaFields small, .mediaFields li { font-size: 13px; color: var(--muted); line-height: 1.5; }
-.documentFields { border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
-.documentFields button { align-self: flex-start; }
-.fotosSalvas {
+.documentFields {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  margin: 0 0 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.documentFields legend {
+  padding: 0 6px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.documentFields :is(input[type='text'], input[type='url'], input:not([type]), select, textarea) {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.documentRequired {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.nomeModelo {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.documentFields button { align-self: flex-start; }
+.fotosDaVaga {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 205px), 1fr));
   gap: 12px;
+  margin: 4px 0 8px;
   padding: 0;
   list-style: none;
 }
 
-.fotosSalvas li {
+.fotosDaVaga li {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+
+.fotoPrevia {
   display: grid;
-  justify-items: start;
+  place-items: center;
+  background: var(--surface);
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.fotoPrevia img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.midiaAcoes {
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
-.fotosSalvas img {
-  width: 120px;
-  height: 72px;
-  border-radius: 8px;
-  object-fit: cover;
+.enquadramento summary {
+  cursor: pointer;
+}
+
+.enquadramento label {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.enquadramento input[type='range'] {
+  min-height: 24px;
+  padding: 0;
+  border: 0;
 }

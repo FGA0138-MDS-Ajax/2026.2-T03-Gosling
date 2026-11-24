@@ -1,4 +1,5 @@
 import http from './http'
+import { TIPO_MODELO_TERMO } from '../utils/midia'
 
 export async function listarVagas({ pagina = 1, porPagina = 20, causa, causaId, modalidade, periodo, signal } = {}) {
   const filtros = Object.fromEntries(Object.entries({ causa, causa_id: causaId, modalidade, periodo }).filter(([, valor]) => valor))
@@ -24,4 +25,12 @@ export async function detalharVaga(id, signal) {
 export async function enviarFotoVaga(file) {
   const { data } = await http.post('/vagas/fotos', file, { headers: { 'Content-Type': file.type } })
   return data.url
+}
+
+export async function enviarModeloTermo(arquivo) {
+  const { data } = await http.post('/vagas/modelos-termo', arquivo, {
+    headers: { 'Content-Type': TIPO_MODELO_TERMO },
+    params: { nome: arquivo.name },
+  })
+  return data
 }

@@ -13,8 +13,9 @@ from fastapi import (
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.midia import salvar_imagem
+from app.core.midia import MidiaResponse, confirmar_upload, salvar_imagem, salvar_modelo
 from app.dependencies import require_perfil
+from app.midias.models import UsoMidia
 from app.usuarios.enums import Perfil
 from app.usuarios.schemas import UsuarioPublico
 from app.vagas.enums import Modalidade, Periodo
@@ -135,14 +136,29 @@ def detalhar_vaga(
     return service.detalhar(vaga_id)
 
 
-@router.post("/fotos", status_code=201)
+@router.post("/fotos", status_code=201, response_model=MidiaResponse)
 async def enviar_foto(
     request: Request,
-    usuario: Annotated[UsuarioPublico, Depends(require_perfil(Perfil.ORGANIZACAO))],
-    service: Annotated[VagaService, Depends(get_vaga_service)],
-):
-    service.validar_publicador(usuario.id)
-    return {"url": await salvar_imagem(request)}
+    usuario: TitularOrganizacao,
+    service: ServicoVagas,
+) -> MidiaResponse:
+    service.validar_autor_rascunho(usuario.id)
+    db = service.repository.session
+    arquivo = await salvar_imagem(request, db, usuario.id, UsoMidia.FOTO_VAGA)
+    return confirmar_upload(db, arquivo)
+
+
+@router.post("/modelos-termo", status_code=201, response_model=MidiaResponse)
+async def enviar_modelo_termo(
+    request: Request,
+    usuario: TitularOrganizacao,
+    service: ServicoVagas,
+    nome: Annotated[str, Query(min_length=1, max_length=255)],
+) -> MidiaResponse:
+    service.validar_autor_rascunho(usuario.id)
+    db = service.repository.session
+    arquivo = await salvar_modelo(request, db, usuario.id, nome)
+    return confirmar_upload(db, arquivo)
 
 
 @router.put(

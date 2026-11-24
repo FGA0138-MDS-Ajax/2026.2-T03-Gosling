@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useSavedVagas } from '../hooks/useSavedVagas'
 import { designAssets } from '../utils/designAssets'
 import { initials } from '../utils/initials'
+import { posicaoDaFoto } from '../utils/midia'
 import { proximoEncontro, resumoEncontro } from '../utils/ocorrencias'
 import { MODALIDADES, tomDaCausa } from '../utils/vagaLabels'
 import { Icon } from './ui/Layout'
@@ -13,7 +14,7 @@ export default function VagaCard({ vaga, heading: Heading = 'h3', agora }) {
   const [montagem] = useState(() => Date.now())
   const salva = saved.ids.includes(vaga.id)
   const [feedback, setFeedback] = useState(null)
-  const foto = vaga.fotos?.[0]
+  const foto = vaga.foto_capa ?? vaga.fotos?.[0]
   const proximo = proximoEncontro(vaga.ocorrencias, agora ?? montagem)
   const titleId = `vaga-${vaga.id}`
   async function alternar() {
@@ -24,7 +25,18 @@ export default function VagaCard({ vaga, heading: Heading = 'h3', agora }) {
   }
   return <article className={s.card} aria-labelledby={titleId}>
     <div className={s.media}>
-      {foto ? <img src={foto} alt="" loading="lazy" /> : <div className={s.placeholder}><img src={designAssets.login.imgImageVolunJa} alt="" width="48" height="38" /></div>}
+      {foto ? (
+        <img
+          src={foto}
+          alt=""
+          loading="lazy"
+          style={posicaoDaFoto(vaga.enquadramento_fotos?.[foto])}
+        />
+      ) : (
+        <div className={s.placeholder}>
+          <img src={designAssets.login.imgImageVolunJa} alt="" width="48" height="38" />
+        </div>
+      )}
       <span className={s.chip}>{MODALIDADES[vaga.modalidade] || vaga.modalidade}</span>
       <button type="button" className={s.save} aria-pressed={saved.ready ? salva : undefined} aria-busy={saved.pending.includes(vaga.id) || saved.loading}
         disabled={!saved.allowed || saved.pending.includes(vaga.id) || (saved.loading && !saved.ready)}

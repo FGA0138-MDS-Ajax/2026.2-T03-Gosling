@@ -5,7 +5,9 @@ from uuid import uuid4
 from fastapi import HTTPException, UploadFile
 from PIL import Image, UnidentifiedImageError
 
-from app.core.midia import MAX_BYTES, pasta_midia
+from app.core.midia import pasta_midia
+
+MAX_BYTES_DOCUMENTO = 5 * 1024 * 1024
 
 
 @dataclass(frozen=True)
@@ -47,10 +49,10 @@ def validar_documentos(
     erros = []
     for posicao, (indice, upload) in enumerate(zip(indices, arquivos)):
         try:
-            conteudo = upload.file.read(MAX_BYTES + 1)
+            conteudo = upload.file.read(MAX_BYTES_DOCUMENTO + 1)
             if not conteudo:
                 raise ValueError("O arquivo está vazio.")
-            if len(conteudo) > MAX_BYTES:
+            if len(conteudo) > MAX_BYTES_DOCUMENTO:
                 raise ValueError("O arquivo deve ter até 5 MB.")
             extensao = _validar_formato(conteudo, upload.content_type)
             recebidos.append(

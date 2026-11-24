@@ -16,6 +16,7 @@ import {
   removeVolunteerPhoto,
 } from '../services/voluntarioService'
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../utils/accountFields'
+import { arquivoValido, LIMITE_AVATAR, TIPOS_IMAGEM } from '../utils/midia'
 import {
   parseDisponibilidades,
   privateCpf,
@@ -196,12 +197,7 @@ export default function VolunteerProfilePage() {
   }
   async function photo(file, remove = false) {
     if (submitting.current) return
-    if (
-      !remove &&
-      (!file ||
-        !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ||
-        file.size > 5 * 1024 * 1024)
-    ) {
+    if (!remove && !arquivoValido(file, TIPOS_IMAGEM, LIMITE_AVATAR)) {
       setMessage('Use uma imagem JPG, PNG ou WebP de até 5 MB.')
       return
     }

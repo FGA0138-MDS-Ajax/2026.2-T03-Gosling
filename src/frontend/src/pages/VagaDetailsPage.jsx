@@ -11,6 +11,7 @@ import { detalharVaga, listarVagas } from '../services/vagasService'
 import { useSavedVagas } from '../hooks/useSavedVagas'
 import { formatarOcorrencia, horarioDoEncontro } from '../utils/ocorrencias'
 import { destinoMapa, textoEndereco } from '../utils/localizacao'
+import { posicaoDaFoto, tamanhoDoArquivo } from '../utils/midia'
 import s from './VagaDetails.module.css'
 
 const modalities = { PRESENCIAL: 'Presencial', REMOTO: 'Remoto', HIBRIDO: 'Híbrido' }
@@ -125,6 +126,9 @@ function VagaDetails({ id }) {
     }
   }
   const fotos = vaga?.fotos || []
+  const capa = vaga?.foto_capa ?? fotos[0]
+  const fotosLaterais = fotos.slice(1, 3)
+  const rotuloGaleria = fotos.length === 1 ? 'Ver foto' : `Ver as ${fotos.length} fotos`
   const ocorrencias = [...(vaga?.ocorrencias || [])].sort(
     (a, b) => new Date(a.inicio) - new Date(b.inicio),
   )
@@ -253,27 +257,44 @@ function VagaDetails({ id }) {
                   {saveButton()}
                 </div>
               </div>
-              <div className={fotos.length ? s.gallery : `${s.gallery} ${s.galleryEmpty}`}>
+              <div
+                className={[
+                  s.gallery,
+                  fotos.length === 0 && s.galleryEmpty,
+                  fotos.length === 1 && s.gallerySingle,
+                ].filter(Boolean).join(' ')}
+              >
                 {fotos.length ? (
                   <>
                     <img
                       className={s.heroPhoto}
-                      src={fotos[0]}
+                      src={capa}
                       alt={`Atividade de voluntariado: ${vaga.titulo}`}
+                      style={posicaoDaFoto(vaga.enquadramento_fotos?.[capa])}
                     />
-                    <div className={s.gallerySide}>
-                      {[1, 2].map(n => (
-                        <img
-                          key={n}
-                          className={fotos[n] ? '' : s.crop}
-                          src={fotos[n] || fotos[0]}
-                          alt=""
-                        />
-                      ))}
-                    </div>
-                    <button className={s.allPhotos} type="button" onClick={() => setGallery(true)}>
+                    {fotosLaterais.length > 0 && (
+                      <div className={s.gallerySide}>
+                        {fotosLaterais.map((src, indice) => (
+                          <img
+                            key={`${src}-${indice}`}
+                            src={src}
+                            alt=""
+                            style={posicaoDaFoto(vaga.enquadramento_fotos?.[src])}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <button
+                      className={s.allPhotos}
+                      type="button"
+                      aria-label={rotuloGaleria}
+                      onClick={() => {
+                        setPhoto(0)
+                        setGallery(true)
+                      }}
+                    >
                       <Icon group="detalhe" name="imgIcon3" />
-                      <span className={s.desktopPhotoLabel}>Ver as {fotos.length} fotos</span>
+                      <span className={s.desktopPhotoLabel}>{rotuloGaleria}</span>
                       <span className={s.mobilePhotoLabel}>1 / {fotos.length}</span>
                     </button>
                   </>
@@ -386,24 +407,31 @@ function VagaDetails({ id }) {
                     <p className={s.hint}>Você envia no momento da candidatura.</p>
                     {vaga.documentos_exigidos?.length ? (
                       <ul className={s.documents}>
-                        {vaga.documentos_exigidos.map((doc, i) => (
-                          <li key={i}>
+                        {vaga.documentos_exigidos.map((doc, indice) => (
+                          <li key={doc.id ?? indice}>
                             <span className={s.docIcon}>
                               <Icon
                                 group="detalhe"
                                 name={doc.modelo_url ? 'imgIcon11' : 'imgIcon10'}
                               />
                             </span>
-                            <div>
+                            <div className={s.docContent}>
                               <strong>{doc.nome}</strong>
-                              <small>
-                                {doc.modelo_url
-                                  ? 'Modelo fornecido pela organização'
-                                  : 'Exigido para esta atividade'}
-                              </small>
+                              <small>{doc.obrigatorio === false ? 'Opcional' : 'Obrigatório'}</small>
+                              {doc.orientacao && <p>{doc.orientacao}</p>}
+                              {doc.modelo && (
+                                <small>
+                                  {doc.modelo.nome} · PDF · {tamanhoDoArquivo(doc.modelo.tamanho_bytes)}
+                                </small>
+                              )}
                             </div>
                             {doc.modelo_url && (
-                              <a href={doc.modelo_url} target="_blank" rel="noopener noreferrer">
+                              <a
+                                href={doc.modelo_url}
+                                download={doc.modelo?.nome}
+                                target={doc.modelo ? undefined : '_blank'}
+                                rel="noopener noreferrer"
+                              >
                                 <Icon group="detalhe" name="imgIcon12" />
                                 Baixar modelo
                               </a>
@@ -488,7 +516,13 @@ function VagaDetails({ id }) {
                 <div>
                   {related.map(v => (
                     <article key={v.id} className={s.relatedCard}>
-                      {v.fotos?.[0] && <img src={v.fotos[0]} alt="" />}
+                      {v.fotos?.[0] && (
+                        <img
+                          src={v.fotos[0]}
+                          alt=""
+                          style={posicaoDaFoto(v.enquadramento_fotos?.[v.fotos[0]])}
+                        />
+                      )}
                       <div>
                         <small>{v.organizacao.nome}</small>
                         <h3>

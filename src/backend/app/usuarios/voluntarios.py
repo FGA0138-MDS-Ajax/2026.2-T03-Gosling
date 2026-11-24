@@ -20,7 +20,7 @@ from app.causas.repository import CausaRepository
 from app.causas.schemas import IdCausa
 from app.causas.service import CatalogoService, nomes_legados
 from app.core.database import get_db
-from app.core.midia import remover_imagem_local, salvar_imagem
+from app.core.midia import confirmar_upload, remover_imagem_sem_vinculo, salvar_imagem
 from app.core.security import hash_password
 from app.localizacao.models import aplicar_localizacao
 from app.localizacao.schemas import (
@@ -28,6 +28,7 @@ from app.localizacao.schemas import (
     LocalizacaoPublica,
     validar_regiao_compativel,
 )
+from app.midias.models import UsoMidia
 from app.dependencies import require_perfil
 from app.usuarios.disponibilidade import (
     DIAS,
@@ -406,15 +407,10 @@ def atualizar(dados: Edicao, conta: Conta, db: Banco, response: Response):
 async def atualizar_foto(request: Request, conta: Conta, db: Banco, response: Response):
     response.headers["Cache-Control"] = "no-store"
     anterior = conta.foto_url
-    nova = await salvar_imagem(request, avatar=True)
-    try:
-        conta.foto_url = nova
-        db.commit()
-    except Exception:
-        db.rollback()
-        remover_imagem_local(nova)
-        raise
-    remover_imagem_local(anterior)
+    arquivo = await salvar_imagem(request, db, conta.id, UsoMidia.AVATAR)
+    conta.foto_url = arquivo.url
+    confirmar_upload(db, arquivo)
+    remover_imagem_sem_vinculo(db, anterior)
     return montar_perfil(conta, db)
 
 
@@ -424,5 +420,5 @@ def excluir_foto(conta: Conta, db: Banco, response: Response):
     anterior = conta.foto_url
     conta.foto_url = None
     db.commit()
-    remover_imagem_local(anterior)
+    remover_imagem_sem_vinculo(db, anterior)
     return montar_perfil(conta, db)
