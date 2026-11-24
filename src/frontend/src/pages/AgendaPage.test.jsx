@@ -167,12 +167,14 @@ describe('atualização após alterações das candidaturas, carregamento e falh
 
 describe('chegada a partir de um conflito de candidatura (#54)', () => {
   it('abre no dia do conflito, destaca o compromisso e oferece a volta para a vaga', async () => {
+    const compromisso = evento({ vaga_id: 8, titulo_vaga: 'Plantão na biblioteca', inicio: '2027-01-12T12:00:00Z', fim: '2027-01-12T14:00:00Z' })
     servico.consultarCalendario.mockResolvedValue([
-      evento({ vaga_id: 8, titulo_vaga: 'Plantão na biblioteca', inicio: '2027-01-12T12:00:00Z', fim: '2027-01-12T14:00:00Z' }),
+      compromisso,
+      { ...compromisso, inicio: '2027-01-12T15:00:00Z', fim: '2027-01-12T17:00:00Z' },
     ])
     abrir({
       data: '2027-01-12',
-      conflito: { vagaId: 1, titulo: 'Apoio em oficinas', conflitos: [{ vaga_id: 8 }] },
+      conflito: { vagaId: 1, titulo: 'Apoio em oficinas', conflitos: [compromisso] },
       voltarPara: '/vagas/1',
     })
     expect(await screen.findByRole('heading', { name: 'Janeiro de 2027' })).toBeVisible()

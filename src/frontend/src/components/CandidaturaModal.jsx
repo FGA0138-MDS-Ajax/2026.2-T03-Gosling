@@ -14,9 +14,9 @@ const capitalizar = (texto) => texto.charAt(0).toUpperCase() + texto.slice(1)
 
 // Fluxo de candidatura (RF16, issue #45). Só mostra a confirmação depois do HTTP 201;
 // um conflito de agenda (409) é repassado à página por onConflito.
-export default function CandidaturaModal({ vaga, ocorrencias, arquivosIniciais, onClose, onEnviada, onConflito }) {
+export default function CandidaturaModal({ aberto, vaga, ocorrencias, onClose, onEnviada, onConflito }) {
   const documentosExigidos = vaga.documentos_exigidos ?? []
-  const [arquivos, setArquivos] = useState(() => arquivosIniciais ?? {})
+  const [arquivos, setArquivos] = useState({})
   const [erros, setErros] = useState({})
   const [mensagem, setMensagem] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -57,7 +57,7 @@ export default function CandidaturaModal({ vaga, ocorrencias, arquivosIniciais, 
     } catch (falha) {
       const erro = interpretarErroCandidatura(falha)
       if (erro.tipo === 'conflito') {
-        onConflito(erro, arquivos)
+        onConflito(erro)
         return
       }
       if (erro.tipo === 'campos') {
@@ -89,11 +89,13 @@ export default function CandidaturaModal({ vaga, ocorrencias, arquivosIniciais, 
       link.remove()
       URL.revokeObjectURL(url)
     } catch {
-      setAvisoComprovante('Não foi possível baixar o comprovante agora. Ele também fica disponível em Minhas candidaturas.')
+      setAvisoComprovante('Não foi possível baixar o comprovante agora. Tente novamente.')
     } finally {
       setBaixando(false)
     }
   }
+
+  if (!aberto) return null
 
   if (candidatura) {
     return (

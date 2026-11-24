@@ -15,6 +15,7 @@ const STATUS = {
 }
 
 const atividades = (quantidade) => (quantidade === 1 ? '1 atividade' : `${quantidade} atividades`)
+const chaveOcorrencia = ({ vaga_id, inicio, fim }) => `${vaga_id}/${Date.parse(inicio)}/${Date.parse(fim)}`
 
 // Calendário e agenda diária do voluntário (RF26, issue #49).
 export default function AgendaPage() {
@@ -22,7 +23,7 @@ export default function AgendaPage() {
   const hoje = hojeEmBrasilia()
   const diaInicial = ehDia(state?.data) ? state.data : hoje
   const conflito = state?.conflito
-  const vagasEmConflito = new Set((conflito?.conflitos ?? []).map((item) => item.vaga_id))
+  const ocorrenciasEmConflito = new Set((conflito?.conflitos ?? []).map(chaveOcorrencia))
 
   const [mes, setMes] = useState(inicioDoMes(diaInicial))
   const [selecionado, setSelecionado] = useState(diaInicial)
@@ -163,7 +164,7 @@ export default function AgendaPage() {
                       <p className={s.etiquetas}>
                         <span className={evento.status === 'ACEITA' ? s.aceita : s.pendente}>{status.rotulo}</span>
                         <span className={s.dica}>{status.detalhe}</span>
-                        {vagasEmConflito.has(evento.vaga_id) && <span className={s.emConflito}>Em conflito</span>}
+                        {ocorrenciasEmConflito.has(chaveOcorrencia(evento)) && <span className={s.emConflito}>Em conflito</span>}
                       </p>
                     </li>
                   )

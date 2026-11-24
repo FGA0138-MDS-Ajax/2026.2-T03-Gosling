@@ -176,7 +176,7 @@ describe('carregamento, erros, confirmação após 201 e conflito 409', () => {
 
   it('encaminha o conflito 409 ao tratamento de agenda, sem confirmar', async () => {
     candidaturas.enviarCandidatura.mockRejectedValue({
-      response: { status: 409, data: { detail: { codigo: 'CONFLITO_AGENDA', mensagem: 'Você já tem um compromisso nesse horário.', conflitos: [] } } },
+      response: { status: 409, data: { detail: { codigo: 'CONFLITO_HORARIO', mensagem: 'Você já tem um compromisso nesse horário.', conflitos: [] } } },
     })
     const { user, dialog } = await abrirCandidatura()
     await anexarTudo(user, dialog)
@@ -188,6 +188,25 @@ describe('carregamento, erros, confirmação após 201 e conflito 409', () => {
     expect(screen.queryByRole('dialog', { name: 'Candidatura enviada' })).not.toBeInTheDocument()
     await user.click(conflito.getByRole('link', { name: 'Ver meu calendário' }))
     expect(screen.getByRole('heading', { name: 'Minha agenda' })).toBeVisible()
+  })
+
+  it('mantém o envio pendente ao fechar e reabrir o formulário', async () => {
+    let responder
+    candidaturas.enviarCandidatura.mockReturnValue(new Promise(resolve => { responder = resolve }))
+    const { user, dialog } = await abrirCandidatura()
+    await anexarTudo(user, dialog)
+    await user.click(dialog.getByRole('button', { name: 'Confirmar candidatura' }))
+    await user.click(dialog.getByRole('button', { name: 'Fechar' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    await user.click(screen.getAllByRole('button', { name: 'Quero me candidatar' })[0])
+    const reaberto = within(screen.getByRole('dialog', { name: 'Confirmar candidatura' }))
+    expect(reaberto.getByRole('button', { name: 'Enviando candidatura…' })).toBeDisabled()
+    fireEvent.submit(reaberto.getByRole('form', { name: 'Confirmar candidatura' }))
+    expect(candidaturas.enviarCandidatura).toHaveBeenCalledTimes(1)
+
+    responder(criada)
+    expect(await screen.findByRole('dialog', { name: 'Candidatura enviada' })).toBeVisible()
   })
 
   it.each([

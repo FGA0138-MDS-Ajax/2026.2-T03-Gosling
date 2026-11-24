@@ -27,15 +27,14 @@ const respostaConflito = {
     status: 409,
     data: {
       detail: {
-        codigo: 'CONFLITO_AGENDA',
+        codigo: 'CONFLITO_HORARIO',
         mensagem: 'Você já tem um compromisso nesse horário.',
         conflitos: [
           {
             vaga_id: 8,
-            titulo: 'Plantão na biblioteca comunitária',
+            titulo_vaga: 'Plantão na biblioteca comunitária',
             inicio: '2027-11-17T00:30:00Z',
             fim: '2027-11-17T02:00:00Z',
-            ocorrencia: { inicio: '2027-11-17T01:00:00Z', fim: '2027-11-17T02:30:00Z' },
           },
         ],
       },
@@ -104,7 +103,7 @@ describe('leitura do 409 e identificação do conflito', () => {
           detail: {
             ...detalhe,
             conflitos: [
-              { vaga_id: 9, titulo: 'Mutirão de limpeza', inicio: '2027-11-20T12:00:00Z', fim: '2027-11-20T15:00:00Z' },
+              { vaga_id: 9, titulo_vaga: 'Mutirão de limpeza', inicio: '2027-11-20T12:00:00Z', fim: '2027-11-20T15:00:00Z' },
               detalhe.conflitos[0],
             ],
           },
