@@ -18,8 +18,7 @@ SEMANA = {"inicio": "2026-11-16", "fim": "2026-11-23"}
 
 @pytest.fixture
 def criar_candidatura(db, contas):
-    causa = Causa(nome="Educação", nome_normalizado="educação")
-    db.add(causa)
+    causa = db.scalar(select(Causa).where(Causa.nome_normalizado == "educação"))
 
     def criar(
         ocorrencias=None,

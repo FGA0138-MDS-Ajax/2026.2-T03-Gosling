@@ -70,7 +70,7 @@ describe('cadastro de voluntário — RF01', () => {
       nome_completo: 'Maria da Silva', email: 'maria@example.com', identificacao: '52998224725',
       password: 'SenhaForte@2026', consentimento_termos: true,
       telefone: '61999999999', cidade: 'Brasília', estado: 'DF',
-      causas: [], disponibilidade_semanal: [], carga_horaria_semanal: null,
+      causa_ids: [], disponibilidade_semanal: [], carga_horaria_semanal: null,
     })
     expect(auth.login).not.toHaveBeenCalled()
     expect(service.updateVolunteerProfile).not.toHaveBeenCalled()

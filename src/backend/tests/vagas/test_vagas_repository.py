@@ -4,8 +4,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
-from sqlalchemy import func, inspect, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
 
 from app.usuarios.catalogos import Causa
 from app.usuarios.enums import TipoOrganizacao
@@ -36,6 +35,11 @@ def criar_organizacao(
 
 
 def criar_causa(db, nome="Educação") -> Causa:
+    existente = db.scalar(
+        select(Causa).where(Causa.nome_normalizado == normalizar(nome))
+    )
+    if existente is not None:
+        return existente
     causa = Causa(nome=nome, nome_normalizado=normalizar(nome))
     db.add(causa)
     db.flush()
@@ -73,26 +77,6 @@ def outro_status() -> StatusVaga:
     pytest.skip("StatusVaga só possui o valor ABERTA.")
 
 
-def contar_causas(db, nome_normalizado: str) -> int:
-    consulta = select(func.count(Causa.id)).where(
-        Causa.nome_normalizado == nome_normalizado
-    )
-    return db.execute(consulta).scalar_one()
-
-
-def simular_busca_vazia(monkeypatch, session, quantidade: int) -> None:
-    original = session.scalar
-    chamadas = []
-
-    def scalar(*args, **kwargs):
-        chamadas.append(1)
-        if len(chamadas) <= quantidade:
-            return None
-        return original(*args, **kwargs)
-
-    monkeypatch.setattr(session, "scalar", scalar)
-
-
 @pytest.fixture
 def repo(db):
     return VagaRepository(db)
@@ -106,22 +90,6 @@ def organizacao(db, senha_hash):
 @pytest.fixture
 def causa(db):
     return criar_causa(db)
-
-
-@pytest.fixture
-def requer_unicidade_da_causa(db):
-    inspetor = inspect(db.connection())
-    tabela = Causa.__tablename__
-    colunas = [
-        item["column_names"] for item in inspetor.get_unique_constraints(tabela)
-    ]
-    colunas += [
-        item["column_names"]
-        for item in inspetor.get_indexes(tabela)
-        if item["unique"]
-    ]
-    if ["nome_normalizado"] not in colunas:
-        pytest.skip("Causa.nome_normalizado não tem restrição de unicidade.")
 
 
 def test_buscar_organizacao_retorna_a_organizacao_pelo_id(repo, organizacao):
@@ -145,46 +113,6 @@ def test_buscar_organizacao_retorna_none_quando_o_id_e_de_voluntario(
     db.flush()
 
     assert repo.buscar_organizacao(voluntario.id) is None
-
-
-def test_obter_ou_criar_causa_cria_causa_nova(repo, db):
-    causa = repo.obter_ou_criar_causa("Saúde")
-
-    assert causa.id is not None
-    assert causa.nome == "Saúde"
-    assert causa.nome_normalizado == normalizar("Saúde")
-    assert contar_causas(db, normalizar("Saúde")) == 1
-
-
-def test_obter_ou_criar_causa_reaproveita_ignorando_caixa(repo, db):
-    existente = criar_causa(db, "Educação")
-
-    retornada = repo.obter_ou_criar_causa("EDUCAÇÃO")
-
-    assert retornada.id == existente.id
-    assert contar_causas(db, normalizar("Educação")) == 1
-
-
-def test_obter_ou_criar_causa_recupera_a_causa_criada_por_outra_transacao(
-    repo, db, monkeypatch, requer_unicidade_da_causa
-):
-    existente = criar_causa(db, "Meio Ambiente")
-    simular_busca_vazia(monkeypatch, db, quantidade=1)
-
-    retornada = repo.obter_ou_criar_causa("Meio Ambiente")
-
-    assert retornada.id == existente.id
-    assert contar_causas(db, normalizar("Meio Ambiente")) == 1
-
-
-def test_obter_ou_criar_causa_propaga_erro_quando_nao_encontra_a_causa(
-    repo, db, monkeypatch, requer_unicidade_da_causa
-):
-    criar_causa(db, "Cultura")
-    simular_busca_vazia(monkeypatch, db, quantidade=10**6)
-
-    with pytest.raises(IntegrityError):
-        repo.obter_ou_criar_causa("Cultura")
 
 
 def test_adicionar_persiste_a_vaga_e_gera_o_id(repo, organizacao, causa):
@@ -289,9 +217,7 @@ def repo_com_sessao_simulada(total=5, linhas=None):
 
 
 def test_listar_vagas_por_organizacao_retorna_linhas_como_dicts_e_total():
-    repo, _ = repo_com_sessao_simulada(
-        total=5, linhas=[{"id": 1, "titulo": "Vaga A"}]
-    )
+    repo, _ = repo_com_sessao_simulada(total=5, linhas=[{"id": 1, "titulo": "Vaga A"}])
 
     vagas, total = repo.listar_vagas_por_organizacao(organizacao_id=10)
 

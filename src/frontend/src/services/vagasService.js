@@ -1,7 +1,7 @@
 import http from './http'
 
-export async function listarVagas({ pagina = 1, porPagina = 20, causa, modalidade, periodo, signal } = {}) {
-  const filtros = Object.fromEntries(Object.entries({ causa, modalidade, periodo }).filter(([, valor]) => valor))
+export async function listarVagas({ pagina = 1, porPagina = 20, causa, causaId, modalidade, periodo, signal } = {}) {
+  const filtros = Object.fromEntries(Object.entries({ causa, causa_id: causaId, modalidade, periodo }).filter(([, valor]) => valor))
   const { data } = await http.get('/vagas', {
     params: { pagina, por_pagina: porPagina, ...filtros },
     publicRequest: true,

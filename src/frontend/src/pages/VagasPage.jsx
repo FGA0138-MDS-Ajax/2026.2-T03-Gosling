@@ -6,10 +6,11 @@ import VagaMediaFields from '../components/VagaMediaFields'
 import { Footer, Header } from '../components/ui/Layout'
 import { useAuth } from '../hooks/useAuth'
 import { useVagas } from '../hooks/useVagas'
+import { causaPorNome, useCausas } from '../hooks/useCausas'
 import { enviarFotoVaga, publicarVaga } from '../services/vagasService'
 import { criarEncontro, prepararOcorrencias } from '../utils/ocorrencias'
 import { errosPublicacao, validarPublicacao } from '../utils/vagaForm'
-import { CAUSAS_DESTAQUE, MODALIDADES } from '../utils/vagaLabels'
+import { MODALIDADES } from '../utils/vagaLabels'
 import explorar from './Explore.module.css'
 import styles from './Vagas.module.css'
 
@@ -25,12 +26,19 @@ export default function VagasPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
+  const catalogo = useCausas()
+  const idNaUrl = Number(params.get('causa_id'))
+  const causaLegada = (params.get('causa') || '').trim().slice(0, 100)
+  const causaSelecionada = idNaUrl > 0 && Number.isInteger(idNaUrl)
+    ? catalogo.itens.find(causa => causa.id === idNaUrl) : causaPorNome(catalogo.itens, causaLegada)
+  const causaId = idNaUrl > 0 && Number.isInteger(idNaUrl) ? String(idNaUrl) : String(causaSelecionada?.id || '')
   const filtros = {
-    causa: (params.get('causa') || '').trim().slice(0, 100),
+    causa: causaId ? '' : causaLegada,
+    causaId,
     modalidade: MODALIDADES[params.get('modalidade')] ? params.get('modalidade') : '',
     periodo: PERIODOS[params.get('periodo')] ? params.get('periodo') : '',
   }
-  const filtrando = Boolean(filtros.causa || filtros.modalidade || filtros.periodo)
+  const filtrando = Boolean(filtros.causa || filtros.causaId || filtros.modalidade || filtros.periodo)
   const [pagina, setPagina] = useState(1)
   const { itens: vagas, total, por_pagina: porPagina, carregando, erro: erroCarregamento, recarregar } = useVagas(pagina, filtros)
   const [erro, setErro] = useState('')
@@ -66,7 +74,8 @@ export default function VagasPage() {
 
   function filtrar(nome, valor) {
     const proximos = new URLSearchParams(params)
-    if (!valor || proximos.get(nome) === valor) proximos.delete(nome)
+    if (nome === 'causa_id') proximos.delete('causa')
+    if (!valor || (nome === 'causa_id' ? filtros.causaId === valor : proximos.get(nome) === valor)) proximos.delete(nome)
     else proximos.set(nome, valor)
     setParams(proximos, { replace: true })
     setPagina(1)
@@ -108,16 +117,17 @@ export default function VagasPage() {
     const titulo = String(dados.get('titulo')).trim()
     const descricao = String(dados.get('descricao')).trim()
     const atividades = String(dados.get('atividades')).trim()
-    const causa = String(dados.get('causa')).trim()
+    const causaId = Number(dados.get('causa_id'))
     const local = String(dados.get('local')).trim()
     const cargaHoraria = Number(dados.get('carga_horaria'))
     const numeroVagas = Number(dados.get('numero_vagas'))
 
     const campos = {
-      titulo, descricao, atividades, causa, local,
+      titulo, descricao, atividades, causa_id: causaId, local,
       carga_horaria: cargaHoraria, numero_vagas: numeroVagas,
     }
     const invalidos = validarPublicacao(campos)
+    if (!catalogo.itens.some(causa => causa.id === causaId && causa.ativo)) invalidos.causa_id = 'Selecione uma causa disponível.'
     const fotosInvalidas = fotos.length > 10 || fotos.some(file => !['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 5*1024*1024)
     const documentosInvalidos = documentos.some(doc => doc.nome.trim().length < 2 || (doc.modelo_url && !/^https:\/\/[^\s]+$/.test(doc.modelo_url)))
     setErroMidia(fotosInvalidas ? 'Use até 10 imagens JPG, PNG ou WebP de até 5 MB cada.' : documentosInvalidos ? 'Informe o nome de cada documento e um link HTTPS válido, quando houver modelo.' : '')
@@ -215,8 +225,10 @@ export default function VagasPage() {
           <aside className={explorar.filters} aria-label="Filtros">
             <div className={explorar.filtersHead}><h2>Filtros</h2>{filtrando && <button type="button" onClick={limparFiltros}>Limpar</button>}</div>
             <fieldset><legend>Causa</legend>
-              <div className={explorar.options}>{[...new Set([...CAUSAS_DESTAQUE.map((c) => c.nome), ...(filtros.causa ? [filtros.causa] : [])])].map((nome) =>
-                <button key={nome} type="button" aria-pressed={filtros.causa.toLowerCase() === nome.toLowerCase()} onClick={() => filtrar('causa', nome)}>{nome}</button>)}</div>
+              {catalogo.carregando && <p role="status">Carregando causas…</p>}
+              {catalogo.erro && <div><p role="alert">{catalogo.erro}</p><button className={explorar.retry} type="button" onClick={catalogo.recarregar}>Tentar carregar causas novamente</button></div>}
+              <div className={explorar.options}>{catalogo.itens.map(causa =>
+                <button key={causa.id} type="button" aria-pressed={filtros.causaId === String(causa.id)} onClick={() => filtrar('causa_id', String(causa.id))}>{causa.nome}{!causa.ativo && ' (anterior)'}</button>)}</div>
             </fieldset>
             <fieldset><legend>Modalidade</legend>
               <div className={explorar.segmented}>{Object.entries(MODALIDADES).map(([valor, texto]) =>
@@ -234,7 +246,7 @@ export default function VagasPage() {
               <span>{total} {total === 1 ? 'oportunidade' : 'oportunidades'}</span>
             </div>
             {filtrando && <ul className={explorar.active} aria-label="Filtros ativos">
-              {filtros.causa && <li><button type="button" onClick={() => filtrar('causa', '')}>{filtros.causa}<span aria-hidden="true">×</span><span className={explorar.srOnly}>remover filtro</span></button></li>}
+              {(filtros.causa || filtros.causaId) && <li><button type="button" onClick={() => filtrar('causa_id', '')}>{causaSelecionada?.nome || filtros.causa || 'Causa selecionada'}<span aria-hidden="true">×</span><span className={explorar.srOnly}>remover filtro</span></button></li>}
               {filtros.modalidade && <li><button type="button" onClick={() => filtrar('modalidade', '')}>{MODALIDADES[filtros.modalidade]}<span aria-hidden="true">×</span><span className={explorar.srOnly}>remover filtro</span></button></li>}
               {filtros.periodo && <li><button type="button" onClick={() => filtrar('periodo', '')}>{PERIODOS[filtros.periodo]}<span aria-hidden="true">×</span><span className={explorar.srOnly}>remover filtro</span></button></li>}
             </ul>}
@@ -306,8 +318,11 @@ export default function VagasPage() {
               </div>
               <div className={styles.formField}>
                 <label htmlFor="vaga-causa">Causa</label>
-                <input id="vaga-causa" name="causa" minLength={3} maxLength={100} required {...atributosCampo('causa')} />
-                {erroCampo('causa')}
+                <select id="vaga-causa" name="causa_id" required disabled={catalogo.carregando || Boolean(catalogo.erro)} {...atributosCampo('causa_id')}>
+                  <option value="">Selecione uma causa</option>{catalogo.itens.filter(causa => causa.ativo).map(causa => <option key={causa.id} value={causa.id}>{causa.nome}</option>)}
+                </select>
+                {erroCampo('causa_id')}
+                {catalogo.erro && <div><p role="alert">{catalogo.erro}</p><button className={explorar.retry} type="button" onClick={catalogo.recarregar}>Tentar carregar causas novamente</button></div>}
               </div>
               <div className={styles.formField}>
                 <label htmlFor="vaga-modalidade">Modalidade</label>

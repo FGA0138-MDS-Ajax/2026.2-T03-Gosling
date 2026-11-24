@@ -2,7 +2,6 @@ export const TEXTOS_VAGA = {
   titulo: { min: 3, max: 150 },
   descricao: { min: 10, max: 5000 },
   atividades: { min: 10, max: 5000 },
-  causa: { min: 3, max: 100 },
   local: { min: 3, max: 500 },
 }
 
@@ -12,6 +11,7 @@ export function validarPublicacao(dados) {
     if (dados[campo].length < min) erros[campo] = `Use pelo menos ${min} caracteres.`
     else if (dados[campo].length > max) erros[campo] = `Use até ${max} caracteres.`
   }
+  if (!Number.isInteger(dados.causa_id) || dados.causa_id < 1) erros.causa_id = 'Selecione uma causa disponível.'
   const carga = dados.carga_horaria
   if (!Number.isFinite(carga) || carga < 0.01 || carga > 99999.99
     || Math.abs(carga * 100 - Math.round(carga * 100)) > 0.0000001) {
@@ -28,7 +28,7 @@ export function errosPublicacao(detail) {
   const encontros = []
   const gerais = []
   for (const issue of detail) {
-    const campo = issue.loc?.[1]
+    const campo = issue.loc?.[1] === 'causa' ? 'causa_id' : issue.loc?.[1]
     const texto = TEXTOS_VAGA[campo]
     let mensagem = issue.msg || 'Confira o valor informado.'
     if (texto && issue.type === 'string_too_short') mensagem = `Use pelo menos ${texto.min} caracteres.`
@@ -36,7 +36,7 @@ export function errosPublicacao(detail) {
     if (campo === 'ocorrencias') {
       const indice = issue.loc?.[2]
       encontros.push(`${Number.isInteger(indice) ? `Encontro ${indice + 1}: ` : ''}${mensagem}`)
-    } else if (texto || ['modalidade', 'periodo', 'carga_horaria', 'numero_vagas'].includes(campo)) {
+    } else if (texto || ['causa_id', 'modalidade', 'periodo', 'carga_horaria', 'numero_vagas'].includes(campo)) {
       campos[campo] ??= mensagem
     } else {
       gerais.push(mensagem)

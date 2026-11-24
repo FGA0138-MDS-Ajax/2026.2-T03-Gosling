@@ -40,7 +40,7 @@ export default function VagaCard({ vaga, heading: Heading = 'h3', agora }) {
       <Heading id={titleId} className={s.title}><Link to={`/vagas/${vaga.id}`}>{vaga.titulo}</Link></Heading>
       <p className={s.meta}><Icon group="detalhe" name="imgIcon19" />{proximo ? <time dateTime={proximo.inicio}>{resumoEncontro(proximo)}</time> : 'Encontros encerrados'}</p>
       <p className={s.meta}><Icon group="detalhe" name="imgIcon20" /><span className={s.ellipsis}>{vaga.local}</span></p>
-      <div className={s.foot}><span className={`${s.tag} ${s[tomDaCausa(vaga.causa.nome)]}`}>{vaga.causa.nome}</span><span className={s.count}>{vaga.numero_vagas} {vaga.numero_vagas === 1 ? 'vaga' : 'vagas'}</span></div>
+      <div className={s.foot}><span className={`${s.tag} ${s[tomDaCausa(vaga.causa.nome, vaga.causa.codigo)]}`}>{vaga.causa.nome}</span><span className={s.count}>{vaga.numero_vagas} {vaga.numero_vagas === 1 ? 'vaga' : 'vagas'}</span></div>
       {feedback?.key === saved.key && <p className={s.feedback} role={feedback.error ? 'alert' : 'status'}>{feedback.message}</p>}
     </div>
   </article>

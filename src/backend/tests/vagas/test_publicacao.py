@@ -113,13 +113,14 @@ def test_entrada_invalida_nao_deixa_vaga_parcial(
     client, db, contas, dados_vaga, campo, valor
 ):
     headers = autenticar(client, contas)
+    causas_antes = quantidade(db, Causa)
     resposta = client.post(
         "/api/v1/vagas", headers=headers, json={**dados_vaga, campo: valor}
     )
     assert resposta.status_code == 422, resposta.text
     assert quantidade(db, Vaga) == 0
     assert quantidade(db, OcorrenciaVaga) == 0
-    assert quantidade(db, Causa) == 0
+    assert quantidade(db, Causa) == causas_antes
 
 
 @pytest.mark.parametrize("carga", ["0.01", "1.25", "99999.99"])
@@ -203,10 +204,11 @@ def test_catalogo_aplica_visibilidade(
 
 def test_catalogo_paginado_e_causa_compartilhada(client, db, contas, dados_vaga):
     headers = autenticar(client, contas)
+    causas_antes = quantidade(db, Causa)
     primeira = publicar(client, headers, dados_vaga)
     publicar(client, headers, {**dados_vaga, "causa": "EDUCAÇÃO"})
     publicar(client, headers, dados_vaga)
-    assert quantidade(db, Causa) == 1
+    assert quantidade(db, Causa) == causas_antes
     resposta = client.get("/api/v1/vagas?pagina=2&por_pagina=2")
     assert resposta.status_code == 200
     assert resposta.json()["total"] == 3
@@ -249,6 +251,7 @@ def test_falha_ao_confirmar_nao_deixa_publicacao_parcial(
     from app.vagas.repository import VagaRepository
 
     headers = autenticar(client, contas)
+    causas_antes = quantidade(db, Causa)
 
     def falhar(repository):
         raise RuntimeError("Falha simulada no commit.")
@@ -258,27 +261,18 @@ def test_falha_ao_confirmar_nao_deixa_publicacao_parcial(
         client.post("/api/v1/vagas", headers=headers, json=dados_vaga)
     assert quantidade(db, Vaga) == 0
     assert quantidade(db, OcorrenciaVaga) == 0
-    assert quantidade(db, Causa) == 0
+    assert quantidade(db, Causa) == causas_antes
 
 
-def test_causa_criada_entre_consulta_e_insert_e_reutilizada(
-    client, db, contas, dados_vaga, monkeypatch
+def test_publicacoes_reutilizam_o_catalogo_com_nome_legado_ou_id(
+    client, db, contas, dados_vaga
 ):
     headers = autenticar(client, contas)
+    causas_antes = quantidade(db, Causa)
     primeira = publicar(client, headers, dados_vaga)
-    consultar_original = db.scalar
-    consultas = 0
-
-    def consultar(statement, *args, **kwargs):
-        nonlocal consultas
-        descricoes = getattr(statement, "column_descriptions", [])
-        if descricoes and descricoes[0].get("entity") is Causa:
-            consultas += 1
-            if consultas == 1:
-                return None
-        return consultar_original(statement, *args, **kwargs)
-
-    monkeypatch.setattr(db, "scalar", consultar)
-    segunda = publicar(client, headers, dados_vaga)
+    por_id = {**dados_vaga, "causa_id": primeira["causa"]["id"]}
+    del por_id["causa"]
+    segunda = publicar(client, headers, por_id)
     assert primeira["causa"]["id"] == segunda["causa"]["id"]
-    assert quantidade(db, Causa) == 1
+    assert primeira["id"] != segunda["id"]
+    assert quantidade(db, Causa) == causas_antes

@@ -38,11 +38,17 @@ def listar_vagas(
     pagina: Annotated[int, Query(ge=1)] = 1,
     por_pagina: Annotated[int, Query(ge=1, le=100)] = 20,
     causa: Annotated[str | None, Query(min_length=1, max_length=100)] = None,
+    causa_id: Annotated[int | None, Query(gt=0)] = None,
     modalidade: Modalidade | None = None,
     periodo: Periodo | None = None,
 ) -> ListaVagasResponse:
     return service.listar(
-        pagina, por_pagina, causa=causa, modalidade=modalidade, periodo=periodo
+        pagina,
+        por_pagina,
+        causa=causa,
+        causa_id=causa_id,
+        modalidade=modalidade,
+        periodo=periodo,
     )
 
 
@@ -91,14 +97,8 @@ def atualizar_vaga(
             dados=dados,
         )
     except VagaNaoEncontradaException as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except AcessoNegadoVagaException as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except AlteracaoHorarioNaoPermitidaException as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

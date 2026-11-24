@@ -2,7 +2,6 @@ import unicodedata
 from typing import Any, Dict, Optional
 
 from sqlalchemy import func, select, text
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.candidaturas.enums import STATUS_ATIVOS
@@ -25,36 +24,27 @@ class VagaRepository:
     def buscar_organizacao(self, usuario_id: int) -> Organizacao | None:
         return self.session.get(Organizacao, usuario_id)
 
-    def obter_ou_criar_causa(self, nome: str) -> Causa:
-        normalizado = unicodedata.normalize("NFKC", nome).casefold()
-        consulta = select(Causa).where(Causa.nome_normalizado == normalizado)
-        causa = self.session.scalar(consulta)
-        if causa is not None:
-            return causa
-        try:
-            with self.session.begin_nested():
-                causa = Causa(nome=nome, nome_normalizado=normalizado)
-                self.session.add(causa)
-                self.session.flush()
-        except IntegrityError:
-            causa = self.session.scalar(consulta.with_for_update())
-            if causa is None:
-                raise
-        return causa
-
     def adicionar(self, vaga: Vaga) -> None:
         self.session.add(vaga)
         self.session.flush()
 
     def listar_publicas(
-        self, pagina: int, por_pagina: int, causa=None, modalidade=None, periodo=None
+        self,
+        pagina: int,
+        por_pagina: int,
+        causa=None,
+        modalidade=None,
+        periodo=None,
+        causa_id=None,
     ):
         filtros = [
             Vaga.status == StatusVaga.ABERTA,
             Organizacao.ativo.is_(True),
             Organizacao.homologada.is_(True),
         ]
-        if causa:
+        if causa_id is not None:
+            filtros.append(Vaga.causa_id == causa_id)
+        elif causa:
             normalizado = unicodedata.normalize("NFKC", causa.strip()).casefold()
             filtros.append(
                 Vaga.causa_id.in_(

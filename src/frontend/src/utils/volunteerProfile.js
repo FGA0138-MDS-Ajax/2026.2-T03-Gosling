@@ -1,10 +1,3 @@
-// Catálogo de causas (documento de arquitetura: Causa é um catálogo compartilhado).
-// Enquanto a API não expõe o catálogo, a lista fica centralizada aqui.
-export const CAUSAS = [
-  'Educação', 'Saúde', 'Meio Ambiente', 'Assistência Social', 'Animais',
-  'Cultura', 'Esporte', 'Direitos Humanos', 'Idosos', 'Crianças e Adolescentes',
-]
-
 export const DIAS = [
   { value: 'SEGUNDA', label: 'Segunda' }, { value: 'TERCA', label: 'Terça' },
   { value: 'QUARTA', label: 'Quarta' }, { value: 'QUINTA', label: 'Quinta' },
@@ -90,20 +83,14 @@ export function weeklyAvailability(perfil) {
   return legacy.dias.flatMap(dia => legacy.periodos.map(periodo => ({ dia, periodo })))
 }
 
-export function profileCompletion({ nome, identificacao, telefone, cidade, estado, causas = [], disponibilidade_semanal = [], carga_horaria_semanal }) {
-  const itens = [nome, identificacao, telefone, cidade, estado, causas.length, disponibilidade_semanal.length, carga_horaria_semanal]
+export function profileCompletion({ nome, identificacao, telefone, cidade, estado, causas = [], causa_ids, causas_legadas = [], disponibilidade_semanal = [], carga_horaria_semanal }) {
+  const interesses = causa_ids ? causa_ids.length + causas_legadas.length : causas.length
+  const itens = [nome, identificacao, telefone, cidade, estado, interesses, disponibilidade_semanal.length, carga_horaria_semanal]
   return Math.round(itens.filter(Boolean).length / itens.length * 100)
 }
 
-const normalizar = (texto = '') => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
-const SINONIMOS = { animais: ['protecao animal'], idosos: ['pessoas idosas'], 'criancas e adolescentes': ['infancia', 'criancas'] }
-export function causaCombina(interesses = [], causa = '') {
-  const alvo = normalizar(causa)
-  if (!alvo) return false
-  return interesses.some((interesse) => {
-    const valor = normalizar(interesse)
-    return [valor, ...(SINONIMOS[valor] || [])].some((termo) => alvo === termo || alvo.includes(termo) || termo.includes(alvo))
-  })
+export function causaCombina(interesses = [], causaId) {
+  return Number.isInteger(causaId) && causaId > 0 && interesses.includes(causaId)
 }
 
 export function maskCpf(value = '') {

@@ -5,15 +5,17 @@ import PhoneInput from '../components/PhoneInput'
 import { Availability, Interests } from '../components/VolunteerPreferences'
 import { Header, Icon } from '../components/ui/Layout'
 import { useAuth } from '../hooks/useAuth'
+import { useCausas } from '../hooks/useCausas'
 import { ESTADOS, NOMES_ESTADOS, maskCpf, validCpf } from '../utils/volunteerProfile'
 import { PASSWORD_ERROR, PHONE_ERROR, PHONE_HINT, phoneDigits, validPassword, validPhone } from '../utils/accountFields'
 import { designAssets } from '../utils/designAssets'
 import s from './VolunteerSignup.module.css'
 
-const empty = { nome_completo: '', email: '', identificacao: '', telefone: '', cidade: '', estado: '', senha: '', consentimento_termos: false, causas: [], disponibilidade_semanal: [], carga_horaria_semanal: null }
+const empty = { nome_completo: '', email: '', identificacao: '', telefone: '', cidade: '', estado: '', senha: '', consentimento_termos: false, causa_ids: [], disponibilidade_semanal: [], carga_horaria_semanal: null }
 
 export default function VolunteerSignupPage() {
   const { usuario, cadastrarVoluntario } = useAuth()
+  const catalogo = useCausas()
   const location = useLocation()
   const [values, setValues] = useState(empty)
   const [step, setStep] = useState(1)
@@ -63,7 +65,7 @@ export default function VolunteerSignupPage() {
       if (Array.isArray(detail)) {
         const invalid = {}
         for (const issue of detail) { const name = issue.loc?.[1]; if (name) invalid[name === 'password' ? 'senha' : name] = issue.msg }
-        setStep(Object.keys(invalid).some(k => k in empty && !['causas', 'disponibilidade_semanal', 'carga_horaria_semanal'].includes(k)) ? 1 : 3)
+        setStep(invalid.causa_ids || invalid.causas ? 2 : Object.keys(invalid).some(k => k in empty && !['causa_ids', 'disponibilidade_semanal', 'carga_horaria_semanal'].includes(k)) ? 1 : 3)
         setErrors(invalid)
         setMessage('Confira os campos indicados e tente novamente.')
       } else {
@@ -105,7 +107,8 @@ export default function VolunteerSignupPage() {
               <div><label className={s.consent}><input type="checkbox" name="consentimento_termos" required checked={values.consentimento_termos} onChange={e => change('consentimento_termos', e.target.checked)} aria-invalid={Boolean(errors.consentimento_termos)} aria-describedby={errors.consentimento_termos ? 'consentimento_termos-error' : undefined} /><span>Li e aceito os <button type="button" onClick={() => setPolicy(!policy)}>Termos de uso</button> e a <button type="button" onClick={() => setPolicy(!policy)}>Política de privacidade</button>.</span></label>{error('consentimento_termos')}
                 {policy && <p className={s.policy} role="status">Os dados informados serão usados para criar e manter sua conta, apresentar oportunidades e registrar suas preferências. Seus contatos e seu CPF ficam reservados à sua conta; contatos são compartilhados com a organização somente após o aceite de uma candidatura. Você pode atualizar seu perfil ou solicitar a exclusão à administração.</p>}</div>
             </div>}
-            {step === 2 && <Interests value={values.causas} onChange={v => change('causas', v)} />}
+            {step === 2 && <><Interests catalogo={catalogo} value={values.causa_ids} error={errors.causa_ids || errors.causas} onChange={v => change('causa_ids', v)} />
+              {(errors.causa_ids || errors.causas) && <p className={s.error} id="causas-error">{errors.causa_ids || errors.causas}</p>}</>}
             {step === 3 && <Availability value={values.disponibilidade_semanal} onChange={v => change('disponibilidade_semanal', v)} hours={values.carga_horaria_semanal} onHoursChange={v => change('carga_horaria_semanal', v)} />}
             {message && <p role="alert" className={s.error}>{message}</p>}
             <div className={s.formFooter}>{step === 1 ? <Link to="/cadastro" state={location.state}><Icon group="cadastro" name="imgIcon5" />Voltar</Link> : <button type="button" className={s.back} onClick={() => setStep(step - 1)}><Icon group="cadastro" name="imgIcon5" />Voltar</button>}

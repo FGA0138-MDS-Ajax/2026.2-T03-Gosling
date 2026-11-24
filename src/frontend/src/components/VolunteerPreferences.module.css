@@ -23,3 +23,4 @@
  .hours { gap: 12px; }
  .hours label { width: 100%; }
 }
+.retry { min-height: 44px; padding: 10px 18px; border: 1px solid #c8d8d5; border-radius: 999px; background: white; color: #0f766e; font: inherit; font-weight: 600; }

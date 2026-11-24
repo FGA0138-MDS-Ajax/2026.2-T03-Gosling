@@ -18,13 +18,17 @@ def test_edicao_parcial_limpeza_e_persistencia_em_outra_sessao(client, db, conta
     titular.disponibilidades = ["Fins de Semana", "DIA:SABADO"]
     db.flush()
     headers = autorizar(titular)
-    resposta = client.put(URL, headers=headers, json={
-        "nome_completo": "  Ana Atualizada  ",
-        "telefone": "+55 (61) 99999-0000",
-        "cidade": "  Brasília  ",
-        "estado": "DF",
-        "biografia": "  Quero apoiar a comunidade.  ",
-    })
+    resposta = client.put(
+        URL,
+        headers=headers,
+        json={
+            "nome_completo": "  Ana Atualizada  ",
+            "telefone": "+55 (61) 99999-0000",
+            "cidade": "  Brasília  ",
+            "estado": "DF",
+            "biografia": "  Quero apoiar a comunidade.  ",
+        },
+    )
     assert resposta.status_code == 200, resposta.text
     perfil = resposta.json()
     assert perfil["nome"] == "Ana Atualizada"
@@ -44,23 +48,28 @@ def test_edicao_parcial_limpeza_e_persistencia_em_outra_sessao(client, db, conta
     assert client.put(URL, headers=headers, json=limpar).status_code == 200
     db.expire_all()
     perfil = client.get(URL, headers=headers).json()
-    assert all(perfil[campo] is None for campo in limpar if campo not in (
-        "causas", "disponibilidades"
-    ))
+    assert all(
+        perfil[campo] is None
+        for campo in limpar
+        if campo not in ("causas", "disponibilidades")
+    )
     assert perfil["causas"] == perfil["disponibilidades"] == []
     assert perfil["nome"] == "Ana Atualizada"
 
 
-@pytest.mark.parametrize("campo,valor", [
-    ("email", "outra@example.com"),
-    ("identificacao", "11144477735"),
-    ("id", 999),
-    ("usuario_id", 999),
-    ("perfil", "ADMINISTRADOR"),
-    ("senha_hash", "hash-injetado"),
-    ("password", "OutraSenha123!"),
-    ("ativo", False),
-])
+@pytest.mark.parametrize(
+    "campo,valor",
+    [
+        ("email", "outra@example.com"),
+        ("identificacao", "11144477735"),
+        ("id", 999),
+        ("usuario_id", 999),
+        ("perfil", "ADMINISTRADOR"),
+        ("senha_hash", "hash-injetado"),
+        ("password", "OutraSenha123!"),
+        ("ativo", False),
+    ],
+)
 def test_nao_altera_identidade_credenciais_ou_permissoes(
     client, db, contas, campo, valor
 ):
@@ -68,9 +77,14 @@ def test_nao_altera_identidade_credenciais_ou_permissoes(
     headers = autorizar(titular)
     antes = client.get(URL, headers=headers).json()
     hash_anterior = titular.senha_hash
-    resposta = client.put(URL, headers=headers, json={
-        "nome_completo": "Nome não deve ser salvo", campo: valor,
-    })
+    resposta = client.put(
+        URL,
+        headers=headers,
+        json={
+            "nome_completo": "Nome não deve ser salvo",
+            campo: valor,
+        },
+    )
     assert resposta.status_code == 422
     assert resposta.json()["detail"][0]["loc"] == ["body", campo]
     db.expire_all()
@@ -78,17 +92,20 @@ def test_nao_altera_identidade_credenciais_ou_permissoes(
     assert titular.senha_hash == hash_anterior
 
 
-@pytest.mark.parametrize("campo,valor", [
-    ("telefone", "123"),
-    ("telefone", "6199999abc00"),
-    ("telefone", "9" * 16),
-    ("nome_completo", "  "),
-    ("cidade", "x" * 101),
-    ("biografia", "x" * 501),
-    ("estado", "ZZ"),
-    ("causas", ["x" * 101]),
-    ("disponibilidades", ["x"] * 101),
-])
+@pytest.mark.parametrize(
+    "campo,valor",
+    [
+        ("telefone", "123"),
+        ("telefone", "6199999abc00"),
+        ("telefone", "9" * 16),
+        ("nome_completo", "  "),
+        ("cidade", "x" * 101),
+        ("biografia", "x" * 501),
+        ("estado", "ZZ"),
+        ("causas", ["x" * 101]),
+        ("disponibilidades", ["x"] * 101),
+    ],
+)
 def test_campos_invalidos_nao_gravam_alteracao_parcial(
     client, db, contas, campo, valor
 ):
@@ -115,9 +132,23 @@ def test_revalida_conta_desativada_e_nao_expoe_segredos(client, db, contas):
     resposta = client.get(URL, headers=headers)
     assert resposta.status_code == 200
     assert set(resposta.json()) == {
-        "id", "nome", "email", "perfil", "tipo", "identificacao", "telefone",
-        "cidade", "estado", "biografia", "causas", "disponibilidades",
-        "disponibilidade_semanal", "carga_horaria_semanal", "foto_url",
+        "id",
+        "nome",
+        "email",
+        "perfil",
+        "tipo",
+        "identificacao",
+        "telefone",
+        "cidade",
+        "estado",
+        "biografia",
+        "causas",
+        "causa_ids",
+        "causas_legadas",
+        "disponibilidades",
+        "disponibilidade_semanal",
+        "carga_horaria_semanal",
+        "foto_url",
     }
     titular.ativo = False
     db.flush()
@@ -127,14 +158,31 @@ def test_revalida_conta_desativada_e_nao_expoe_segredos(client, db, contas):
     assert client.put(URL, json={}).status_code == 401
 
 
-@pytest.mark.parametrize("preferencia", [
-    "DIA:FERIADO", "DIA:segunda", "DIA:", "DIA", "DIA:SABADO:MANHA",
-    "PERIODO:MADRUGADA", "PERIODO:manha", "PERIODO:", "PERIODO",
-    "CARGA_HORARIA:999", "CARGA_HORARIA:61", "CARGA_HORARIA:0",
-    "CARGA_HORARIA:-1", "CARGA_HORARIA:1.5", "CARGA_HORARIA:abc",
-    "CARGA_HORARIA:", "CARGA_HORARIA", "CARGA_HORARIA: 4",
-    "CARGA_HORARIA:４", "CARGA_HORARIA:4:6",
-])
+@pytest.mark.parametrize(
+    "preferencia",
+    [
+        "DIA:FERIADO",
+        "DIA:segunda",
+        "DIA:",
+        "DIA",
+        "DIA:SABADO:MANHA",
+        "PERIODO:MADRUGADA",
+        "PERIODO:manha",
+        "PERIODO:",
+        "PERIODO",
+        "CARGA_HORARIA:999",
+        "CARGA_HORARIA:61",
+        "CARGA_HORARIA:0",
+        "CARGA_HORARIA:-1",
+        "CARGA_HORARIA:1.5",
+        "CARGA_HORARIA:abc",
+        "CARGA_HORARIA:",
+        "CARGA_HORARIA",
+        "CARGA_HORARIA: 4",
+        "CARGA_HORARIA:４",
+        "CARGA_HORARIA:4:6",
+    ],
+)
 def test_rejeita_disponibilidade_invalida_sem_salvar_biografia(
     client, db, contas, preferencia
 ):
@@ -145,10 +193,14 @@ def test_rejeita_disponibilidade_invalida_sem_salvar_biografia(
     headers = autorizar(titular)
     antes = client.get(URL, headers=headers).json()
 
-    resposta = client.put(URL, headers=headers, json={
-        "biografia": "Não deve ser salva.",
-        "disponibilidades": ["DIA:SABADO", preferencia],
-    })
+    resposta = client.put(
+        URL,
+        headers=headers,
+        json={
+            "biografia": "Não deve ser salva.",
+            "disponibilidades": ["DIA:SABADO", preferencia],
+        },
+    )
 
     assert resposta.status_code == 422, resposta.text
     assert resposta.json()["detail"][0]["loc"] == ["body", "disponibilidades", 1]
@@ -157,15 +209,22 @@ def test_rejeita_disponibilidade_invalida_sem_salvar_biografia(
 
 
 @pytest.mark.parametrize("horas", [1, 4, 60])
-def test_aceita_dias_periodos_e_limites_da_carga_semanal(
-    client, db, contas, horas
-):
+def test_aceita_dias_periodos_e_limites_da_carga_semanal(client, db, contas, horas):
     titular = contas["voluntario"]
     headers = autorizar(titular)
     preferencias = [
-        "DIA:SEGUNDA", "DIA:TERCA", "DIA:QUARTA", "DIA:QUINTA", "DIA:SEXTA",
-        "DIA:SABADO", "DIA:DOMINGO", "PERIODO:MANHA", "PERIODO:TARDE",
-        "PERIODO:NOITE", f"CARGA_HORARIA:{horas}", "Fins de Semana",
+        "DIA:SEGUNDA",
+        "DIA:TERCA",
+        "DIA:QUARTA",
+        "DIA:QUINTA",
+        "DIA:SEXTA",
+        "DIA:SABADO",
+        "DIA:DOMINGO",
+        "PERIODO:MANHA",
+        "PERIODO:TARDE",
+        "PERIODO:NOITE",
+        f"CARGA_HORARIA:{horas}",
+        "Fins de Semana",
     ]
     resposta = client.put(URL, headers=headers, json={"disponibilidades": preferencias})
     assert resposta.status_code == 200, resposta.text
@@ -182,9 +241,13 @@ def test_aceita_dias_periodos_e_limites_da_carga_semanal(
 def test_rejeita_cargas_semanais_ambiguas(client, db, contas):
     headers = autorizar(contas["voluntario"])
     antes = client.get(URL, headers=headers).json()
-    resposta = client.put(URL, headers=headers, json={
-        "disponibilidades": ["CARGA_HORARIA:4", "CARGA_HORARIA:6"],
-    })
+    resposta = client.put(
+        URL,
+        headers=headers,
+        json={
+            "disponibilidades": ["CARGA_HORARIA:4", "CARGA_HORARIA:6"],
+        },
+    )
     assert resposta.status_code == 422, resposta.text
     assert resposta.json()["detail"][0]["loc"] == ["body", "disponibilidades"]
     db.expire_all()

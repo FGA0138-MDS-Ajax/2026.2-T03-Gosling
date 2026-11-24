@@ -6,6 +6,7 @@ import { BottomNav, Header, Icon } from '../components/ui/Layout'
 import { initials } from '../utils/initials'
 import Modal from '../components/ui/Modal'
 import { useAuth } from '../hooks/useAuth'
+import { useCausas } from '../hooks/useCausas'
 import { getVolunteerProfile, updateVolunteerProfile, uploadVolunteerPhoto, removeVolunteerPhoto } from '../services/voluntarioService'
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../utils/accountFields'
 import { ESTADOS, NOMES_ESTADOS, parseDisponibilidades, privateCpf, profileCompletion, weeklyAvailability } from '../utils/volunteerProfile'
@@ -17,10 +18,11 @@ const tile = (label, icon, group = 'perfil') => <span className={s.menuIcon} sty
 
 function initialValues(p) {
   return { nome_completo: p.nome || '', telefone: p.telefone || '', cidade: p.cidade || '', estado: p.estado || '', biografia: p.biografia || '',
-    causas: p.causas || [], disponibilidade_semanal: weeklyAvailability(p), carga_horaria_semanal: p.carga_horaria_semanal ?? (Number(parseDisponibilidades(p.disponibilidades).cargaHoraria) || null) }
+    causa_ids: p.causa_ids || [], causas_legadas: p.causas_legadas || [], disponibilidade_semanal: weeklyAvailability(p), carga_horaria_semanal: p.carga_horaria_semanal ?? (Number(parseDisponibilidades(p.disponibilidades).cargaHoraria) || null) }
 }
 export default function VolunteerProfilePage() {
   const { updateAccount, logout } = useAuth()
+  const catalogo = useCausas()
   const aviso = useLocation().state?.aviso
   const [perfil, setPerfil] = useState(null)
   const [values, setValues] = useState(null)
@@ -52,12 +54,13 @@ export default function VolunteerProfilePage() {
   }, [attempt])
 
   useEffect(() => {
-    if (!pending && (errors.causas || errors.disponibilidade_semanal)) {
+    if (!pending && (errors.causa_ids || errors.causas || errors.causas_legadas || errors.disponibilidade_semanal)) {
       editor.current?.querySelector('[tabindex="-1"]')?.focus()
     }
   }, [errors, pending])
 
   const dirty = Boolean(perfil && values && JSON.stringify(values) !== JSON.stringify(initialValues(perfil)))
+  const interesses = (values?.causa_ids.length || 0) + (values?.causas_legadas.length || 0)
   function change(name, value) { setValues(v => ({ ...v, [name]: value })); setSaved(false); setMessage(''); setErrors({}) }
   function discard() { setValues(initialValues(perfil)); setErrors({}); setMessage(''); setSaved(false) }
   function validate() {
@@ -135,13 +138,13 @@ export default function VolunteerProfilePage() {
           <section className={s.summary} aria-label="Resumo do perfil"><div className={s.photoWrap}>{avatar(true)}<button type="button" onClick={() => photoInput.current.click()} disabled={pending} aria-label="Alterar foto do perfil"><Icon name="imgIcon9" /></button>
             <input ref={photoInput} type="file" accept="image/jpeg,image/png,image/webp" hidden aria-label="Arquivo da foto" onChange={e => { photo(e.target.files[0]); e.target.value = '' }} /></div>
             <div className={s.summaryText}><h1>{personName}</h1><p>{[values.cidade, values.estado].filter(Boolean).join(', ') || 'Localização não informada'}<span> · Voluntário no VolunJá</span></p>
-              <div className={s.badges}><span>{values.causas.length} interesses</span><span>{values.disponibilidade_semanal.length} turnos disponíveis</span><span>Perfil {profileCompletion({ ...values, nome: values.nome_completo, identificacao: perfil.identificacao })}% completo</span></div>
+              <div className={s.badges}><span>{interesses} interesses</span><span>{values.disponibilidade_semanal.length} turnos disponíveis</span><span>Perfil {profileCompletion({ ...values, nome: values.nome_completo, identificacao: perfil.identificacao })}% completo</span></div>
             </div><button className={s.publicProfile} type="button" onClick={() => setNotice('Prévia do perfil')}>Ver perfil público</button>
           </section>
 
           <div className={s.mobileMenu} hidden={Boolean(mobileSection)}>
             <button className={s.mobileIdentity} type="button" onClick={() => setMobileSection('dados')}>Dados pessoais e contato<Icon name="imgIcon10" /></button>
-            <div className={s.menuGroup}>{[['interesses','imgIcon4','Interesses',values.causas.length + ' selecionados'], ['disponibilidade','imgIcon5','Disponibilidade',values.disponibilidade_semanal.length + ' turnos'], ['Notificações','imgIcon6','Notificações','']].map(([id,icon,label,extra]) => <button key={id} type="button" onClick={() => ['interesses','disponibilidade'].includes(id) ? setMobileSection(id) : setNotice(label)}>{tile(label, icon, 'mobile_perfil')}<span>{label}</span><small>{extra}</small><Icon group="mobile_perfil" name="imgIcon3" /></button>)}</div>
+            <div className={s.menuGroup}>{[['interesses','imgIcon4','Interesses',interesses + ' selecionados'], ['disponibilidade','imgIcon5','Disponibilidade',values.disponibilidade_semanal.length + ' turnos'], ['Notificações','imgIcon6','Notificações','']].map(([id,icon,label,extra]) => <button key={id} type="button" onClick={() => ['interesses','disponibilidade'].includes(id) ? setMobileSection(id) : setNotice(label)}>{tile(label, icon, 'mobile_perfil')}<span>{label}</span><small>{extra}</small><Icon group="mobile_perfil" name="imgIcon3" /></button>)}</div>
             <div className={s.menuGroup}>{[['imgIcon7','Histórico e horas'],['imgIcon8','Comprovantes'],['imgIcon9','Senha e segurança'],['imgIcon10','Privacidade e dados']].map(([icon,label]) => <button key={label} type="button" onClick={() => setNotice(label)}>{tile(label, icon, 'mobile_perfil')}{label}<Icon group="mobile_perfil" name="imgIcon3" /></button>)}</div>
             <button className={s.mobileLogout} type="button" onClick={() => logout()}>Sair da conta</button>
           </div>
@@ -159,9 +162,9 @@ export default function VolunteerProfilePage() {
                 <button type="button" className={s.biography} onClick={() => setEditing('biografia')}>{values.biografia ? 'Editar biografia' : 'Adicionar biografia'}</button>
               </section>
               <section id="interesses" className={mobileSection && mobileSection !== 'interesses' ? s.hideMobile : ''}>
-                {sectionTitle('Interesses', values.causas.length + ' selecionados')}
-                <Interests value={values.causas} error={errors.causas} onChange={v => change('causas',v)} />
-                {errors.causas && <p id="causas-error" className={s.error}>{errors.causas}</p>}
+                {sectionTitle('Interesses', interesses + ' selecionados')}
+                <Interests catalogo={catalogo} value={values.causa_ids} legadas={values.causas_legadas} error={errors.causa_ids || errors.causas || errors.causas_legadas} onChange={v => change('causa_ids',v)} onLegacyChange={v => change('causas_legadas',v)} />
+                {(errors.causa_ids || errors.causas || errors.causas_legadas) && <p id="causas-error" className={s.error}>{errors.causa_ids || errors.causas || errors.causas_legadas}</p>}
               </section>
               <section id="disponibilidade" className={mobileSection && mobileSection !== 'disponibilidade' ? s.hideMobile : ''}>
                 {sectionTitle('Disponibilidade', 'Usada para recomendar vagas e filtrar conflitos')}
@@ -184,7 +187,7 @@ export default function VolunteerProfilePage() {
             </form>
           </Modal>}
           {notice && <Modal title={notice} onClose={() => setNotice('')}>
-            {notice === 'Prévia do perfil' ? <div className={s.preview}>{avatar(true)}<h3>{personName}</h3><p>{values.biografia || 'Sem biografia.'}</p><p>{values.causas.join(' · ') || 'Sem interesses informados.'}</p><p className={s.hint}>A prévia não inclui CPF, e-mail, telefone ou localização.</p></div> :
+            {notice === 'Prévia do perfil' ? <div className={s.preview}>{avatar(true)}<h3>{personName}</h3><p>{values.biografia || 'Sem biografia.'}</p><p>{[...values.causa_ids.map(id => catalogo.itens.find(c => c.id === id)?.nome || perfil.causas?.[perfil.causa_ids?.indexOf(id)] || 'Interesse indisponível'), ...values.causas_legadas].join(' · ') || 'Sem interesses informados.'}</p><p className={s.hint}>A prévia não inclui CPF, e-mail, telefone ou localização.</p></div> :
               <p>{notice === 'Seu CPF' ? 'O CPF identifica sua conta e não pode ser editado por aqui. Procure a administração se houver um erro.' : notice === 'Seu e-mail' ? 'O e-mail identifica seu acesso. A alteração com confirmação de endereço ainda não está disponível.' : notice === 'Privacidade e dados' ? 'Seus dados pessoais ficam reservados. Você pode editar suas preferências aqui ou solicitar a exclusão da conta à administração.' : 'Este recurso ainda está em desenvolvimento. Seus dados e preferências continuam disponíveis neste perfil.'}</p>}
           </Modal>}
         </>}

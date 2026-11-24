@@ -16,7 +16,7 @@ const passado = [{ id: 8, inicio: '2020-01-10T11:00:00Z', fim: '2020-01-10T15:00
 const [educacao, social, ambiente] = VAGAS_TESTE.map((vaga) => ({ ...vaga, ocorrencias: futuro }))
 const voluntario = { id: 3, nome: 'Ana Martins', perfil: 'VOLUNTARIO', tipo: null }
 const perfil = { ...voluntario, identificacao: '12345678909', telefone: '61998765432', cidade: 'Ceilândia', estado: 'DF',
-  causas: ['Educação'], disponibilidade_semanal: [{ dia: 'SABADO', periodo: 'MANHA' }], carga_horaria_semanal: null }
+  causas: ['Educação'], causa_ids: [1], causas_legadas: [], disponibilidade_semanal: [{ dia: 'SABADO', periodo: 'MANHA' }], carga_horaria_semanal: null }
 
 beforeEach(() => {
   vi.resetAllMocks()
@@ -38,7 +38,7 @@ it('recomenda só as vagas abertas que combinam com os interesses do perfil', as
 })
 
 it('mostra as vagas abertas quando nada combina e ignora vagas encerradas', async () => {
-  auth.getProfile.mockResolvedValue({ ...perfil, causas: ['Esporte'] })
+  auth.getProfile.mockResolvedValue({ ...perfil, causas: ['Esporte'], causa_ids: [9] })
   vagas.listarVagas.mockResolvedValue({ itens: [{ ...ambiente, ocorrencias: passado }, social], total: 2, pagina: 1, por_pagina: 20 })
   open()
   const sugestoes = within(await screen.findByRole('region', { name: 'Vagas abertas agora' }))

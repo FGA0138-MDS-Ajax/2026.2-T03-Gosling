@@ -2,19 +2,21 @@ import { DIAS, PERIODOS } from '../utils/volunteerProfile'
 import { Icon } from './ui/Layout'
 import s from './VolunteerPreferences.module.css'
 
-const DESIGN_CAUSAS = ['Meio ambiente', 'Educação', 'Alimentação', 'Proteção animal', 'Pessoas idosas', 'Cultura', 'Saúde', 'Esporte']
-// Mantém os valores já usados pela API e os interesses de contas antigas.
-const labels = { 'Meio Ambiente': 'Meio ambiente', Animais: 'Proteção animal', Idosos: 'Pessoas idosas' }
-const valueFor = label => Object.keys(labels).find(key => labels[key] === label) || label
-
-export function Interests({ value, onChange, disabled = false, error }) {
-  const catalogo = [...new Set([...DESIGN_CAUSAS.map(valueFor), ...value])]
-  return <div className={s.chips} role="group" tabIndex={error ? -1 : undefined} aria-describedby={error ? 'causas-error' : undefined} aria-label="Causas de interesse">{catalogo.map(causa => {
-    const selected = value.includes(causa)
-    return <button type="button" role="checkbox" aria-checked={selected} disabled={disabled} key={causa}
-      className={selected ? s.selected : ''} onClick={() => onChange(selected ? value.filter(v => v !== causa) : [...value, causa])}>
-      {selected && <Icon name="imgIcon12" />}{labels[causa] || causa}</button>
-  })}</div>
+export function Interests({ value, onChange, catalogo, legadas = [], onLegacyChange, disabled = false, error }) {
+  const causas = catalogo.itens.filter(causa => causa.ativo || value.includes(causa.id))
+  return <>
+    {catalogo.carregando && <p role="status">Carregando causas…</p>}
+    {catalogo.erro && <div><p role="alert">{catalogo.erro}</p><button className={s.retry} type="button" onClick={catalogo.recarregar}>Tentar carregar causas novamente</button></div>}
+    <div className={s.chips} role="group" tabIndex={error ? -1 : undefined} aria-describedby={error ? 'causas-error' : undefined} aria-label="Causas de interesse">{causas.map(causa => {
+      const selected = value.includes(causa.id)
+      return <button type="button" role="checkbox" aria-checked={selected} disabled={disabled || catalogo.carregando || Boolean(catalogo.erro)} key={causa.id}
+        title={!causa.ativo ? 'Interesse anterior preservado. Pode ser removido.' : undefined}
+        className={selected ? s.selected : ''} onClick={() => onChange(selected ? value.filter(id => id !== causa.id) : [...value, causa.id])}>
+        {selected && <Icon name="imgIcon12" />}{causa.nome}{!causa.ativo && ' (anterior)'}</button>
+    })}{legadas.map(nome => <button type="button" key={`legado-${nome}`} role="checkbox" aria-checked="true" disabled={disabled}
+      title="Interesse antigo preservado; desmarque para remover." className={s.selected} onClick={() => onLegacyChange(legadas.filter(valor => valor !== nome))}>
+      <Icon name="imgIcon12" />{nome} (anterior)</button>)}</div>
+  </>
 }
 
 export function Availability({ value, onChange, hours, onHoursChange, disabled = false, error }) {

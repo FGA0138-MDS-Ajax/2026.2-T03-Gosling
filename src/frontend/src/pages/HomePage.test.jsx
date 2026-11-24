@@ -48,12 +48,12 @@ it('calcula os números com os dados da API e mostra destaques e vagas presencia
 it('leva aos filtros pela busca do topo e pelos atalhos de causa', async () => {
   const user = userEvent.setup(); open()
   await screen.findByRole('link', { name: '3 vagas abertas agora' })
-  expect(screen.getByRole('link', { name: /Educação\s*1 vaga aberta/ })).toHaveAttribute('href', '/vagas?causa=Educa%C3%A7%C3%A3o')
+  expect(await screen.findByRole('link', { name: /Educação\s*1 vaga aberta/ })).toHaveAttribute('href', '/vagas?causa_id=1')
   const busca = within(screen.getByRole('search', { name: 'Buscar vagas' }))
-  await user.selectOptions(busca.getByLabelText('Causa'), 'Meio ambiente')
+  await user.selectOptions(busca.getByLabelText('Causa'), '3')
   await user.selectOptions(busca.getByLabelText('Quando'), 'MANHA')
   await user.click(busca.getByRole('button', { name: 'Buscar' }))
-  expect(screen.getByRole('heading', { name: 'Destino /vagas?causa=Meio+ambiente&periodo=MANHA' })).toBeVisible()
+  expect(screen.getByRole('heading', { name: 'Destino /vagas?causa_id=3&periodo=MANHA' })).toBeVisible()
 })
 
 it('leva ao detalhe pelo título do card', async () => {
