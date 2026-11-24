@@ -94,10 +94,9 @@ class VagaService:
             raise HTTPException(404, "Vaga não encontrada ou indisponível.")
         return VagaPublica.model_validate(vaga)
 
-    def listar_vagas_da_organizacao(
+        def listar_vagas_da_organizacao(
         self, organizacao_id: int, pagina: int, tamanho_pagina: int
     ) -> PaginatedResponseVagas:
-        """Listagem paginada das vagas da organização (Issue #36)."""
         vagas, total_itens = self.repository.listar_vagas_por_organizacao(
             organizacao_id=organizacao_id,
             pagina=pagina,
@@ -109,12 +108,10 @@ class VagaService:
                 id=str(vaga["id"]),
                 titulo=vaga["titulo"],
                 estado_vaga=vaga["estado_vaga"],
-                local=vaga.get("local"),
-                descricao=vaga.get("descricao"),
                 cidade=vaga.get("cidade"),
                 estado_uf=vaga.get("estado_uf"),
                 data_criacao=vaga.get("data_criacao"),
-                total_candidaturas=int(vaga["total_candidaturas"]),
+                total_candidaturas=vaga.get("total_candidaturas"),
             )
             for vaga in vagas
         ]
