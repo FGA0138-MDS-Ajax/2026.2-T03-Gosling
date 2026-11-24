@@ -30,7 +30,12 @@ function VagaResumo({ vaga }) {
   return (
     <tr role="row" className={styles.vaga} aria-labelledby={`minha-vaga-${vaga.id}`}>
       <th role="rowheader" scope="row" className={styles.titulo}>
-        <span id={`minha-vaga-${vaga.id}`}>{titulo}</span>
+        {vaga.descricao && !rascunho ? (
+          <details className={styles.detalhes}>
+            <summary id={`minha-vaga-${vaga.id}`}>{titulo}</summary>
+            <p className={styles.descricao}>{vaga.descricao}</p>
+          </details>
+        ) : <span id={`minha-vaga-${vaga.id}`}>{titulo}</span>}
         {local && <span className={styles.local}>{local}</span>}
       </th>
       <td role="cell" className={styles.situacao}>

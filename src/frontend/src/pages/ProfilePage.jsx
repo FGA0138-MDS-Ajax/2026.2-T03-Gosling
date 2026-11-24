@@ -112,13 +112,15 @@ function AreaOrganizacao({ usuario, logout }) {
         <div className={s.cardActions}>
           {ong && <Link className={s.primary} to="/vagas" state={{ abrirPublicacao: true }}>Publicar vaga</Link>}
           <Link className={ong ? s.secondary : s.primary} to="/organizacao/perfil">Editar perfil institucional</Link>
-          <Link className={s.secondary} to="/organizacao/vagas">Minhas vagas</Link>
           <button type="button" className={s.ghost} onClick={() => logout()}>Sair</button>
         </div>
       </section>
-      <section className={s.card} aria-labelledby="painel-em-breve">
-        <h2 id="painel-em-breve">Painel da organização</h2>
-        <p className={s.muted}>O acompanhamento de vagas, candidaturas e triagem fica neste espaço. Por enquanto, suas vagas publicadas aparecem em Explorar vagas.</p>
+      <section className={s.card} aria-labelledby="painel-organizacao">
+        <h2 id="painel-organizacao">Painel da organização</h2>
+        <p className={s.muted}>Acompanhe as vagas publicadas e o número de candidaturas.</p>
+        <div className={s.cardActions}>
+          <Link className={s.secondary} to="/organizacao/vagas">Minhas vagas</Link>
+        </div>
       </section>
     </div>
   </>
