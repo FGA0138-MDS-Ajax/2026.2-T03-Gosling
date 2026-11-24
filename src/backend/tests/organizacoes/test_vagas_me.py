@@ -241,6 +241,7 @@ def test_listagem_real_isola_organizacoes_e_mantem_a_ordem_das_paginas(
     }]
     assert ultima.json()["itens"] == []
     assert ultima.json()["total_itens"] == 3
+    assert lista_b.json()["tamanho_pagina"] == 10
     assert [(v["id"], v["total_candidaturas"]) for v in lista_b.json()["itens"]] == [
         (str(outra_vaga), 1)
     ]

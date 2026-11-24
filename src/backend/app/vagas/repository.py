@@ -115,7 +115,7 @@ class VagaRepository:
             .offset((pagina - 1) * tamanho_pagina)
             .limit(tamanho_pagina)
         )
-        linhas = self.session.execute(consulta).mappings()
+        linhas = self.session.execute(consulta).mappings().all()
         return [dict(linha) for linha in linhas], total_itens
 
     def confirmar(self) -> None:
