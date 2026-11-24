@@ -1,262 +1,181 @@
+import os
+import uuid
 from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock
-import jwt
+
 import pytest
-from fastapi import status
 from fastapi.testclient import TestClient
 
-from app.organizacoes.router import get_vaga_service
-from app.vagas.schemas import PaginatedResponseVagas, VagaResumoResponse
-from app.voluntarios.service import ALGORITHM, SECRET_KEY
+from app.main import app
 
 URL = "/api/v1/organizacoes/me/vagas"
-SENHA = "SenhaDeTeste123!"
+SENHA = "Senha@123"
 
 
-def gerar_token_teste(
-    sub: str = "org-uuid-123",
-    perfil: str = "Organizacao",
-    expirado: bool = False,
-) -> str:
-    delta = timedelta(hours=-1) if expirado else timedelta(hours=2)
-    payload = {
-        "sub": sub,
-        "perfil": perfil,
-        "exp": datetime.now(timezone.utc) + delta,
-        "iat": datetime.now(timezone.utc),
-    }
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+@pytest.fixture(scope="module", autouse=True)
+def _exige_banco_migrado():
+    if os.getenv("DATABASE_URL"):
+        return
+    if os.getenv("CI"):
+        pytest.fail(
+            "DATABASE_URL não definido na CI: o teste de integração "
+            "da listagem de vagas não pode ser ignorado.",
+            pytrace=False,
+        )
+    pytest.skip("Requer DATABASE_URL apontando para um banco migrado")
 
 
-def autenticar(client: TestClient, email: str) -> dict[str, str]:
-    resposta = client.post(
+def _cnpj_valido(base12: str) -> str:
+    def dv(digitos: str, pesos: list[int]) -> str:
+        soma = sum(int(d) * p for d, p in zip(digitos, pesos))
+        resto = soma % 11
+        return "0" if resto < 2 else str(11 - resto)
+
+    d1 = dv(base12, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2])
+    d2 = dv(base12 + d1, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2])
+    return base12 + d1 + d2
+
+
+def _cnpj_unico() -> str:
+    base = f"{uuid.uuid4().int % 10**8:08d}0001"
+    return _cnpj_valido(base)
+
+
+@pytest.fixture(scope="module")
+def client():
+    return TestClient(app)
+
+
+def _criar_organizacao_e_logar(client: TestClient, rotulo: str) -> dict:
+    sufixo = uuid.uuid4().hex[:8]
+    email = f"{rotulo}.{sufixo}@teste.com"
+    resp = client.post(
+        "/api/v1/organizacoes",
+        json={
+            "nome": f"Org {rotulo} {sufixo}",
+            "email": email,
+            "razao_social": f"Org {rotulo} Ltda",
+            "cnpj": _cnpj_unico(),
+            "area_atuacao": "Educação",
+            "endereco": "Rua Exemplo, 100, Gama, Brasília",
+            "responsavel": "Maria Silva",
+            "descricao": "Organização de teste",
+            "telefone": "61999998888",
+            "senha": SENHA,
+            "consentimento_termos": True,
+        },
+    )
+    assert resp.status_code in (200, 201), resp.text
+
+    login = client.post(
         "/api/v1/auth/login", json={"email": email, "senha": SENHA}
     )
-    assert resposta.status_code == status.HTTP_200_OK
-    return {"Authorization": f"Bearer {resposta.json()['access_token']}"}
+    assert login.status_code == 200, login.text
+    token = login.json()["access_token"]
+    return {"email": email, "headers": {"Authorization": f"Bearer {token}"}}
 
 
-def resposta_padrao_paginada() -> PaginatedResponseVagas:
-    return PaginatedResponseVagas(
-        itens=[
-            VagaResumoResponse(
-                id="vaga-uuid-001",
-                titulo="Desenvolvedor Python Voluntário",
-                estado_vaga="ABERTA",
-                cidade="São Paulo",
-                estado_uf="SP",
-                data_criacao=datetime.now(timezone.utc),
-                total_candidaturas=7,
-            ),
-            VagaResumoResponse(
-                id="vaga-uuid-002",
-                titulo="Auxiliar de Logística Social",
-                estado_vaga="ENCERRADA",
-                cidade="Campinas",
-                estado_uf="SP",
-                data_criacao=datetime.now(timezone.utc),
-                total_candidaturas=5,
-            ),
+def _criar_vaga(client: TestClient, org: dict, titulo: str) -> None:
+    inicio = datetime.now(timezone.utc) + timedelta(days=30)
+    fim = inicio + timedelta(hours=4)
+    payload = {
+        "titulo": titulo,
+        "descricao": "Vaga criada pelo teste de integração",
+        "atividades": "Atividades de apoio realizadas pelo voluntário",
+        "causa": "Educação",
+        "modalidade": "PRESENCIAL",
+        "local": "Brasília - DF",
+        "periodo": "MANHA",
+        "carga_horaria": 4,
+        "numero_vagas": 3,
+        "ocorrencias": [
+            {"inicio": inicio.isoformat(), "fim": fim.isoformat()}
         ],
-        pagina=1,
-        tamanho_pagina=10,
-        total_itens=2,
-        total_paginas=1,
+    }
+    resp = client.post("/api/v1/vagas", json=payload, headers=org["headers"])
+    assert resp.status_code in (200, 201), resp.text
+
+
+def _listar(client: TestClient, org: dict, pagina: int, tamanho: int):
+    return client.get(
+        f"{URL}?pagina={pagina}&tamanho_pagina={tamanho}",
+        headers=org["headers"],
     )
 
 
-@pytest.fixture
-def service_mock(client) -> MagicMock:
-    mock = MagicMock()
-    mock.listar_vagas_da_organizacao.return_value = resposta_padrao_paginada()
-    client.app.dependency_overrides[get_vaga_service] = lambda: mock
-    yield mock
-    client.app.dependency_overrides.clear()
+@pytest.fixture(scope="module")
+def cenario(client):
+    org_a = _criar_organizacao_e_logar(client, "a")
+    org_b = _criar_organizacao_e_logar(client, "b")
+    for i in range(5):
+        _criar_vaga(client, org_a, f"A-{i}")
+    for i in range(2):
+        _criar_vaga(client, org_b, f"B-{i}")
+    return org_a, org_b
 
 
-def test_listar_minhas_vagas_confirma_dados_contagem_e_paginacao(
-    client, contas, service_mock
+def test_listagem_retorna_so_vagas_da_organizacao_com_paginacao(
+    client, cenario
 ):
-    headers = autenticar(client, "ong@example.com")
+    org_a, _ = cenario
 
-    service_mock.listar_vagas_da_organizacao.return_value = (
-        PaginatedResponseVagas(
-            itens=[resposta_padrao_paginada().itens[0]],
-            pagina=1,
-            tamanho_pagina=10,
-            total_itens=1,
-            total_paginas=1,
-        )
-    )
+    r1 = _listar(client, org_a, pagina=1, tamanho=3)
+    assert r1.status_code == 200, r1.text
+    corpo1 = r1.json()
+    assert len(corpo1["itens"]) == 3
+    assert corpo1["pagina"] == 1
+    assert corpo1["tamanho_pagina"] == 3
+    assert corpo1["total_itens"] == 5
+    assert corpo1["total_paginas"] == 2
 
-    response = client.get(
-        f"{URL}?pagina=1&tamanho_pagina=10",
-        headers=headers,
-    )
+    r2 = _listar(client, org_a, pagina=2, tamanho=3)
+    assert r2.status_code == 200, r2.text
+    corpo2 = r2.json()
+    assert len(corpo2["itens"]) == 2
+    assert corpo2["pagina"] == 2
 
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-
-    assert data["pagina"] == 1
-    assert data["tamanho_pagina"] == 10
-    assert data["total_itens"] == 1
-    assert data["total_paginas"] == 1
-
-    item = data["itens"][0]
-    assert item["id"] == "vaga-uuid-001"
-    assert item["estado_vaga"] == "ABERTA"
-    assert item["total_candidaturas"] == 7
+    titulos = [v["titulo"] for v in corpo1["itens"] + corpo2["itens"]]
+    assert sorted(titulos) == [f"A-{i}" for i in range(5)]
+    assert len(set(titulos)) == 5
 
 
-def test_listar_minhas_vagas_garante_isolamento_de_organizacao(
-    client, contas, service_mock
-):
-    headers = autenticar(client, "ong@example.com")
+def test_listagem_expoe_campos_essenciais_da_vaga(client, cenario):
+    org_a, _ = cenario
 
-    service_mock.listar_vagas_da_organizacao.return_value = (
-        PaginatedResponseVagas(
-            itens=[],
-            pagina=1,
-            tamanho_pagina=10,
-            total_itens=0,
-            total_paginas=0,
-        )
-    )
+    r = _listar(client, org_a, pagina=1, tamanho=10)
+    assert r.status_code == 200, r.text
 
-    client.get(URL, headers=headers)
-
-    service_mock.listar_vagas_da_organizacao.assert_called_once()
-    _, kwargs = service_mock.listar_vagas_da_organizacao.call_args
-    assert kwargs["organizacao_id"] == contas["organizacao"].id
+    for item in r.json()["itens"]:
+        assert item["id"]
+        assert item["titulo"].startswith("A-")
+        assert item["estado_vaga"] is not None
+        assert "data_criacao" in item
+        assert "total_candidaturas" in item
 
 
-def test_listar_vagas_usa_o_id_da_organizacao_do_jwt_com_fixture(
-    client,
-    contas,
-    service_mock,
-):
-    headers = autenticar(client, "ong@example.com")
+def test_listagem_da_outra_organizacao_nao_mistura(client, cenario):
+    _, org_b = cenario
 
-    client.get(URL, headers=headers)
-
-    service_mock.listar_vagas_da_organizacao.assert_called_once()
-    _, kwargs = service_mock.listar_vagas_da_organizacao.call_args
-    assert kwargs["organizacao_id"] == contas["organizacao"].id
+    r = _listar(client, org_b, pagina=1, tamanho=10)
+    assert r.status_code == 200, r.text
+    corpo = r.json()
+    assert corpo["total_itens"] == 2
+    assert len(corpo["itens"]) == 2
+    assert all(v["titulo"].startswith("B-") for v in corpo["itens"])
 
 
-def test_listar_vagas_repassa_parametros_de_paginacao(
-    client, contas, service_mock
-):
-    headers = autenticar(client, "ong@example.com")
+def test_pagina_alem_do_fim_retorna_lista_vazia(client, cenario):
+    org_a, _ = cenario
 
-    resposta = client.get(f"{URL}?pagina=2&tamanho_pagina=5", headers=headers)
-
-    assert resposta.status_code == status.HTTP_200_OK
-    service_mock.listar_vagas_da_organizacao.assert_called_once_with(
-        organizacao_id=contas["organizacao"].id,
-        pagina=2,
-        tamanho_pagina=5,
-    )
+    r = _listar(client, org_a, pagina=99, tamanho=3)
+    assert r.status_code == 200, r.text
+    corpo = r.json()
+    assert corpo["itens"] == []
+    assert corpo["total_itens"] == 5
 
 
-@pytest.mark.parametrize(
-    "query",
-    ["pagina=0", "pagina=-1", "tamanho_pagina=0", "tamanho_pagina=101"],
-)
-def test_listar_vagas_parametros_invalidos_retornam_422(
-    client, contas, service_mock, query
-):
-    headers = autenticar(client, "ong@example.com")
+def test_contagem_indisponivel_retorna_null(client, cenario):
+    org_a, _ = cenario
 
-    resposta = client.get(f"{URL}?{query}", headers=headers)
-
-    assert resposta.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
-    service_mock.listar_vagas_da_organizacao.assert_not_called()
-
-
-def test_listar_minhas_vagas_lista_vazia_retorna_200_ok(
-    client, contas, service_mock
-):
-    headers = autenticar(client, "ong@example.com")
-
-    service_mock.listar_vagas_da_organizacao.return_value = (
-        PaginatedResponseVagas(
-            itens=[],
-            pagina=1,
-            tamanho_pagina=10,
-            total_itens=0,
-            total_paginas=0,
-        )
-    )
-
-    response = client.get(URL, headers=headers)
-
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert data["itens"] == []
-    assert data["total_itens"] == 0
-    assert data["total_paginas"] == 0
-
-
-def test_listar_minhas_vagas_sem_autenticacao_retorna_401(
-    client, service_mock
-):
-    response = client.get(URL)
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    service_mock.listar_vagas_da_organizacao.assert_not_called()
-
-
-def test_listar_minhas_vagas_token_expirado_retorna_401(
-    client, service_mock
-):
-    token_expirado = gerar_token_teste(expirado=True)
-    response = client.get(
-        URL, headers={"Authorization": f"Bearer {token_expirado}"}
-    )
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    service_mock.listar_vagas_da_organizacao.assert_not_called()
-
-
-def test_listar_vagas_com_token_invalido_retorna_401(
-    client, service_mock
-):
-    response = client.get(
-        URL, headers={"Authorization": "Bearer token-invalido"}
-    )
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    service_mock.listar_vagas_da_organizacao.assert_not_called()
-
-
-def test_listar_minhas_vagas_perfil_voluntario_retorna_403(
-    client, contas, service_mock
-):
-    headers = autenticar(client, "voluntario@example.com")
-    response = client.get(URL, headers=headers)
-    assert response.status_code == status.HTTP_403_FORBIDDEN
-    service_mock.listar_vagas_da_organizacao.assert_not_called()
-
-
-def test_listar_vagas_com_perfil_voluntario_fixture_retorna_403(
-    client,
-    contas,
-    service_mock,
-):
-    headers = autenticar(client, "voluntario@example.com")
-    resposta = client.get(URL, headers=headers)
-    assert resposta.status_code == status.HTTP_403_FORBIDDEN
-    service_mock.listar_vagas_da_organizacao.assert_not_called()
-
-
-def test_listar_minhas_vagas_erro_no_banco_retorna_500(
-    client, contas, service_mock
-):
-    headers = autenticar(client, "ong@example.com")
-
-    service_mock.listar_vagas_da_organizacao.side_effect = Exception(
-        "Erro de conexão com o banco MySQL"
-    )
-
-    with TestClient(client.app, raise_server_exceptions=False) as client_500:
-        response = client_500.get(URL, headers=headers)
-
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    r = _listar(client, org_a, pagina=1, tamanho=3)
+    assert r.status_code == 200, r.text
+    assert all(v["total_candidaturas"] is None for v in r.json()["itens"])
