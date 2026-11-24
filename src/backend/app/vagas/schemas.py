@@ -1,13 +1,11 @@
-from datetime import UTC, datetime
+from datetime import UTC
 from decimal import Decimal
-from typing import Annotated, List, Optional
 
 from pydantic import (
     AwareDatetime,
     BaseModel,
     ConfigDict,
     Field,
-    HttpUrl,
     field_validator,
     model_validator,
 )
@@ -30,30 +28,6 @@ class OcorrenciaRequest(BaseModel):
         return self
 
 
-def validar_url_publica(valor: str) -> str:
-    import re
-
-    if re.fullmatch(r"/api/v1/midia/[a-f0-9]{32}\.webp", valor):
-        return valor
-    from pydantic import TypeAdapter
-
-    url = TypeAdapter(HttpUrl).validate_python(valor)
-    if url.scheme != "https":
-        raise ValueError("Use uma URL HTTPS para arquivos externos.")
-    return str(url)
-
-
-class DocumentoExigido(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-    nome: str = Field(min_length=2, max_length=150)
-    modelo_url: str | None = Field(default=None, max_length=2000)
-
-    @field_validator("modelo_url")
-    @classmethod
-    def url_segura(cls, valor):
-        return validar_url_publica(valor) if valor else None
-
-
 class CadastroVagaRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -67,17 +41,6 @@ class CadastroVagaRequest(BaseModel):
     carga_horaria: Decimal = Field(gt=0, max_digits=7, decimal_places=2)
     numero_vagas: int = Field(gt=0, strict=True)
     ocorrencias: list[OcorrenciaRequest] = Field(min_length=1, max_length=100)
-    fotos: list[Annotated[str, Field(max_length=2000)]] = Field(
-        default_factory=list, max_length=10
-    )
-    documentos_exigidos: list[DocumentoExigido] = Field(
-        default_factory=list, max_length=20
-    )
-
-    @field_validator("fotos")
-    @classmethod
-    def urls_seguras(cls, valor):
-        return [validar_url_publica(url) for url in valor]
 
     @field_validator(
         "titulo", "descricao", "atividades", "causa", "local", mode="before"
@@ -105,8 +68,6 @@ class OrganizacaoResumo(BaseModel):
 
     id: int
     nome: str
-    homologada: bool = False
-    descricao: str | None = None
 
 
 class CausaPublica(BaseModel):
@@ -138,14 +99,6 @@ class VagaPublica(BaseModel):
     numero_vagas: int
     status: StatusVaga
     ocorrencias: list[OcorrenciaPublica]
-    fotos: list[str] = Field(default_factory=list)
-    documentos_exigidos: list[DocumentoExigido] = Field(default_factory=list)
-    candidaturas_disponiveis: bool = False
-
-    @field_validator("fotos", "documentos_exigidos", mode="before")
-    @classmethod
-    def listas_existentes(cls, valor):
-        return [] if valor is None else valor
 
 
 class ListaVagasResponse(BaseModel):
@@ -153,37 +106,3 @@ class ListaVagasResponse(BaseModel):
     total: int
     pagina: int
     por_pagina: int
-
-
-class AtualizarVagaRequest(BaseModel):
-    titulo: Optional[str] = Field(None, min_length=3, max_length=100)
-    descricao: Optional[str] = Field(None, min_length=10)
-    cidade: Optional[str] = None
-    estado_uf: Optional[str] = Field(None, min_length=2, max_length=2)
-    data_inicio: Optional[datetime] = None
-    data_fim: Optional[datetime] = None
-    estado_vaga: Optional[str] = Field(
-        None,
-        description="Estado da vaga: ABERTA, ENCERRADA ou RASCUNHO",
-    )
-
-
-class VagaResumoResponse(BaseModel):
-    id: str
-    titulo: str
-    estado_vaga: str
-    cidade: Optional[str] = None
-    estado_uf: Optional[str] = None
-    data_criacao: datetime
-    total_candidaturas: int = Field(
-        default=0,
-        description="Contagem acumulada de inscritos na vaga",
-    )
-
-
-class PaginatedResponseVagas(BaseModel):
-    itens: List[VagaResumoResponse]
-    pagina: int
-    tamanho_pagina: int
-    total_itens: int
-    total_paginas: int
