@@ -6,6 +6,7 @@ import {
   readSession,
   SESSION_EXPIRED_EVENT,
   updateSessionExpiry,
+  wasSessionExpired,
   writeSession,
 } from '../services/sessionStore'
 import { AuthContext } from './authContext'
@@ -13,7 +14,8 @@ import { AuthContext } from './authContext'
 export default function AuthProvider({ children }) {
   const [{ saved: initial, expired: initialExpired }] = useState(() => {
     const saved = readSession()
-    return { saved, expired: Boolean(saved && saved.expires_at * 1000 <= Date.now()) }
+    const expired = saved ? saved.expires_at * 1000 <= Date.now() : wasSessionExpired()
+    return { saved, expired }
   })
   const [usuario, setUsuario] = useState(null)
   const [loading, setLoading] = useState(Boolean(initial && !initialExpired))
@@ -24,7 +26,7 @@ export default function AuthProvider({ children }) {
 
   const logout = useCallback(({ expired = false } = {}) => {
     revision.current += 1
-    clearSession()
+    clearSession({ expired })
     setUsuario(null)
     setExpiresAt(0)
     setRestoreError('')
@@ -55,7 +57,10 @@ export default function AuthProvider({ children }) {
 
   const refreshSession = useCallback(() => {
     const saved = readSession()
-    if (!saved) { logout(); return }
+    if (!saved) {
+      logout({ expired: wasSessionExpired() })
+      return
+    }
     if (saved.expires_at * 1000 <= Date.now()) {
       logout({ expired: true })
       return
@@ -68,12 +73,15 @@ export default function AuthProvider({ children }) {
 
   useEffect(() => {
     const saved = readSession()
-    if (saved && saved.expires_at * 1000 > Date.now()) {
-      const requestRevision = ++revision.current
-      Promise.resolve().then(() => restore(saved, requestRevision))
-    } else {
-      clearSession()
+    if (!saved) return
+
+    if (saved.expires_at * 1000 <= Date.now()) {
+      clearSession({ expired: true })
+      return
     }
+
+    const requestRevision = ++revision.current
+    Promise.resolve().then(() => restore(saved, requestRevision))
     return () => { revision.current += 1 }
   }, [restore])
 

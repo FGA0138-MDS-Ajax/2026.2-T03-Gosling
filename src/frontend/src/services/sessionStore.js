@@ -56,7 +56,15 @@ export function updateSessionExpiry(accessToken, expiresAt) {
   }
 }
 
-export function clearSession() {
+export function wasSessionExpired() {
+  try {
+    return sessionStorage.getItem(ENDED_KEY) === 'expired'
+  } catch {
+    return false
+  }
+}
+
+export function clearSession({ expired = false } = {}) {
   let active
   try { active = parseSession(sessionStorage.getItem(STORAGE_KEY)) } catch { /* Armazenamento indisponível. */ }
   try {
@@ -65,7 +73,7 @@ export function clearSession() {
   } catch { /* O armazenamento da aba ainda deve ser limpo. */ }
   try {
     sessionStorage.removeItem(STORAGE_KEY)
-    // Impede que uma aba deslogada adote a conta lembrada em outra aba.
-    sessionStorage.setItem(ENDED_KEY, 'true')
+    // Mantém o motivo na aba, inclusive se uma recarga descartar o evento.
+    sessionStorage.setItem(ENDED_KEY, expired ? 'expired' : 'true')
   } catch { /* Armazenamento indisponível. */ }
 }

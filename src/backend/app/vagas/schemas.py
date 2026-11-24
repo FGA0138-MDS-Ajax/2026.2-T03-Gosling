@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Literal, Optional
 
 from pydantic import (
     AwareDatetime,
@@ -15,6 +15,7 @@ from pydantic import (
 
 from app.vagas.enums import Modalidade, Periodo, StatusVaga
 from app.causas.schemas import IdCausa
+from app.localizacao.schemas import Localizacao, LocalizacaoPublica
 
 
 class OcorrenciaRequest(BaseModel):
@@ -66,6 +67,8 @@ class CadastroVagaRequest(BaseModel):
     causa_id: IdCausa | None = None
     modalidade: Modalidade
     local: str = Field(min_length=3, max_length=500)
+    localizacao: Localizacao | None = None
+    origem_localizacao: Literal["PROPRIA", "ORGANIZACAO"] | None = None
     periodo: Periodo
     carga_horaria: Decimal = Field(gt=0, max_digits=7, decimal_places=2)
     numero_vagas: int = Field(gt=0, strict=True)
@@ -105,6 +108,20 @@ class CadastroVagaRequest(BaseModel):
     def selecionar_causa(self):
         if (self.causa is None) == (self.causa_id is None):
             raise ValueError("Informe somente causa_id; o campo causa é legado.")
+        return self
+
+    @model_validator(mode="after")
+    def endereco_da_atividade(self):
+        if self.modalidade == Modalidade.REMOTO:
+            if self.localizacao is not None or self.origem_localizacao is not None:
+                raise ValueError("Atividade remota não usa endereço presencial.")
+        elif self.origem_localizacao == "ORGANIZACAO":
+            if self.localizacao is not None:
+                raise ValueError(
+                    "Escolha o endereço da organização ou um endereço próprio."
+                )
+        elif self.origem_localizacao == "PROPRIA" and self.localizacao is None:
+            raise ValueError("Informe o endereço próprio da atividade.")
         return self
 
     @model_validator(mode="after")
@@ -151,6 +168,8 @@ class VagaPublica(BaseModel):
     organizacao: OrganizacaoResumo
     modalidade: Modalidade
     local: str
+    localizacao: LocalizacaoPublica | None = None
+    origem_localizacao: str = "LEGADO"
     periodo: Periodo
     carga_horaria: Decimal
     numero_vagas: int

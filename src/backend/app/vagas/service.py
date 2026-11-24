@@ -6,8 +6,10 @@ from app.causas.repository import CausaRepository
 from app.causas.service import CatalogoService, erro_causa, normalizar
 
 from app.core.midia import bloqueio_midia, pasta_midia
+from app.localizacao.models import aplicar_localizacao
+from app.localizacao.schemas import Localizacao
 from app.usuarios.enums import TipoOrganizacao
-from app.vagas.enums import StatusVaga
+from app.vagas.enums import Modalidade, StatusVaga
 from app.vagas.models import OcorrenciaVaga, Vaga
 from app.vagas.repository import VagaRepository
 from app.vagas.schemas import (
@@ -67,7 +69,15 @@ class VagaService:
                     CausaRepository(self.repository.session)
                 ).publicavel(dados.causa_id, dados.causa)
                 vaga = Vaga(
-                    **dados.model_dump(exclude={"causa", "causa_id", "ocorrencias"}),
+                    **dados.model_dump(
+                        exclude={
+                            "causa",
+                            "causa_id",
+                            "ocorrencias",
+                            "localizacao",
+                            "origem_localizacao",
+                        }
+                    ),
                     organizacao=organizacao,
                     causa=causa,
                     status=StatusVaga.ABERTA,
@@ -76,6 +86,32 @@ class VagaService:
                         for item in dados.ocorrencias
                     ],
                 )
+                if dados.modalidade == Modalidade.REMOTO:
+                    vaga.origem_localizacao = "REMOTA"
+                elif dados.origem_localizacao == "ORGANIZACAO":
+                    if organizacao.localizacao is None:
+                        raise HTTPException(
+                            422,
+                            detail=[
+                                {
+                                    "loc": ["body", "origem_localizacao"],
+                                    "msg": (
+                                        "Cadastre o endereço da organização "
+                                        "antes de usá-lo."
+                                    ),
+                                    "type": "value_error",
+                                }
+                            ],
+                        )
+                    aplicar_localizacao(
+                        vaga, Localizacao.model_validate(organizacao.localizacao)
+                    )
+                    vaga.origem_localizacao = "ORGANIZACAO"
+                elif dados.localizacao is not None:
+                    aplicar_localizacao(vaga, dados.localizacao)
+                    vaga.origem_localizacao = "PROPRIA"
+                else:
+                    vaga.origem_localizacao = "LEGADO"
                 self.repository.adicionar(vaga)
                 resposta = VagaPublica.model_validate(vaga)
                 self.repository.confirmar()

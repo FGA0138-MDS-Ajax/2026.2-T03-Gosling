@@ -11,10 +11,15 @@ export function validarPublicacao(dados) {
     if (dados[campo].length < min) erros[campo] = `Use pelo menos ${min} caracteres.`
     else if (dados[campo].length > max) erros[campo] = `Use até ${max} caracteres.`
   }
-  if (!Number.isInteger(dados.causa_id) || dados.causa_id < 1) erros.causa_id = 'Selecione uma causa disponível.'
+  if (!Number.isInteger(dados.causa_id) || dados.causa_id < 1)
+    erros.causa_id = 'Selecione uma causa disponível.'
   const carga = dados.carga_horaria
-  if (!Number.isFinite(carga) || carga < 0.01 || carga > 99999.99
-    || Math.abs(carga * 100 - Math.round(carga * 100)) > 0.0000001) {
+  if (
+    !Number.isFinite(carga) ||
+    carga < 0.01 ||
+    carga > 99999.99 ||
+    Math.abs(carga * 100 - Math.round(carga * 100)) > 0.0000001
+  ) {
     erros.carga_horaria = 'Informe de 0,01 a 99.999,99 horas, com até duas casas decimais.'
   }
   if (!Number.isInteger(dados.numero_vagas) || dados.numero_vagas < 1) {
@@ -31,12 +36,25 @@ export function errosPublicacao(detail) {
     const campo = issue.loc?.[1] === 'causa' ? 'causa_id' : issue.loc?.[1]
     const texto = TEXTOS_VAGA[campo]
     let mensagem = issue.msg || 'Confira o valor informado.'
-    if (texto && issue.type === 'string_too_short') mensagem = `Use pelo menos ${texto.min} caracteres.`
+    if (texto && issue.type === 'string_too_short')
+      mensagem = `Use pelo menos ${texto.min} caracteres.`
     if (texto && issue.type === 'string_too_long') mensagem = `Use até ${texto.max} caracteres.`
     if (campo === 'ocorrencias') {
       const indice = issue.loc?.[2]
       encontros.push(`${Number.isInteger(indice) ? `Encontro ${indice + 1}: ` : ''}${mensagem}`)
-    } else if (texto || ['causa_id', 'modalidade', 'periodo', 'carga_horaria', 'numero_vagas'].includes(campo)) {
+    } else if (campo === 'localizacao') {
+      campos[issue.loc.slice(1).join('.')] ??= mensagem
+    } else if (
+      texto ||
+      [
+        'causa_id',
+        'modalidade',
+        'periodo',
+        'carga_horaria',
+        'numero_vagas',
+        'origem_localizacao',
+      ].includes(campo)
+    ) {
       campos[campo] ??= mensagem
     } else {
       gerais.push(mensagem)

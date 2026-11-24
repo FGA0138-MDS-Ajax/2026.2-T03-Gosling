@@ -4,6 +4,7 @@ import http from './http'
 import {
   readSession,
   SESSION_EXPIRED_EVENT,
+  wasSessionExpired,
   writeSession,
 } from './sessionStore'
 
@@ -56,8 +57,17 @@ describe('cliente HTTP compartilhado', () => {
     rejectWith(401)
     await expect(http.get('/auth/me')).rejects.toBeInstanceOf(AxiosError)
     expect(readSession()).toBeNull()
+    expect(wasSessionExpired()).toBe(true)
     expect(notify).toHaveBeenCalledTimes(1)
     window.removeEventListener(SESSION_EXPIRED_EVENT, notify)
+  })
+
+  it('não registra expiração quando um recurso protegido recusa o visitante', async () => {
+    rejectWith(401)
+
+    await expect(http.get('/auth/me')).rejects.toBeInstanceOf(AxiosError)
+
+    expect(wasSessionExpired()).toBe(false)
   })
 
   it('deixa a tela tratar as credenciais inválidas do login', async () => {

@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from app.core.security import hash_password
+from app.localizacao.models import aplicar_localizacao
 from app.usuarios.enums import Perfil, TipoOrganizacao
 from app.usuarios.models import Organizacao
 from app.usuarios.schemas import (
@@ -37,13 +38,14 @@ class OrganizacaoService:
     def cadastrar(self, dados: CadastroOrganizacaoRequest) -> OrganizacaoPublica:
         self._verificar_duplicidade(str(dados.email), dados.cnpj)
         organizacao = Organizacao(
-            **dados.model_dump(exclude={"senha"}),
+            **dados.model_dump(exclude={"senha", "localizacao"}),
             senha_hash=hash_password(dados.senha.get_secret_value()),
             perfil=Perfil.ORGANIZACAO,
             tipo=TipoOrganizacao.ONG,
             ativo=True,
             homologada=True,
         )
+        aplicar_localizacao(organizacao, dados.localizacao)
         return self._salvar(organizacao)
 
     def consultar(self, usuario_id: int) -> OrganizacaoPublica:
@@ -67,7 +69,12 @@ class OrganizacaoService:
 
         self._verificar_duplicidade(str(dados.email), dados.cnpj, usuario_id)
 
-        for campo, valor in dados.model_dump().items():
+        if "localizacao" in dados.model_fields_set:
+            aplicar_localizacao(organizacao, dados.localizacao)
+        elif dados.endereco != organizacao.endereco:
+            # Um cliente antigo mudou o texto sem confirmar o endereço detalhado.
+            aplicar_localizacao(organizacao, None)
+        for campo, valor in dados.model_dump(exclude={"localizacao"}).items():
             setattr(organizacao, campo, valor)
 
         organizacao.atualizado_em = func.now()

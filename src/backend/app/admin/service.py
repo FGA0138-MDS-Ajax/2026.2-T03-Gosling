@@ -9,6 +9,7 @@ from app.admin.schemas import (
 )
 from app.core.errors import NaoAutenticadoError
 from app.core.security import hash_password
+from app.localizacao.models import aplicar_localizacao
 from app.usuarios.enums import Perfil, TipoOrganizacao
 from app.usuarios.models import Organizacao, Usuario, Voluntario
 
@@ -18,9 +19,7 @@ class AdminService:
         self.repository = repository
 
     def listar(self, pagina, por_pagina, busca, perfil, ativo):
-        itens, total = self.repository.listar(
-            pagina, por_pagina, busca, perfil, ativo
-        )
+        itens, total = self.repository.listar(pagina, por_pagina, busca, perfil, ativo)
         return ListaContasResponse(
             itens=[
                 ContaAdminPublica.model_validate(usuario).model_copy(
@@ -28,7 +27,9 @@ class AdminService:
                 )
                 for usuario, vagas in itens
             ],
-            total=total, pagina=pagina, por_pagina=por_pagina,
+            total=total,
+            pagina=pagina,
+            por_pagina=por_pagina,
         )
 
     def consultar(self, usuario_id):
@@ -42,13 +43,16 @@ class AdminService:
     def criar(self, dados: CriarContaRequest):
         cnpj = getattr(dados, "cnpj", None)
         self._verificar_duplicidade(str(dados.email), cnpj)
-        campos = dados.model_dump(exclude={"senha", "perfil"})
+        campos = dados.model_dump(exclude={"senha", "perfil", "localizacao"})
         campos["senha_hash"] = hash_password(dados.senha.get_secret_value())
         if dados.perfil == Perfil.ORGANIZACAO:
             usuario = Organizacao(
-                **campos, perfil=Perfil.ORGANIZACAO,
-                tipo=TipoOrganizacao.ONG, consentimento_termos=False,
+                **campos,
+                perfil=Perfil.ORGANIZACAO,
+                tipo=TipoOrganizacao.ONG,
+                consentimento_termos=False,
             )
+            aplicar_localizacao(usuario, dados.localizacao)
         elif dados.perfil == Perfil.VOLUNTARIO:
             usuario = Voluntario(**campos, perfil=Perfil.VOLUNTARIO)
         else:
@@ -75,15 +79,12 @@ class AdminService:
         try:
             administradores = self.repository.bloquear_administradores()
             if not any(
-                item.id == administrador_id and item.ativo
-                for item in administradores
+                item.id == administrador_id and item.ativo for item in administradores
             ):
                 raise NaoAutenticadoError()
             usuario = self.repository.buscar_para_excluir(usuario_id)
             if usuario is None:
-                raise HTTPException(
-                    status_code=404, detail="Cadastro não encontrado."
-                )
+                raise HTTPException(status_code=404, detail="Cadastro não encontrado.")
             vagas = self.repository.bloquear_vagas(usuario_id)
             if vagas and not excluir_vagas:
                 raise HTTPException(

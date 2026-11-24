@@ -8,32 +8,62 @@ import * as auth from '../services/authService'
 import * as service from '../services/voluntarioService'
 import { clearSession, readSession } from '../services/sessionStore'
 
-vi.mock('../services/vagasService', () => ({ listarVagas: async () => ({ itens: [], total: 0, pagina: 1, por_pagina: 20 }) }))
-vi.mock('../services/authService', () => ({ login: vi.fn(), getSession: vi.fn(), getProfile: vi.fn() }))
+vi.mock('../services/vagasService', () => ({
+  listarVagas: async () => ({ itens: [], total: 0, pagina: 1, por_pagina: 20 }),
+}))
+vi.mock('../services/authService', () => ({
+  login: vi.fn(),
+  getSession: vi.fn(),
+  getProfile: vi.fn(),
+}))
 vi.mock('../services/voluntarioService', () => ({
-  registerVolunteer: vi.fn(), getVolunteerProfile: vi.fn(), updateVolunteerProfile: vi.fn(),
+  registerVolunteer: vi.fn(),
+  getVolunteerProfile: vi.fn(),
+  updateVolunteerProfile: vi.fn(),
 }))
 
-const usuario = { id: 9, nome: 'Maria da Silva', email: 'maria@example.com', perfil: 'VOLUNTARIO', tipo: null }
-const sessao = { access_token: 'token-novo', expires_at: Math.floor(Date.now() / 1000) + 3600, expires_in: 3600, usuario }
+const usuario = {
+  id: 9,
+  nome: 'Maria da Silva',
+  email: 'maria@example.com',
+  perfil: 'VOLUNTARIO',
+  tipo: null,
+}
+const sessao = {
+  access_token: 'token-novo',
+  expires_at: Math.floor(Date.now() / 1000) + 3600,
+  expires_in: 3600,
+  usuario,
+}
 
 beforeEach(() => {
   vi.resetAllMocks()
   clearSession()
   service.registerVolunteer.mockResolvedValue(sessao)
-  service.updateVolunteerProfile.mockImplementation(async (payload) => payload)
+  service.updateVolunteerProfile.mockImplementation(async payload => payload)
   auth.login.mockResolvedValue(sessao)
   auth.getProfile.mockResolvedValue(usuario)
 })
 
 function open() {
-  return render(<MemoryRouter initialEntries={['/cadastro/voluntario']}><AuthProvider><App /></AuthProvider></MemoryRouter>)
+  return render(
+    <MemoryRouter initialEntries={['/cadastro/voluntario']}>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </MemoryRouter>,
+  )
 }
 
 async function preencher(user, extras = {}) {
   const dados = {
-    'Nome completo': ' Maria da Silva ', CPF: '529.982.247-25', 'E-mail': 'Maria@Example.com',
-    Telefone: '(61) 99999-9999', Cidade: 'Brasília', Senha: 'SenhaForte@2026', ...extras,
+    'Nome completo': ' Maria da Silva ',
+    CPF: '529.982.247-25',
+    'E-mail': 'Maria@Example.com',
+    Telefone: '(61) 99999-9999',
+    Cidade: 'Brasília',
+    Senha: 'SenhaForte@2026',
+    ...extras,
   }
   await screen.findByRole('heading', { name: 'Crie sua conta de voluntário' })
   for (const [label, value] of Object.entries(dados)) {
@@ -54,7 +84,15 @@ describe('cadastro de voluntário — RF01', () => {
   it('coleta nome, e-mail, senha, CPF, localização, contato e consentimento', async () => {
     open()
     await screen.findByRole('heading', { name: 'Crie sua conta de voluntário' })
-    for (const label of ['Nome completo', 'CPF', 'E-mail', 'Telefone', 'Cidade', 'Estado', 'Senha']) {
+    for (const label of [
+      'Nome completo',
+      'CPF',
+      'E-mail',
+      'Telefone',
+      'Cidade',
+      'Estado',
+      'Senha',
+    ]) {
       expect(screen.getByLabelText(label)).toBeVisible()
     }
     expect(screen.getByRole('checkbox', { name: /Li e aceito/ })).not.toBeChecked()
@@ -67,10 +105,23 @@ describe('cadastro de voluntário — RF01', () => {
     await enviar(user)
     expect(await screen.findByRole('heading', { name: 'Área de Voluntário' })).toBeVisible()
     expect(service.registerVolunteer).toHaveBeenCalledWith({
-      nome_completo: 'Maria da Silva', email: 'maria@example.com', identificacao: '52998224725',
-      password: 'SenhaForte@2026', consentimento_termos: true,
-      telefone: '61999999999', cidade: 'Brasília', estado: 'DF',
-      causa_ids: [], disponibilidade_semanal: [], carga_horaria_semanal: null,
+      nome_completo: 'Maria da Silva',
+      email: 'maria@example.com',
+      identificacao: '52998224725',
+      password: 'SenhaForte@2026',
+      consentimento_termos: true,
+      telefone: '61999999999',
+      cidade: 'Brasília',
+      estado: 'DF',
+      localizacao: expect.objectContaining({
+        cidade: 'Brasília',
+        estado: 'DF',
+        latitude: null,
+        longitude: null,
+      }),
+      causa_ids: [],
+      disponibilidade_semanal: [],
+      carga_horaria_semanal: null,
     })
     expect(auth.login).not.toHaveBeenCalled()
     expect(service.updateVolunteerProfile).not.toHaveBeenCalled()
@@ -88,7 +139,11 @@ describe('cadastro de voluntário — RF01', () => {
     await enviar(user)
     expect(screen.getByText('Informe um CPF válido.')).toBeVisible()
     expect(screen.getByText('Informe um e-mail válido.')).toBeVisible()
-    expect(screen.getByText('Use pelo menos 8 caracteres, uma letra maiúscula, um número e um símbolo, sem espaços.')).toBeVisible()
+    expect(
+      screen.getByText(
+        'Use pelo menos 8 caracteres, uma letra maiúscula, um número e um símbolo, sem espaços.',
+      ),
+    ).toBeVisible()
     expect(screen.getByText('Selecione o estado.')).toBeVisible()
     expect(screen.getByText('Confirme o consentimento para continuar.')).toBeVisible()
     expect(screen.getByLabelText('Nome completo')).toHaveFocus()
@@ -109,7 +164,9 @@ describe('cadastro de voluntário — RF01', () => {
 
   it('exibe o erro de duplicidade retornado pela API (409)', async () => {
     const user = userEvent.setup()
-    service.registerVolunteer.mockRejectedValue({ response: { status: 409, data: { detail: 'E-mail já cadastrado.' } } })
+    service.registerVolunteer.mockRejectedValue({
+      response: { status: 409, data: { detail: 'E-mail já cadastrado.' } },
+    })
     open()
     await preencher(user)
     await enviar(user)
@@ -121,12 +178,17 @@ describe('cadastro de voluntário — RF01', () => {
   it('aponta campos recusados pela validação da API (422)', async () => {
     const user = userEvent.setup()
     service.registerVolunteer.mockRejectedValue({
-      response: { status: 422, data: { detail: [{ loc: ['body', 'password'], msg: 'Senha fraca.' }] } },
+      response: {
+        status: 422,
+        data: { detail: [{ loc: ['body', 'password'], msg: 'Senha fraca.' }] },
+      },
     })
     open()
     await preencher(user)
     await enviar(user)
     expect(await screen.findByText('Senha fraca.')).toBeVisible()
-    expect(screen.getByRole('alert')).toHaveTextContent('Confira os campos indicados e tente novamente.')
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Confira os campos indicados e tente novamente.',
+    )
   })
 })

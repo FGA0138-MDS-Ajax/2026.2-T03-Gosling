@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.dependencies import require_perfil
@@ -36,18 +36,22 @@ def cadastrar_organizacao(
 
 @router.get("/organizacoes/me", response_model=OrganizacaoPublica)
 def organizacao_me(
+    response: Response,
     usuario: Annotated[UsuarioPublico, Depends(require_perfil(Perfil.ORGANIZACAO))],
     service: Annotated[OrganizacaoService, Depends(get_organizacao_service)],
 ) -> OrganizacaoPublica:
+    response.headers["Cache-Control"] = "no-store"
     return service.consultar(usuario.id)
 
 
 @router.put("/organizacoes/me", response_model=OrganizacaoPublica)
 def atualizar_organizacao_me(
     payload: AtualizarOrganizacaoRequest,
+    response: Response,
     usuario: Annotated[UsuarioPublico, Depends(require_perfil(Perfil.ORGANIZACAO))],
     service: Annotated[OrganizacaoService, Depends(get_organizacao_service)],
 ) -> OrganizacaoPublica:
+    response.headers["Cache-Control"] = "no-store"
     return service.atualizar(usuario.id, payload)
 
 

@@ -142,6 +142,45 @@ campo legado e o campo de IDs no mesmo recurso. A normalização NFKC/casefold e
 as restrições únicas do nome normalizado e do código continuam protegendo a
 identidade das categorias.
 
+## Localização e consulta de CEP
+
+Organizações, voluntários e vagas podem enviar `localizacao` com `cep`,
+`logradouro`, `numero`, `complemento`, `bairro`, `regiao_administrativa`,
+`cidade`, `estado`, `latitude`, `longitude` e `origem_coordenadas`.
+Os campos são opcionais; coordenadas devem formar um par válido, com até
+sete casas decimais. `origem_coordenadas` aceita `MANUAL` ou `NAVEGADOR`.
+CEP não produz coordenadas. Bairro e região administrativa são campos distintos.
+
+O texto de exibição continua em `endereco` da organização e `local` da vaga.
+A migração `0009_localizacao` preserva esses textos e a cidade/UF do voluntário;
+não tenta extrair CEP, inferir endereço ou inventar um ponto no mapa.
+Endereços sem coordenadas continuam válidos.
+
+Na publicação presencial/híbrida, `origem_localizacao: "PROPRIA"` acompanha
+o objeto `localizacao`. `"ORGANIZACAO"` usa uma cópia do endereço cadastrado
+da organização, sem enviar outro objeto. A cópia não muda se a sede for
+alterada depois. Sem objeto/origem, clientes antigos continuam usando o texto
+legado. A resposta informa `PROPRIA`, `ORGANIZACAO`, `LEGADO` ou `REMOTA`.
+Atividades remotas usam o texto para a plataforma/orientação e recusam endereço
+presencial e coordenadas.
+
+No perfil do voluntário, `localizacao` é privado e só retorna para o titular
+autenticado, com `Cache-Control: no-store`. A sessão resumida, os dados públicos
+das vagas e a prévia do perfil não incluem endereço residencial nem coordenadas.
+`localizacao: null` remove a localização estruturada. Os campos antigos
+`cidade`/`estado` continuam aceitos; mudar a região por esse contrato invalida
+o endereço detalhado e o ponto anteriores. Ao enviar os dois formatos, a região
+deve ser consistente. Alterar o texto institucional por um cliente antigo também
+invalida os detalhes anteriores quando não houver um novo objeto confirmado.
+
+Os formulários consultam o [ViaCEP](https://viacep.com.br/) somente ao clicar
+em **Consultar CEP**, sem enviar o JWT. Diferenciam formato inválido, CEP não
+encontrado e indisponibilidade; permitem correção/preenchimento manual e descartam
+respostas atrasadas após uma edição. O retorno preenchido deve ser conferido
+antes de salvar. A localização do navegador depende de clique e permissão;
+recusar não impede o preenchimento manual. Alterar o endereço limpa um ponto
+anterior para evitar associá-lo a outro lugar.
+
 ## Calendário do voluntário
 
 `GET /api/v1/voluntarios/me/calendario?inicio=2026-11-16&fim=2026-11-23`

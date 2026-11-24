@@ -11,7 +11,8 @@ import VagasPage from './VagasPage'
 
 vi.mock('../hooks/useAuth', () => ({ useAuth: vi.fn() }))
 vi.mock('../services/vagasService', () => ({
-  listarVagas: vi.fn(), publicarVaga: vi.fn(),
+  listarVagas: vi.fn(),
+  publicarVaga: vi.fn(),
 }))
 
 const ONG = { id: 7, perfil: 'ORGANIZACAO', tipo: 'ONG', nome: 'ONG da sessão' }
@@ -31,11 +32,16 @@ beforeEach(() => {
   vi.resetAllMocks()
   vagasServidor = structuredClone(VAGAS_TESTE)
   vagasService.listarVagas.mockImplementation(async () => ({
-    itens: [...vagasServidor], total: vagasServidor.length, pagina: 1, por_pagina: 20,
+    itens: [...vagasServidor],
+    total: vagasServidor.length,
+    pagina: 1,
+    por_pagina: 20,
   }))
-  vagasService.publicarVaga.mockImplementation(async (payload) => {
+  vagasService.publicarVaga.mockImplementation(async payload => {
     const vaga = {
-      ...payload, id: 99, status: 'ABERTA',
+      ...payload,
+      id: 99,
+      status: 'ABERTA',
       causa: CAUSAS_TESTE.find(causa => causa.id === payload.causa_id),
       organizacao: { id: ONG.id, nome: ONG.nome },
       ocorrencias: payload.ocorrencias.map((item, indice) => ({ ...item, id: 100 + indice })),
@@ -47,23 +53,45 @@ beforeEach(() => {
 
 function abrir(usuario = null, extra = {}, rota = '/vagas') {
   useAuth.mockReturnValue({
-    usuario, loading: false, restoreError: '', logout: vi.fn(), ...extra,
+    usuario,
+    loading: false,
+    restoreError: '',
+    logout: vi.fn(),
+    ...extra,
   })
-  return render(<MemoryRouter initialEntries={[rota]}><VagasPage /></MemoryRouter>)
+  return render(
+    <MemoryRouter initialEntries={[rota]}>
+      <VagasPage />
+    </MemoryRouter>,
+  )
 }
 
 function preencherEncontro(indice, data, inicio, fim, dataFim = data) {
-  fireEvent.change(screen.getByLabelText(`Data de início do encontro ${indice}`), { target: { value: data } })
-  fireEvent.change(screen.getByLabelText(`Hora de início do encontro ${indice}`), { target: { value: inicio } })
-  fireEvent.change(screen.getByLabelText(`Data de término do encontro ${indice}`), { target: { value: dataFim } })
-  fireEvent.change(screen.getByLabelText(`Hora de término do encontro ${indice}`), { target: { value: fim } })
+  fireEvent.change(screen.getByLabelText(`Data de início do encontro ${indice}`), {
+    target: { value: data },
+  })
+  fireEvent.change(screen.getByLabelText(`Hora de início do encontro ${indice}`), {
+    target: { value: inicio },
+  })
+  fireEvent.change(screen.getByLabelText(`Data de término do encontro ${indice}`), {
+    target: { value: dataFim },
+  })
+  fireEvent.change(screen.getByLabelText(`Hora de término do encontro ${indice}`), {
+    target: { value: fim },
+  })
 }
 
 async function preencherFormulario(user) {
   await user.click(screen.getByRole('button', { name: 'Publicar vaga', exact: true }))
   await user.type(screen.getByLabelText('Título da vaga'), 'Oficina de leitura')
-  await user.type(screen.getByLabelText('Descrição'), 'Apoio às atividades de leitura da comunidade.')
-  await user.type(screen.getByLabelText('Atividades do voluntário'), 'Organizar livros e apoiar a leitura.')
+  await user.type(
+    screen.getByLabelText('Descrição'),
+    'Apoio às atividades de leitura da comunidade.',
+  )
+  await user.type(
+    screen.getByLabelText('Atividades do voluntário'),
+    'Organizar livros e apoiar a leitura.',
+  )
   await user.selectOptions(screen.getByLabelText('Causa'), '1')
   await user.type(screen.getByLabelText('Local ou atividade remota'), 'Brasília')
   await user.type(screen.getByLabelText('Carga horária (horas)'), '3')
@@ -72,10 +100,42 @@ async function preencherFormulario(user) {
 }
 
 function botaoEnviar() {
-  return within(screen.getByRole('dialog')).getByRole('button', { name: 'Publicar vaga', exact: true })
+  return within(screen.getByRole('dialog')).getByRole('button', {
+    name: 'Publicar vaga',
+    exact: true,
+  })
 }
 
 describe('página pública de vagas', () => {
+  it.each(['PRESENCIAL', 'REMOTO'])(
+    'publica %s com o contrato correto de endereço',
+    async modalidade => {
+      const user = userEvent.setup()
+      abrir(ONG)
+      await screen.findAllByRole('article')
+      await preencherFormulario(user)
+      fireEvent.change(screen.getByLabelText('CEP'), { target: { value: '70000001' } })
+      fireEvent.change(screen.getByLabelText('Logradouro'), {
+        target: { value: 'Endereço da atividade' },
+      })
+      if (modalidade === 'REMOTO') {
+        await user.selectOptions(screen.getByLabelText('Modalidade'), 'REMOTO')
+        expect(screen.queryByLabelText('CEP')).not.toBeInTheDocument()
+      }
+      await user.click(botaoEnviar())
+      await waitFor(() => expect(vagasService.publicarVaga).toHaveBeenCalledTimes(1))
+      const payload = vagasService.publicarVaga.mock.calls[0][0]
+      if (modalidade === 'PRESENCIAL') {
+        expect(payload).toMatchObject({
+          origem_localizacao: 'PROPRIA',
+          localizacao: { cep: '70000001', logradouro: 'Endereço da atividade' },
+        })
+      } else {
+        expect(payload).not.toHaveProperty('localizacao')
+        expect(payload).not.toHaveProperty('origem_localizacao')
+      }
+    },
+  )
   it.each([
     [null, false],
     [{ perfil: 'VOLUNTARIO' }, false],
@@ -92,7 +152,7 @@ describe('página pública de vagas', () => {
 
   it.each([{ loading: true }, { restoreError: 'Falha de rede' }])(
     'aguarda validação da sessão antes de oferecer publicação: %j',
-    async (extra) => {
+    async extra => {
       abrir(ONG, extra)
       await screen.findAllByRole('article')
       expect(screen.queryByRole('button', { name: 'Publicar vaga' })).not.toBeInTheDocument()
@@ -109,10 +169,12 @@ describe('página pública de vagas', () => {
     expect(await screen.findByRole('heading', { name: 'Oficina de leitura' })).toBeVisible()
     expect(screen.getAllByRole('article')).toHaveLength(4)
     expect(screen.getByText(ONG.nome)).toBeVisible()
-    expect(vagasService.publicarVaga).toHaveBeenCalledWith(expect.objectContaining({
-      causa_id: 1,
-      ocorrencias: [{ inicio: '2026-11-16T12:00:00.000Z', fim: '2026-11-16T15:00:00.000Z' }],
-    }))
+    expect(vagasService.publicarVaga).toHaveBeenCalledWith(
+      expect.objectContaining({
+        causa_id: 1,
+        ocorrencias: [{ inicio: '2026-11-16T12:00:00.000Z', fim: '2026-11-16T15:00:00.000Z' }],
+      }),
+    )
     expect(vagasService.publicarVaga.mock.calls[0][0]).not.toHaveProperty('causa')
     expect(vagasService.publicarVaga.mock.calls[0][0]).not.toHaveProperty('organizacao_id')
 
@@ -131,7 +193,9 @@ describe('página pública de vagas', () => {
     fireEvent.submit(screen.getByRole('form', { name: 'Publicar vaga' }))
     expect(screen.getByText('Confira os campos indicados e tente novamente.')).toBeVisible()
     expect(screen.getByLabelText(/Título da vaga/)).toHaveAttribute('aria-invalid', 'true')
-    expect(screen.getByLabelText(/Título da vaga/)).toHaveAccessibleDescription('Use pelo menos 3 caracteres.')
+    expect(screen.getByLabelText(/Título da vaga/)).toHaveAccessibleDescription(
+      'Use pelo menos 3 caracteres.',
+    )
     expect(screen.getByLabelText(/Título da vaga/)).toHaveFocus()
     expect(vagasService.publicarVaga).not.toHaveBeenCalled()
   })
@@ -167,50 +231,81 @@ describe('página pública de vagas', () => {
     expect(screen.getAllByRole('article')).toHaveLength(3)
   })
 
-  it.each(['0.01', '1.25', '99999.99'])('publica carga %s e local com 500 caracteres', async (carga) => {
-    const user = userEvent.setup()
-    abrir(ONG)
-    await screen.findAllByRole('article')
-    await preencherFormulario(user)
-    const local = 'L'.repeat(500)
-    fireEvent.change(screen.getByLabelText('Local ou atividade remota'), { target: { value: local } })
-    fireEvent.change(screen.getByLabelText('Carga horária (horas)'), { target: { value: carga } })
-    expect(screen.getByLabelText('Local ou atividade remota')).toHaveAttribute('maxlength', '500')
-    expect(screen.getByLabelText('Carga horária (horas)')).toHaveAttribute('step', '0.01')
-    await user.click(botaoEnviar())
-    await screen.findByRole('heading', { name: 'Oficina de leitura' })
-    expect(vagasService.publicarVaga).toHaveBeenCalledWith(expect.objectContaining({
-      local, carga_horaria: Number(carga),
-    }))
-  })
+  it.each(['0.01', '1.25', '99999.99'])(
+    'publica carga %s e local com 500 caracteres',
+    async carga => {
+      const user = userEvent.setup()
+      abrir(ONG)
+      await screen.findAllByRole('article')
+      await preencherFormulario(user)
+      const local = 'L'.repeat(500)
+      fireEvent.change(screen.getByLabelText('Local ou atividade remota'), {
+        target: { value: local },
+      })
+      fireEvent.change(screen.getByLabelText('Carga horária (horas)'), { target: { value: carga } })
+      expect(screen.getByLabelText('Local ou atividade remota')).toHaveAttribute('maxlength', '500')
+      expect(screen.getByLabelText('Carga horária (horas)')).toHaveAttribute('step', '0.01')
+      await user.click(botaoEnviar())
+      await screen.findByRole('heading', { name: 'Oficina de leitura' })
+      expect(vagasService.publicarVaga).toHaveBeenCalledWith(
+        expect.objectContaining({
+          local,
+          carga_horaria: Number(carga),
+        }),
+      )
+    },
+  )
 
-  it.each(['0', '-1', '1.001', '100000'])('recusa a carga inválida %s e aponta o campo', async (carga) => {
-    const user = userEvent.setup()
-    abrir(ONG)
-    await screen.findAllByRole('article')
-    await preencherFormulario(user)
-    fireEvent.change(screen.getByLabelText('Carga horária (horas)'), { target: { value: carga } })
-    await user.click(botaoEnviar())
-    expect(screen.getByLabelText(/Carga horária \(horas\)/)).toHaveAccessibleDescription(/até duas casas decimais/)
-    expect(screen.getByLabelText(/Carga horária \(horas\)/)).toHaveFocus()
-    expect(vagasService.publicarVaga).not.toHaveBeenCalled()
-  })
+  it.each(['0', '-1', '1.001', '100000'])(
+    'recusa a carga inválida %s e aponta o campo',
+    async carga => {
+      const user = userEvent.setup()
+      abrir(ONG)
+      await screen.findAllByRole('article')
+      await preencherFormulario(user)
+      fireEvent.change(screen.getByLabelText('Carga horária (horas)'), { target: { value: carga } })
+      await user.click(botaoEnviar())
+      expect(screen.getByLabelText(/Carga horária \(horas\)/)).toHaveAccessibleDescription(
+        /até duas casas decimais/,
+      )
+      expect(screen.getByLabelText(/Carga horária \(horas\)/)).toHaveFocus()
+      expect(vagasService.publicarVaga).not.toHaveBeenCalled()
+    },
+  )
 
   it('associa os erros 422 aos campos e indica o encontro recusado sem apagar os dados', async () => {
     const user = userEvent.setup()
-    vagasService.publicarVaga.mockRejectedValue({ response: { status: 422, data: { detail: [
-      { loc: ['body', 'local'], type: 'string_too_long', msg: 'String should have at most 500 characters' },
-      { loc: ['body', 'carga_horaria'], msg: 'Carga horária inválida.' },
-      { loc: ['body', 'ocorrencias', 0, 'fim'], msg: 'O término deve ser posterior ao início.' },
-    ] } } })
+    vagasService.publicarVaga.mockRejectedValue({
+      response: {
+        status: 422,
+        data: {
+          detail: [
+            {
+              loc: ['body', 'local'],
+              type: 'string_too_long',
+              msg: 'String should have at most 500 characters',
+            },
+            { loc: ['body', 'carga_horaria'], msg: 'Carga horária inválida.' },
+            {
+              loc: ['body', 'ocorrencias', 0, 'fim'],
+              msg: 'O término deve ser posterior ao início.',
+            },
+          ],
+        },
+      },
+    })
     abrir(ONG)
     await screen.findAllByRole('article')
     await preencherFormulario(user)
     await user.click(botaoEnviar())
     expect(await screen.findByText('Confira os campos indicados e tente novamente.')).toBeVisible()
-    expect(screen.getByLabelText(/Local ou atividade remota/)).toHaveAccessibleDescription('Use até 500 caracteres.')
+    expect(screen.getByLabelText(/Local ou atividade remota/)).toHaveAccessibleDescription(
+      'Use até 500 caracteres.',
+    )
     expect(screen.getByLabelText(/Local ou atividade remota/)).toHaveFocus()
-    expect(screen.getByLabelText(/Carga horária \(horas\)/)).toHaveAccessibleDescription('Carga horária inválida.')
+    expect(screen.getByLabelText(/Carga horária \(horas\)/)).toHaveAccessibleDescription(
+      'Carga horária inválida.',
+    )
     expect(screen.getByText('Encontro 1: O término deve ser posterior ao início.')).toBeVisible()
     expect(screen.getByLabelText('Título da vaga')).toHaveValue('Oficina de leitura')
     expect(screen.getByRole('dialog')).toBeVisible()
@@ -230,14 +325,31 @@ describe('página pública de vagas', () => {
     abrir(null, {}, '/vagas?causa=Educação&modalidade=VOANDO')
     await screen.findByRole('heading', { name: 'Resultado da busca' })
     const filtros = within(screen.getByRole('complementary', { name: 'Filtros' }))
-    expect(await filtros.findByRole('button', { name: 'Educação' })).toHaveAttribute('aria-pressed', 'true')
-    await waitFor(() => expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ causaId: '1', causa: '', modalidade: '', periodo: '' })))
+    expect(await filtros.findByRole('button', { name: 'Educação' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await waitFor(() =>
+      expect(vagasService.listarVagas).toHaveBeenLastCalledWith(
+        expect.objectContaining({ causaId: '1', causa: '', modalidade: '', periodo: '' }),
+      ),
+    )
     await user.click(filtros.getByRole('button', { name: 'Remoto' }))
     await user.click(filtros.getByRole('button', { name: 'Noite' }))
-    expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ pagina: 1, causaId: '1', causa: '', modalidade: 'REMOTO', periodo: 'NOITE' }))
+    expect(vagasService.listarVagas).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        pagina: 1,
+        causaId: '1',
+        causa: '',
+        modalidade: 'REMOTO',
+        periodo: 'NOITE',
+      }),
+    )
     const ativos = within(screen.getByRole('list', { name: 'Filtros ativos' }))
     await user.click(ativos.getByRole('button', { name: /Educação/ }))
-    expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ causa: '', modalidade: 'REMOTO', periodo: 'NOITE' }))
+    expect(vagasService.listarVagas).toHaveBeenLastCalledWith(
+      expect.objectContaining({ causa: '', modalidade: 'REMOTO', periodo: 'NOITE' }),
+    )
     await user.click(filtros.getByRole('button', { name: 'Limpar' }))
     expect(await screen.findByRole('heading', { name: 'Vagas publicadas' })).toBeVisible()
   })
@@ -248,16 +360,22 @@ describe('página pública de vagas', () => {
     abrir(null, {}, '/vagas?periodo=MADRUGADA')
     expect(await screen.findByText('Nenhuma vaga aberta com esses filtros.')).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Limpar filtros' }))
-    expect(vagasService.listarVagas).toHaveBeenLastCalledWith(expect.objectContaining({ periodo: '' }))
+    expect(vagasService.listarVagas).toHaveBeenLastCalledWith(
+      expect.objectContaining({ periodo: '' }),
+    )
   })
 
   it('usa opções e IDs da API no lugar de texto livre para publicação', async () => {
-    listarCausas.mockResolvedValueOnce([{ id: 41, codigo: 'servidor', nome: 'Causa do servidor', ativo: true, aliases: [] }])
+    listarCausas.mockResolvedValueOnce([
+      { id: 41, codigo: 'servidor', nome: 'Causa do servidor', ativo: true, aliases: [] },
+    ])
     const user = userEvent.setup()
     abrir(ONG)
     await user.click(screen.getByRole('button', { name: 'Publicar vaga', exact: true }))
     const campo = screen.getByRole('combobox', { name: 'Causa' })
-    expect(await within(campo).findByRole('option', { name: 'Causa do servidor' })).toHaveValue('41')
+    expect(await within(campo).findByRole('option', { name: 'Causa do servidor' })).toHaveValue(
+      '41',
+    )
     expect(within(campo).queryByRole('option', { name: 'Educação' })).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: 'Causa' })).not.toBeInTheDocument()
   })

@@ -9,6 +9,7 @@ from pydantic import (
 )
 
 from app.usuarios.enums import Perfil, TipoOrganizacao
+from app.localizacao.schemas import Localizacao, LocalizacaoPublica
 from app.usuarios.validacoes import PADRAO_TELEFONE, SenhaCadastro
 from app.usuarios.validacoes import normalizar_telefone as normalizar_numero_telefone
 
@@ -36,6 +37,7 @@ class AtualizarOrganizacaoRequest(BaseModel):
     cnpj: str | None = None
     area_atuacao: str = Field(min_length=3, max_length=150)
     endereco: str = Field(min_length=5, max_length=500)
+    localizacao: Localizacao | None = None
     responsavel: str = Field(min_length=3, max_length=150)
     descricao: str = Field(default="", max_length=5000)
     telefone: str = Field(pattern=PADRAO_TELEFONE)
@@ -110,6 +112,7 @@ class OrganizacaoPublica(UsuarioPublico):
     cnpj: str | None = None
     area_atuacao: str | None = None
     endereco: str | None = None
+    localizacao: LocalizacaoPublica | None = None
     responsavel: str | None = None
     descricao: str | None = None
     telefone: str | None = None
