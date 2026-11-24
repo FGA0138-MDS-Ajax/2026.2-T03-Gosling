@@ -1,0 +1,180 @@
+.pagina {
+  min-height: 100svh;
+  background: #f5f5f7;
+  color: #1d1d1f;
+}
+
+.barra {
+  border-bottom: 1px solid #e8e8ed;
+  background: var(--surface);
+}
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  min-height: 64px;
+  width: min(1184px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+.cabecalho nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 14px;
+}
+
+.cabecalho nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.painel {
+  width: min(1152px, calc(100% - 48px));
+  margin: 48px auto;
+  border-radius: 28px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%), 0 8px 28px rgb(0 0 0 / 6%);
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding: 20px 24px;
+}
+
+.heading h1 {
+  margin: 0;
+  font-size: 21px;
+  line-height: 1.25;
+  letter-spacing: -.018em;
+}
+
+.publicar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 16px;
+  border-radius: 999px;
+  background: var(--action);
+  color: white;
+  font-size: 14px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.publicar:hover { background: var(--action-hover); }
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  text-align: start;
+}
+
+.tabela :is(th, td) {
+  padding: 14px 16px;
+  border-top: 1px solid #f0f0f2;
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+
+.tabela :is(th, td):first-child { padding-inline-start: 24px; }
+.tabela :is(th, td):last-child { padding-inline-end: 24px; }
+
+.tabela thead th {
+  padding-block: 10px;
+  background: #fafafc;
+  color: #626267;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.tabela thead th:first-child { width: 48%; }
+.tabela thead th:nth-child(2) { width: 18%; }
+.titulo { font-size: 15px; font-weight: 650; }
+.detalhes summary {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.descricao { margin: 6px 0 0; font-size: 14px; font-weight: 400; white-space: pre-wrap; }
+.local { display: block; margin-top: 4px; }
+.local, .data, .rotuloMobile { color: #626267; font-size: 13px; font-weight: 400; }
+
+.status, .contagem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  min-height: 24px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f0f0f2;
+  color: #46464a;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.status::before {
+  flex: 0 0 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  content: '';
+}
+
+.status[data-status='ABERTA'] { background: #e0f2ef; color: #0f6b64; }
+.status[data-status='SUSPENSA'] { background: #fff2df; color: #854d0e; }
+.contagem[data-disponivel='true'] { background: var(--action); color: white; }
+.rotuloMobile { display: none; }
+.feedback { margin: 0; padding: 20px 24px; border-top: 1px solid #f0f0f2; }
+.paginacao { margin: 0; padding: 16px; border-top: 1px solid #f0f0f2; }
+
+@media (max-width: 680px) {
+  .painel { width: calc(100% - 32px); margin-block: 24px; border-radius: 16px; }
+  .heading { padding: 12px; }
+  .tabela, .tabela tbody { display: block; }
+
+  .tabela thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .vaga {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+    padding: 12px;
+    border-top: 1px solid #f0f0f2;
+  }
+
+  .tabela .vaga > :is(th, td) { padding: 0; border: 0; }
+  .titulo { grid-column: 1; grid-row: 1; }
+  .situacao { grid-column: 1; grid-row: 2; }
+  .data { grid-column: 1; grid-row: 3; }
+  .data[data-ausente='true'] { display: none; }
+  .tabela .candidaturas {
+    display: grid;
+    justify-items: end;
+    align-content: center;
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    gap: 4px;
+    text-align: end;
+  }
+  .rotuloMobile { display: inline; }
+}

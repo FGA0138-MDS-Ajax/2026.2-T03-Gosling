@@ -47,3 +47,21 @@ class EventoCalendario(BaseModel):
     status: StatusCandidatura
     inicio: AwareDatetime
     fim: AwareDatetime
+
+
+class HorarioConflitante(BaseModel):
+    vaga_id: int
+    titulo_vaga: str
+    inicio: AwareDatetime
+    fim: AwareDatetime
+
+
+class ComprovanteCandidatura(BaseModel):
+    codigo: str
+
+
+class CandidaturaRegistrada(BaseModel):
+    id: int
+    vaga_id: int
+    status: StatusCandidatura
+    comprovante: ComprovanteCandidatura

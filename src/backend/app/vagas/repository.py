@@ -4,10 +4,17 @@ from typing import Any, Dict, Optional
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
+from app.candidaturas.enums import STATUS_ATIVOS
+from app.candidaturas.models import Candidatura
 from app.usuarios.catalogos import Causa
 from app.usuarios.models import Organizacao
 from app.vagas.enums import StatusVaga
 from app.vagas.models import Vaga
+
+
+_CAMPO_PARA_COLUNA = {
+    "estado_vaga": "status",
+}
 
 
 class VagaRepository:
@@ -76,36 +83,30 @@ class VagaRepository:
     def listar_vagas_por_organizacao(
         self, organizacao_id: int, pagina: int = 1, tamanho_pagina: int = 10
     ) -> tuple[list[dict[str, Any]], int]:
-        offset = (pagina - 1) * tamanho_pagina
-
+        da_organizacao = Vaga.organizacao_id == organizacao_id
         total_itens = self.session.execute(
-            text("SELECT COUNT(*) FROM vagas WHERE organizacao_id = :organizacao_id"),
-            {"organizacao_id": organizacao_id},
+            select(func.count(Vaga.id)).where(da_organizacao)
         ).scalar_one()
-
-        linhas = (
-            self.session.execute(
-                text(
-                    "SELECT v.id, v.titulo, v.estado_vaga, v.cidade, v.estado_uf, "
-                    "v.data_criacao, COUNT(c.id) AS total_candidaturas "
-                    "FROM vagas v "
-                    "LEFT JOIN candidaturas c ON c.vaga_id = v.id "
-                    "WHERE v.organizacao_id = :organizacao_id "
-                    "GROUP BY v.id, v.titulo, v.estado_vaga, v.cidade, "
-                    "v.estado_uf, v.data_criacao "
-                    "ORDER BY v.data_criacao DESC, v.id DESC "
-                    "LIMIT :limite OFFSET :offset"
-                ),
-                {
-                    "organizacao_id": organizacao_id,
-                    "limite": tamanho_pagina,
-                    "offset": offset,
-                },
-            )
-            .mappings()
-            .all()
+        total_candidaturas = (
+            select(func.count(Candidatura.id))
+            .where(Candidatura.vaga_id == Vaga.id)
+            .scalar_subquery()
         )
-
+        consulta = (
+            select(
+                Vaga.id,
+                Vaga.titulo,
+                Vaga.descricao,
+                Vaga.status.label("estado_vaga"),
+                Vaga.local,
+                total_candidaturas.label("total_candidaturas"),
+            )
+            .where(da_organizacao)
+            .order_by(Vaga.id.desc())
+            .offset((pagina - 1) * tamanho_pagina)
+            .limit(tamanho_pagina)
+        )
+        linhas = self.session.execute(consulta).mappings().all()
         return [dict(linha) for linha in linhas], total_itens
 
     def confirmar(self) -> None:
@@ -114,41 +115,93 @@ class VagaRepository:
     def desfazer(self) -> None:
         self.session.rollback()
 
-    def buscar_por_id(self, vaga_id: str) -> Optional[Dict[str, Any]]:
-        """Busca uma vaga pelo id."""
-        resultado = self.session.execute(
-            text("SELECT * FROM vagas WHERE id = :id"),
-            {"id": vaga_id},
-        )
+    def buscar_por_id(
+        self, vaga_id: str, *, bloquear: bool = False
+    ) -> Optional[Dict[str, Any]]:
+        """Busca uma vaga pelo id.
+
+        Retorna o dicionário com as colunas reais da tabela, **mais** o
+        alias ``estado_vaga`` (espelhando ``status``), para que a camada
+        de serviço/router possa devolver o payload no contrato público
+        sem precisar reescrever o nome do campo.
+        """
+        consulta = "SELECT * FROM vagas WHERE id = :id"
+        if bloquear and self.session.get_bind().dialect.name != "sqlite":
+            consulta += " FOR UPDATE"
+        resultado = self.session.execute(text(consulta), {"id": vaga_id})
         linha = resultado.mappings().first()
-        return dict(linha) if linha else None
+        if not linha:
+            return None
+        vaga = dict(linha)
+        if "status" in vaga and "estado_vaga" not in vaga:
+            vaga["estado_vaga"] = vaga["status"]
+        return vaga
 
     def tem_candidaturas_ativas(self, vaga_id: str) -> bool:
         """Verifica se a vaga possui candidaturas em status PENDENTE ou ACEITA."""
-        total = self.session.execute(
-            text(
-                "SELECT COUNT(*) FROM candidaturas "
-                "WHERE vaga_id = :vaga_id AND status IN ('PENDENTE', 'ACEITA')"
-            ),
-            {"vaga_id": vaga_id},
-        ).scalar_one()
-        return total > 0
+        consulta = (
+            select(Candidatura.id)
+            .where(
+                Candidatura.vaga_id == vaga_id,
+                Candidatura.status.in_(STATUS_ATIVOS),
+            )
+            .limit(1)
+            .with_for_update(read=True)
+        )
+        return self.session.scalar(consulta) is not None
 
-    def atualizar_vaga(self, vaga_id: str, dados_atualizacao: Dict[str, Any]) -> bool:
-        """Atualiza dinamicamente apenas os campos informados."""
+    def atualizar_vaga(
+        self, vaga_id: str, dados_atualizacao: Dict[str, Any]
+    ) -> bool:
+        """Atualiza dinamicamente apenas os campos informados.
+
+        - ``estado_vaga`` é mapeado para a coluna ``status``.
+        - ``ocorrencias`` é tratada à parte (delete+insert) porque não é
+          coluna escalar de ``vagas``.
+        - Campos desconhecidos vindos do schema (que já usa
+          ``extra="forbid"``) chegam aqui somente se forem válidos; ainda
+          assim, o guard ``isidentifier`` evita injeção via nome de coluna.
+        """
         if not dados_atualizacao:
             return False
 
-        for chave in dados_atualizacao:
-            if not chave.isidentifier():
-                raise ValueError(f"Nome de campo inválido: {chave!r}")
+        ocorrencias = dados_atualizacao.pop("ocorrencias", None)
 
-        campos_set = ", ".join(f"{chave} = :{chave}" for chave in dados_atualizacao)
-        parametros = {**dados_atualizacao, "vaga_id": vaga_id}
+        campos_set: list[str] = []
+        parametros: Dict[str, Any] = {"vaga_id": vaga_id}
+        for chave, valor in dados_atualizacao.items():
+            coluna = _CAMPO_PARA_COLUNA.get(chave, chave)
+            if not coluna.isidentifier():
+                raise ValueError(f"Nome de campo inválido: {coluna!r}")
+            campos_set.append(f"{coluna} = :{coluna}")
+            parametros[coluna] = valor
 
-        resultado = self.session.execute(
-            text(f"UPDATE vagas SET {campos_set} WHERE id = :vaga_id"),
-            parametros,
-        )
+        if campos_set:
+            self.session.execute(
+                text(
+                    f"UPDATE vagas SET {', '.join(campos_set)} "
+                    "WHERE id = :vaga_id"
+                ),
+                parametros,
+            )
+
+        if ocorrencias is not None:
+            self.session.execute(
+                text("DELETE FROM ocorrencias_vaga WHERE vaga_id = :vaga_id"),
+                {"vaga_id": vaga_id},
+            )
+            for item in ocorrencias:
+                self.session.execute(
+                    text(
+                        "INSERT INTO ocorrencias_vaga (vaga_id, inicio, fim) "
+                        "VALUES (:vaga_id, :inicio, :fim)"
+                    ),
+                    {
+                        "vaga_id": vaga_id,
+                        "inicio": item["inicio"],
+                        "fim": item["fim"],
+                    },
+                )
+
         self.session.commit()
-        return resultado.rowcount > 0
+        return True
