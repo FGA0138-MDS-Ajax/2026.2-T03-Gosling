@@ -133,3 +133,8 @@
   .formGrid { grid-template-columns: 1fr; }
   .formActions { align-items: stretch; flex-direction: column-reverse; }
 }
+.mediaFields { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 24px; }
+.mediaFields h3 { font-size: 17px; margin: 0 0 16px; }
+.mediaFields small, .mediaFields li { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.documentFields { border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
+.documentFields button { align-self: flex-start; }

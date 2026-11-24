@@ -5,7 +5,7 @@ test('login é acessível e responsivo nos três tamanhos', async ({ page }) => 
   for (const width of [1280, 768, 360]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/login')
-    await expect(page.getByRole('heading', { name: 'Entre no VolunJá' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Entrar no VolunJá' })).toBeVisible()
     expect(await page.evaluate(() =>
       document.documentElement.scrollWidth <= window.innerWidth,
     )).toBe(true)
@@ -20,14 +20,17 @@ test('login é acessível e responsivo nos três tamanhos', async ({ page }) => 
 test('abre o acesso ao cadastro do voluntário pelo teclado no celular', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 900 })
   await page.goto('/login')
-  const signup = page.getByRole('link', { name: 'Cadastre-se como voluntário' })
-  await expect(signup).toHaveAttribute('href', '/cadastro/voluntario')
+  const signup = page.getByRole('link', { name: 'Criar conta', exact: true })
+  await expect(signup).toHaveAttribute('href', '/cadastro')
   await signup.focus()
   await page.keyboard.press('Enter')
+  await expect(page.getByRole('heading', { name: 'Como você quer participar?' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continuar como voluntário' }).focus()
+  await page.keyboard.press('Enter')
   await expect(page).toHaveURL(/\/cadastro\/voluntario$/)
-  await expect(page.getByRole('heading', { name: 'Cadastro de voluntário' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Crie sua conta de voluntário' })).toBeVisible()
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([])
-  await page.getByRole('link', { name: 'Entrar na minha conta' }).click()
+  await page.getByRole('link', { name: 'Entrar', exact: true }).click()
   await expect(page).toHaveURL(/\/login$/)
 })
 

@@ -60,4 +60,19 @@ describe('cliente HTTP compartilhado', () => {
     await expect(http.get('/admin/me')).rejects.toThrow()
     expect(readSession()?.access_token).toBe('token-atual')
   })
+
+  it('usa a conta da aba e um 401 dela não apaga a conta lembrada em outra aba', async () => {
+    writeSession('conta-A', 2000000000, true)
+    const outra = { access_token: 'conta-B', expires_at: 2000000000, persistent: true }
+    localStorage.setItem('volunja:session', JSON.stringify(outra))
+    http.defaults.adapter = async (config) => {
+      expect(config.headers.Authorization).toBe('Bearer conta-A')
+      throw new AxiosError('Sessão expirada', 'ERR_BAD_REQUEST', config, null, {
+        status: 401, data: {}, config, headers: {},
+      })
+    }
+    await expect(http.get('/voluntarios/me')).rejects.toThrow()
+    expect(readSession()).toBeNull()
+    expect(JSON.parse(localStorage.getItem('volunja:session'))).toEqual(outra)
+  })
 })

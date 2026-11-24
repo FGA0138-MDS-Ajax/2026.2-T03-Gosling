@@ -27,3 +27,4 @@ coverage/
 # Evidencias locais de navegacao automatizada
 playwright-report/
 test-results/
+uploads/

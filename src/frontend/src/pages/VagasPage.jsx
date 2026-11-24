@@ -1,19 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import EncontrosEditor from '../components/EncontrosEditor'
+import VagaCard from '../components/VagaCard'
+import VagaMediaFields from '../components/VagaMediaFields'
+import { Footer, Header } from '../components/ui/Layout'
 import { useAuth } from '../hooks/useAuth'
 import { useVagas } from '../hooks/useVagas'
-import { publicarVaga } from '../services/vagasService'
-import { criarEncontro, formatarOcorrencia, prepararOcorrencias } from '../utils/ocorrencias'
-import { profileRoute } from '../utils/profileRoutes'
+import { enviarFotoVaga, publicarVaga } from '../services/vagasService'
+import { criarEncontro, prepararOcorrencias } from '../utils/ocorrencias'
 import { errosPublicacao, validarPublicacao } from '../utils/vagaForm'
+import { CAUSAS_DESTAQUE, MODALIDADES } from '../utils/vagaLabels'
+import explorar from './Explore.module.css'
 import styles from './Vagas.module.css'
-
-const MODALIDADES = {
-  PRESENCIAL: 'Presencial',
-  REMOTO: 'Remoto',
-  HIBRIDO: 'Híbrido',
-}
 
 const PERIODOS = {
   MANHA: 'Manhã',
@@ -23,11 +21,18 @@ const PERIODOS = {
 }
 
 export default function VagasPage() {
-  const { usuario, loading, restoreError, logout } = useAuth()
+  const { usuario, loading, restoreError } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
+  const filtros = {
+    causa: (params.get('causa') || '').trim().slice(0, 100),
+    modalidade: MODALIDADES[params.get('modalidade')] ? params.get('modalidade') : '',
+    periodo: PERIODOS[params.get('periodo')] ? params.get('periodo') : '',
+  }
+  const filtrando = Boolean(filtros.causa || filtros.modalidade || filtros.periodo)
   const [pagina, setPagina] = useState(1)
-  const { itens: vagas, total, por_pagina: porPagina, carregando, erro: erroCarregamento, recarregar } = useVagas(pagina)
+  const { itens: vagas, total, por_pagina: porPagina, carregando, erro: erroCarregamento, recarregar } = useVagas(pagina, filtros)
   const [erro, setErro] = useState('')
   const [errosCampos, setErrosCampos] = useState({})
   const [erroEncontros, setErroEncontros] = useState('')
@@ -37,6 +42,10 @@ export default function VagasPage() {
   const dialogo = useRef(null)
   const botaoPublicar = useRef(null)
   const envioPendente = useRef(false)
+  const [fotos, setFotos] = useState([])
+  const [documentos, setDocumentos] = useState([])
+  const [erroMidia, setErroMidia] = useState('')
+  const fotosEnviadas = useRef(new Map())
 
   const sessaoValidada = !loading && !restoreError
   const podePublicar = sessaoValidada
@@ -55,12 +64,26 @@ export default function VagasPage() {
     if (campo) dialogo.current?.querySelector(`[name="${campo}"]`)?.focus()
   }, [errosCampos, publicando])
 
+  function filtrar(nome, valor) {
+    const proximos = new URLSearchParams(params)
+    if (!valor || proximos.get(nome) === valor) proximos.delete(nome)
+    else proximos.set(nome, valor)
+    setParams(proximos, { replace: true })
+    setPagina(1)
+  }
+
+  function limparFiltros() {
+    setParams(new URLSearchParams(), { replace: true })
+    setPagina(1)
+  }
+
   function abrirFormulario() {
     if (!podePublicar) return
     setErro('')
     setErrosCampos({})
     setErroEncontros('')
     setEncontros([criarEncontro()])
+    setFotos([]); setDocumentos([]); setErroMidia(''); fotosEnviadas.current.clear()
     dialogo.current.querySelector('form').reset()
     dialogo.current.showModal()
   }
@@ -95,6 +118,9 @@ export default function VagasPage() {
       carga_horaria: cargaHoraria, numero_vagas: numeroVagas,
     }
     const invalidos = validarPublicacao(campos)
+    const fotosInvalidas = fotos.length > 10 || fotos.some(file => !['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 5*1024*1024)
+    const documentosInvalidos = documentos.some(doc => doc.nome.trim().length < 2 || (doc.modelo_url && !/^https:\/\/[^\s]+$/.test(doc.modelo_url)))
+    setErroMidia(fotosInvalidas ? 'Use até 10 imagens JPG, PNG ou WebP de até 5 MB cada.' : documentosInvalidos ? 'Informe o nome de cada documento e um link HTTPS válido, quando houver modelo.' : '')
     setErrosCampos(invalidos)
 
     let ocorrencias
@@ -103,7 +129,7 @@ export default function VagasPage() {
       setErroEncontros(failure.message)
     }
     if (Object.keys(invalidos).length) setErro('Confira os campos indicados e tente novamente.')
-    if (Object.keys(invalidos).length || !ocorrencias) return
+    if (Object.keys(invalidos).length || !ocorrencias || fotosInvalidas || documentosInvalidos) return
 
     const payload = {
       ...campos,
@@ -114,6 +140,13 @@ export default function VagasPage() {
     envioPendente.current = true
     setPublicando(true)
     try {
+      const urls = []
+      for (const file of fotos) {
+        if (!fotosEnviadas.current.has(file)) fotosEnviadas.current.set(file, await enviarFotoVaga(file))
+        urls.push(fotosEnviadas.current.get(file))
+      }
+      if (urls.length) payload.fotos = urls
+      if (documentos.length) payload.documentos_exigidos = documentos.map(doc => ({nome:doc.nome.trim(),modelo_url:doc.modelo_url.trim() || null}))
       await publicarVaga(payload)
       setPagina(1)
       recarregar()
@@ -147,106 +180,94 @@ export default function VagasPage() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={explorar.page}>
       <a className={styles.skipLink} href="#conteudo-vagas">Ir para as vagas</a>
-
-      <header className={styles.header}>
-        <Link className={styles.brand} to="/">VolunJá</Link>
-        <nav className={styles.navigation} aria-label="Navegação principal">
-          <Link to="/">Início</Link>
-          <Link to="/vagas" aria-current="page">Vagas</Link>
-          {loading ? (
-            <span role="status">Validando sessão…</span>
-          ) : restoreError ? (
-            <Link to="/login" state={{ from: '/vagas' }}>Validar sessão</Link>
-          ) : usuario ? (
-            <>
-              <Link to={profileRoute(usuario.perfil)}>Minha área</Link>
-              <button type="button" onClick={() => logout()}>Sair</button>
-            </>
-          ) : (
-            <Link to="/login" state={{ from: '/vagas' }}>Entrar</Link>
-          )}
-        </nav>
-      </header>
+      <Header />
 
       <main id="conteudo-vagas">
-        <section className={styles.intro} aria-labelledby="titulo-vagas">
-          <div>
-            <h1 id="titulo-vagas">Vagas de voluntariado</h1>
-            <p>Encontre uma oportunidade para dedicar seu tempo a uma causa.</p>
-          </div>
-          {podePublicar && (
-            <button
-              ref={botaoPublicar}
-              className={styles.primaryButton}
-              type="button"
-              onClick={abrirFormulario}
-              disabled={publicando}
-            >
-              Publicar vaga
-            </button>
-          )}
-        </section>
-
-        <p className={styles.feedback} role="status">{mensagem}</p>
-
-        <section aria-labelledby="vagas-publicadas">
-          <div className={styles.sectionHeading}>
-            <h2 id="vagas-publicadas">Vagas publicadas</h2>
-            <span>{total} {total === 1 ? 'oportunidade' : 'oportunidades'}</span>
-          </div>
-
-          {carregando ? (
-            <p role="status">Carregando vagas…</p>
-          ) : erroCarregamento ? (
-            <div className={styles.empty}>
-              <p role="alert">{erroCarregamento}</p>
-              <button className={styles.secondaryButton} type="button" onClick={recarregar}>Tentar novamente</button>
+        <section className={explorar.intro} aria-labelledby="titulo-vagas">
+          <div className={explorar.introInner}>
+            <div>
+              <h1 id="titulo-vagas">Explorar vagas</h1>
+              <p>{carregando ? 'Carregando as vagas abertas…' : `${total} ${total === 1 ? 'vaga aberta' : 'vagas abertas'} para você conhecer`}</p>
             </div>
-          ) : vagas.length === 0 ? (
-            <p className={styles.empty}>Ainda não há vagas publicadas.</p>
-          ) : (
-            <ul className={styles.grid}>
-              {vagas.map((vaga) => (
-                <li key={vaga.id}>
-                  <article className={styles.vacancy} aria-labelledby={`vaga-${vaga.id}`}>
-                    <span className={styles.cause}>{vaga.causa.nome}</span>
-                    <h3 id={`vaga-${vaga.id}`}>{vaga.titulo}</h3>
-                    <p className={styles.organization}>{vaga.organizacao.nome}</p>
-                    <p className={styles.description}>{vaga.descricao}</p>
-                    <dl className={styles.metadata}>
-                      <div><dt>Modalidade</dt><dd>{MODALIDADES[vaga.modalidade]}</dd></div>
-                      <div><dt>Local</dt><dd>{vaga.local}</dd></div>
-                      <div><dt>Período</dt><dd>{PERIODOS[vaga.periodo]}</dd></div>
-                      <div><dt>Carga horária</dt><dd>{vaga.carga_horaria} h</dd></div>
-                      <div><dt>Vagas disponíveis</dt><dd>{vaga.numero_vagas}</dd></div>
-                    </dl>
-                    <div className={styles.meetingSummary}>
-                      <h4>Datas e horários</h4>
-                      <ul>
-                        {vaga.ocorrencias.map((item) => (
-                          <li key={item.id}>{formatarOcorrencia(item)}</li>
-                        ))}
-                      </ul>
-                      <small>Horário de Brasília</small>
-                    </div>
-                  </article>
-                </li>
-              ))}
-            </ul>
-          )}
-          {!carregando && !erroCarregamento && total > porPagina && (
-            <nav className={styles.pagination} aria-label="Páginas de vagas">
-              <button type="button" disabled={pagina === 1} onClick={() => setPagina((atual) => atual - 1)}>Anterior</button>
-              <span>Página {pagina} de {Math.ceil(total / porPagina)}</span>
-              <button type="button" disabled={pagina * porPagina >= total} onClick={() => setPagina((atual) => atual + 1)}>Próxima</button>
-            </nav>
-          )}
+            {podePublicar && (
+              <button
+                ref={botaoPublicar}
+                className={explorar.publish}
+                type="button"
+                onClick={abrirFormulario}
+                disabled={publicando}
+              >
+                Publicar vaga
+              </button>
+            )}
+          </div>
+          {loading && <p className={explorar.session} role="status">Validando sessão…</p>}
+          {restoreError && <p className={explorar.session} role="status">
+            <Link to="/login" state={{ from: '/vagas' }}>Valide sua sessão</Link> para publicar ou se candidatar.
+          </p>}
         </section>
+
+        <p className={explorar.feedback} role="status">{mensagem}</p>
+
+        <div className={explorar.layout}>
+          <aside className={explorar.filters} aria-label="Filtros">
+            <div className={explorar.filtersHead}><h2>Filtros</h2>{filtrando && <button type="button" onClick={limparFiltros}>Limpar</button>}</div>
+            <fieldset><legend>Causa</legend>
+              <div className={explorar.options}>{[...new Set([...CAUSAS_DESTAQUE.map((c) => c.nome), ...(filtros.causa ? [filtros.causa] : [])])].map((nome) =>
+                <button key={nome} type="button" aria-pressed={filtros.causa.toLowerCase() === nome.toLowerCase()} onClick={() => filtrar('causa', nome)}>{nome}</button>)}</div>
+            </fieldset>
+            <fieldset><legend>Modalidade</legend>
+              <div className={explorar.segmented}>{Object.entries(MODALIDADES).map(([valor, texto]) =>
+                <button key={valor} type="button" aria-pressed={filtros.modalidade === valor} onClick={() => filtrar('modalidade', valor)}>{texto}</button>)}</div>
+            </fieldset>
+            <fieldset><legend>Período</legend>
+              <div className={explorar.options}>{Object.entries(PERIODOS).map(([valor, texto]) =>
+                <button key={valor} type="button" aria-pressed={filtros.periodo === valor} onClick={() => filtrar('periodo', valor)}>{texto}</button>)}</div>
+            </fieldset>
+          </aside>
+
+          <section className={explorar.results} aria-labelledby="vagas-publicadas">
+            <div className={explorar.sectionHeading}>
+              <h2 id="vagas-publicadas">{filtrando ? 'Resultado da busca' : 'Vagas publicadas'}</h2>
+              <span>{total} {total === 1 ? 'oportunidade' : 'oportunidades'}</span>
+            </div>
+            {filtrando && <ul className={explorar.active} aria-label="Filtros ativos">
+              {filtros.causa && <li><button type="button" onClick={() => filtrar('causa', '')}>{filtros.causa}<span aria-hidden="true">×</span><span className={explorar.srOnly}>remover filtro</span></button></li>}
+              {filtros.modalidade && <li><button type="button" onClick={() => filtrar('modalidade', '')}>{MODALIDADES[filtros.modalidade]}<span aria-hidden="true">×</span><span className={explorar.srOnly}>remover filtro</span></button></li>}
+              {filtros.periodo && <li><button type="button" onClick={() => filtrar('periodo', '')}>{PERIODOS[filtros.periodo]}<span aria-hidden="true">×</span><span className={explorar.srOnly}>remover filtro</span></button></li>}
+            </ul>}
+
+            {carregando ? (
+              <p className={explorar.state} role="status">Carregando vagas…</p>
+            ) : erroCarregamento ? (
+              <div className={explorar.state}>
+                <p role="alert">{erroCarregamento}</p>
+                <button className={explorar.retry} type="button" onClick={recarregar}>Tentar novamente</button>
+              </div>
+            ) : vagas.length === 0 ? (
+              <div className={explorar.state}>
+                <p>{filtrando ? 'Nenhuma vaga aberta com esses filtros.' : 'Ainda não há vagas publicadas.'}</p>
+                {filtrando && <button className={explorar.retry} type="button" onClick={limparFiltros}>Limpar filtros</button>}
+              </div>
+            ) : (
+              <ul className={explorar.grid}>
+                {vagas.map((vaga) => <li key={vaga.id}><VagaCard vaga={vaga} /></li>)}
+              </ul>
+            )}
+            {!carregando && !erroCarregamento && total > porPagina && (
+              <nav className={explorar.pagination} aria-label="Páginas de vagas">
+                <button type="button" disabled={pagina === 1} onClick={() => setPagina((atual) => atual - 1)}>Anterior</button>
+                <span>Página {pagina} de {Math.ceil(total / porPagina)}</span>
+                <button type="button" disabled={pagina * porPagina >= total} onClick={() => setPagina((atual) => atual + 1)}>Próxima</button>
+              </nav>
+            )}
+          </section>
+        </div>
       </main>
 
-      <footer className={styles.footer}>VolunJá · Conectando pessoas e causas</footer>
+      <Footer />
 
       {podePublicar && (
         <dialog
@@ -323,6 +344,7 @@ export default function VagasPage() {
               </div>
             </div>
             <EncontrosEditor encontros={encontros} onChange={alterarEncontros} erro={erroEncontros} />
+            <VagaMediaFields fotos={fotos} setFotos={setFotos} documentos={documentos} setDocumentos={setDocumentos} error={erroMidia} />
 
             {erro && <p className={styles.error} role="alert">{erro}</p>}
 

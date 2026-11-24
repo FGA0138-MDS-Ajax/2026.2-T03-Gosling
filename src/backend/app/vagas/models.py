@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import (
+    JSON,
     CheckConstraint,
     Enum,
     ForeignKey,
@@ -37,6 +38,10 @@ class Vaga(Base):
     periodo: Mapped[Periodo] = mapped_column(Enum(Periodo, name="periodo_vaga"))
     carga_horaria: Mapped[Decimal] = mapped_column(Numeric(7, 2))
     numero_vagas: Mapped[int]
+    fotos: Mapped[list[str] | None] = mapped_column(JSON)
+    documentos_exigidos: Mapped[list[dict[str, str | None]] | None] = mapped_column(
+        JSON
+    )
     status: Mapped[StatusVaga] = mapped_column(
         Enum(StatusVaga, name="status_vaga"), default=StatusVaga.ABERTA
     )
@@ -59,8 +64,6 @@ class OcorrenciaVaga(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    vaga_id: Mapped[int] = mapped_column(
-        ForeignKey("vagas.id", ondelete="CASCADE")
-    )
+    vaga_id: Mapped[int] = mapped_column(ForeignKey("vagas.id", ondelete="CASCADE"))
     inicio: Mapped[datetime] = mapped_column(UTCDateTime())
     fim: Mapped[datetime] = mapped_column(UTCDateTime())

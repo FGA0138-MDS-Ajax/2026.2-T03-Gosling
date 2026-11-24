@@ -13,21 +13,29 @@ import VolunteerSignupPage from './pages/VolunteerSignupPage'
 import VagasPage from './pages/VagasPage'
 import AdminLoginPage from './pages/AdminLoginPage'
 import AdminPage from './pages/AdminPage'
+import ProfileChoicePage from './pages/ProfileChoicePage'
+import VagaDetailsPage from './pages/VagaDetailsPage'
+import { NoticePage } from './components/ui/Layout'
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/vagas" element={<VagasPage />} />
+      <Route path="/vagas/:id" element={<VagaDetailsPage />} />
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/login/projeto-social" element={<ProjetoSocialLoginPage />} />
+      <Route path="/cadastro" element={<ProfileChoicePage />} />
       <Route path="/cadastro/voluntario" element={<VolunteerSignupPage />} />
       <Route path="/cadastro/organizacao" element={<OrganizationSignupPage />} />
       <Route path="/cadastro/projeto-social" element={<ProjetoSocialSignupPage />} />
       <Route element={<ProtectedRoute perfil="VOLUNTARIO" />}>
         <Route path="/voluntario" element={<ProfilePage />} />
         <Route path="/voluntario/perfil" element={<VolunteerProfilePage />} />
+        <Route path="/voluntario/agenda" element={<NoticePage title="Minha agenda" />} />
+        <Route path="/voluntario/candidaturas" element={<NoticePage title="Minhas candidaturas" />} />
+        <Route path="/voluntario/notificacoes" element={<NoticePage title="Notificações" />} />
       </Route>
       <Route element={<ProtectedRoute perfil="ORGANIZACAO" />}>
         <Route path="/organizacao" element={<ProfilePage />} />

@@ -83,3 +83,35 @@ export function validCpf(value) {
   }
   return true
 }
+
+export function weeklyAvailability(perfil) {
+  if (Array.isArray(perfil.disponibilidade_semanal)) return perfil.disponibilidade_semanal
+  const legacy = parseDisponibilidades(perfil.disponibilidades)
+  return legacy.dias.flatMap(dia => legacy.periodos.map(periodo => ({ dia, periodo })))
+}
+
+export function profileCompletion({ nome, identificacao, telefone, cidade, estado, causas = [], disponibilidade_semanal = [], carga_horaria_semanal }) {
+  const itens = [nome, identificacao, telefone, cidade, estado, causas.length, disponibilidade_semanal.length, carga_horaria_semanal]
+  return Math.round(itens.filter(Boolean).length / itens.length * 100)
+}
+
+const normalizar = (texto = '') => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+const SINONIMOS = { animais: ['protecao animal'], idosos: ['pessoas idosas'], 'criancas e adolescentes': ['infancia', 'criancas'] }
+export function causaCombina(interesses = [], causa = '') {
+  const alvo = normalizar(causa)
+  if (!alvo) return false
+  return interesses.some((interesse) => {
+    const valor = normalizar(interesse)
+    return [valor, ...(SINONIMOS[valor] || [])].some((termo) => alvo === termo || alvo.includes(termo) || termo.includes(alvo))
+  })
+}
+
+export function maskCpf(value = '') {
+  const digits = value.replace(/\D/g, '').slice(0, 11)
+  return digits.replace(/^(\d{3})(\d)/, '$1.$2').replace(/^(\d{3}\.\d{3})(\d)/, '$1.$2').replace(/(\d{3}\.\d{3}\.\d{3})(\d)/, '$1-$2')
+}
+
+export function privateCpf(value) {
+  const digits = (value || '').replace(/\D/g, '')
+  return digits.length === 11 ? `•••.${digits.slice(3, 6)}.${digits.slice(6, 9)}-••` : 'Não informado'
+}

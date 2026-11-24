@@ -68,7 +68,10 @@ describe('login do projeto social', () => {
   it('é acessível a partir do login geral', async () => {
     const user = userEvent.setup()
     abrir('/login')
-    await user.click(await screen.findByRole('link', { name: 'Entre como projeto social' }))
+    await user.click(await screen.findByRole('link', { name: 'Criar conta', exact: true }))
+    await user.click(screen.getByRole('radio', { name: /Lidero um projeto social/ }))
+    await user.click(screen.getByRole('button', { name: 'Continuar como projeto social' }))
+    await user.click(screen.getByRole('link', { name: 'Entrar na minha conta' }))
     expect(await screen.findByRole('heading', { name: 'Entrar como projeto social' })).toBeVisible()
   })
 
