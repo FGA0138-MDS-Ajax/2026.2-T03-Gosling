@@ -38,7 +38,6 @@ def test_detalhes_completos_publicos_e_privacidade(client, db, contas, dados_vag
     assert vaga["ocorrencias"][1]["inicio"] == "2026-11-23T12:00:00Z"
     assert vaga["fotos"] == dados_vaga["fotos"]
     assert len(vaga["documentos_exigidos"]) == 2
-    assert vaga["candidaturas_disponiveis"] is False
     assert set(vaga["organizacao"]) == {"id", "nome", "homologada", "descricao"}
     for reservado in (
         ong.email,

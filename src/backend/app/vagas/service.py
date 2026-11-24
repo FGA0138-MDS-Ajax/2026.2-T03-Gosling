@@ -129,7 +129,7 @@ class VagaService:
         self, vaga_id: str, organizacao_id: str, dados: AtualizarVagaRequest
     ) -> Dict[str, Any]:
         """Regra de negócio para alteração de vaga (Issue #32)."""
-        vaga = self.repository.buscar_por_id(vaga_id)
+        vaga = self.repository.buscar_por_id(vaga_id, bloquear=True)
         if not vaga:
             raise VagaNaoEncontradaException("Vaga não encontrada.")
 
@@ -149,7 +149,7 @@ class VagaService:
         alterou_fim = (
             "data_fim" in payload and payload["data_fim"] != vaga.get("data_fim")
         )
-        if alterou_inicio or alterou_fim:
+        if alterou_inicio or alterou_fim or payload.get("ocorrencias"):
             if self.repository.tem_candidaturas_ativas(vaga_id):
                 raise AlteracaoHorarioNaoPermitidaException(
                     "Não é permitido alterar os horários da vaga pois existem "

@@ -68,7 +68,6 @@ def test_detalhe_e_o_mesmo_para_visitante_e_usuarios_autenticados(
     assert resposta.status_code == 200
     vaga = resposta.json()
     assert vaga == publicado
-    assert vaga["candidaturas_disponiveis"] is False
     assert set(vaga["organizacao"]) == CHAVES_PUBLICAS_ORGANIZACAO
     for reservado in contatos_reservados:
         assert reservado not in resposta.text

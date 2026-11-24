@@ -1,10 +1,21 @@
 from datetime import UTC, datetime, time
-from typing import Any, List, Optional
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from app.candidaturas.models import Candidatura
+from fastapi import HTTPException, UploadFile
+
+from app.candidaturas.comprovantes import codigo_comprovante, gerar_comprovante
+from app.candidaturas.documentos import pasta_documentos, validar_documentos
+from app.candidaturas.models import Candidatura, DocumentoCandidatura
 from app.candidaturas.repository import CandidaturaRepository
-from app.candidaturas.schemas import EventoCalendario, IntervaloCalendario
+from app.candidaturas.schemas import (
+    CandidaturaRegistrada,
+    ComprovanteCandidatura,
+    EventoCalendario,
+    HorarioConflitante,
+    IntervaloCalendario,
+)
+from app.vagas.enums import StatusVaga
 
 
 BRASILIA = ZoneInfo("America/Sao_Paulo")
@@ -22,51 +33,101 @@ class CandidaturaDuplicadaException(Exception):
     pass
 
 
+class ConflitoHorarioException(Exception):
+    def __init__(self, conflitos: list[HorarioConflitante]):
+        self.conflitos = conflitos
+
+
 class CandidaturaService:
-    def __init__(
+    def __init__(self, repository: CandidaturaRepository):
+        self.repository = repository
+
+    def candidatar(
         self,
-        candidatura_repository: CandidaturaRepository,
-        vaga_repository: Any,
-    ):
-        self.candidatura_repository = candidatura_repository
-        self.vaga_repository = vaga_repository
+        vaga_id: int,
+        voluntario_id: int,
+        indices: list[int],
+        arquivos: list[UploadFile],
+    ) -> CandidaturaRegistrada:
+        session = self.repository.session
+        caminhos: list[Path] = []
+        try:
+            if not self.repository.bloquear_voluntario(voluntario_id):
+                raise HTTPException(403, "Voluntário indisponível.")
+            vaga = self.repository.bloquear_vaga(vaga_id)
+            if vaga is None:
+                raise VagaNaoEncontradaException("Vaga não encontrada.")
+            if vaga.status != StatusVaga.ABERTA:
+                raise VagaNaoAbertaException(
+                    "Não é possível se candidatar: A vaga não está no estado ABERTA."
+                )
+            if self.repository.ja_candidatado(vaga_id, voluntario_id):
+                raise CandidaturaDuplicadaException(
+                    "Você já possui uma candidatura registrada para esta vaga."
+                )
+            ocorrencias = self.repository.listar_ocorrencias(vaga_id)
+            if not any(encontro.fim > datetime.now(UTC) for encontro in ocorrencias):
+                raise VagaNaoAbertaException(
+                    "Os encontros desta vaga já se encerraram."
+                )
+            conflitos = self.repository.listar_conflitos(voluntario_id, ocorrencias)
+            if conflitos:
+                raise ConflitoHorarioException(
+                    [HorarioConflitante.model_validate(item) for item in conflitos]
+                )
 
-    def candidatar(self, vaga_id: int, voluntario_id: int) -> Candidatura:
-        vaga = self.vaga_repository.buscar_por_id(vaga_id)
-
-        if not vaga:
-            raise VagaNaoEncontradaException("Vaga não encontrada.")
-
-        if isinstance(vaga, dict):
-            estado_vaga = (
-                vaga.get("status")
-                or vaga.get("estado_vaga")
-                or vaga.get("estado")
+            documentos = validar_documentos(
+                [doc["nome"] for doc in vaga.documentos_exigidos or []],
+                indices,
+                arquivos,
             )
-        else:
-            estado_vaga = (
-                getattr(vaga, "status", None)
-                or getattr(vaga, "estado_vaga", None)
-                or getattr(vaga, "estado", None)
+            candidatura = Candidatura(vaga_id=vaga_id, voluntario_id=voluntario_id)
+            session.add(candidatura)
+            session.flush()
+            if documentos:
+                pasta = pasta_documentos()
+                pasta.mkdir(parents=True, exist_ok=True)
+                for documento in documentos:
+                    caminho = pasta / documento.arquivo
+                    with caminho.open("xb") as destino:
+                        caminhos.append(caminho)
+                        destino.write(documento.conteudo)
+                    session.add(
+                        DocumentoCandidatura(
+                            candidatura_id=candidatura.id,
+                            indice=documento.indice,
+                            nome=documento.nome,
+                            arquivo=documento.arquivo,
+                        )
+                    )
+            resposta = CandidaturaRegistrada(
+                id=candidatura.id,
+                vaga_id=vaga_id,
+                status=candidatura.status,
+                comprovante=ComprovanteCandidatura(
+                    codigo=codigo_comprovante(candidatura)
+                ),
             )
+            session.commit()
+            return resposta
+        except Exception:
+            session.rollback()
+            for caminho in caminhos:
+                caminho.unlink(missing_ok=True)
+            raise
 
-        estado_vaga = getattr(estado_vaga, "value", estado_vaga)
-
-        if estado_vaga != "ABERTA":
-            raise VagaNaoAbertaException(
-                "Não é possível se candidatar: A vaga não está no estado ABERTA."
-            )
-
-        if self.candidatura_repository.ja_candidatado(vaga_id, voluntario_id):
-            raise CandidaturaDuplicadaException(
-                "Você já possui uma candidatura registrada para esta vaga."
-            )
-
-        return self.candidatura_repository.criar_candidatura(
-            vaga_id=vaga_id,
-            voluntario_id=voluntario_id,
-            status="PENDENTE",
+    def comprovante(
+        self,
+        candidatura_id: int,
+        voluntario_id: int,
+        nome_voluntario: str,
+    ) -> bytes:
+        candidatura = self.repository.buscar_do_voluntario(
+            candidatura_id, voluntario_id
         )
+        if candidatura is None:
+            raise HTTPException(404, "Candidatura não encontrada.")
+        return gerar_comprovante(candidatura, nome_voluntario)
 
 
 class CalendarioService:

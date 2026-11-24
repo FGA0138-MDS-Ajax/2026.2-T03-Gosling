@@ -1,13 +1,12 @@
-
+from collections.abc import Sequence
 from datetime import datetime
-from typing import List, Optional
 
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_, select, update
+from sqlalchemy.orm import Session, lazyload
 
 from app.candidaturas.enums import STATUS_ATIVOS
 from app.candidaturas.models import Candidatura
-from app.usuarios.models import Organizacao
+from app.usuarios.models import Organizacao, Voluntario
 from app.vagas.models import OcorrenciaVaga, Vaga
 
 
@@ -15,52 +14,109 @@ class CandidaturaRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def ja_candidatado(self, vaga_id: int, voluntario_id: int) -> bool:
-        consulta = select(func.count(Candidatura.id)).where(
-            Candidatura.vaga_id == vaga_id,
-            Candidatura.voluntario_id == voluntario_id,
-        )
-
-        total = self.session.execute(consulta).scalar() or 0
-
-        return total > 0
-
-    def criar_candidatura(
-        self,
-        vaga_id: int,
-        voluntario_id: int,
-        status: str = "PENDENTE",
-    ) -> Candidatura:
-        try:
-            nova_candidatura = Candidatura(
-                vaga_id=vaga_id,
-                voluntario_id=voluntario_id,
-                status=status,
+    def bloquear_voluntario(self, voluntario_id: int) -> bool:
+        if self.session.get_bind().dialect.name == "sqlite":
+            # SQLite serializa escritas e não implementa SELECT FOR UPDATE.
+            voluntarios = Voluntario.__table__
+            resultado = self.session.execute(
+                update(voluntarios)
+                .where(voluntarios.c.id == voluntario_id)
+                .values(id=voluntarios.c.id)
             )
-
-            self.session.add(nova_candidatura)
-            self.session.commit()
-            self.session.refresh(nova_candidatura)
-
-            return nova_candidatura
-
-        except Exception as e:
-            self.session.rollback()
-            raise e
-
-    def buscar_por_id(self, candidatura_id: int) -> Optional[Candidatura]:
-        consulta = select(Candidatura).where(
-            Candidatura.id == candidatura_id
+            return resultado.rowcount > 0
+        consulta = (
+            select(Voluntario.id)
+            .where(Voluntario.id == voluntario_id)
+            .with_for_update()
         )
+        return self.session.scalar(consulta) is not None
 
-        return self.session.execute(consulta).scalar_one_or_none()
-
-    def listar_por_vaga(self, vaga_id: int) -> List[Candidatura]:
-        consulta = select(Candidatura).where(
-            Candidatura.id == vaga_id
+    def bloquear_vaga(self, vaga_id: int) -> Vaga | None:
+        consulta = (
+            select(Vaga)
+            .options(
+                lazyload(Vaga.organizacao),
+                lazyload(Vaga.causa),
+                lazyload(Vaga.ocorrencias),
+            )
+            .where(
+                Vaga.id == vaga_id,
+                Vaga.organizacao.has(
+                    and_(
+                        Organizacao.ativo.is_(True),
+                        Organizacao.homologada.is_(True),
+                    )
+                ),
+            )
+            .with_for_update()
+            .execution_options(populate_existing=True)
         )
+        return self.session.scalar(consulta)
 
-        return list(self.session.execute(consulta).scalars().all())
+    def listar_ocorrencias(self, vaga_id: int) -> Sequence[OcorrenciaVaga]:
+        consulta = (
+            select(OcorrenciaVaga)
+            .where(OcorrenciaVaga.vaga_id == vaga_id)
+            .order_by(OcorrenciaVaga.inicio)
+            .with_for_update(read=True)
+            .execution_options(populate_existing=True)
+        )
+        return self.session.scalars(consulta).all()
+
+    def ja_candidatado(self, vaga_id: int, voluntario_id: int) -> bool:
+        consulta = (
+            select(Candidatura.id)
+            .where(
+                Candidatura.vaga_id == vaga_id,
+                Candidatura.voluntario_id == voluntario_id,
+            )
+            .with_for_update(read=True)
+        )
+        return self.session.scalar(consulta) is not None
+
+    def listar_conflitos(
+        self, voluntario_id: int, ocorrencias: Sequence[OcorrenciaVaga]
+    ):
+        if not ocorrencias:
+            return []
+        sobreposicoes = [
+            and_(
+                OcorrenciaVaga.inicio < encontro.fim,
+                OcorrenciaVaga.fim > encontro.inicio,
+            )
+            for encontro in ocorrencias
+        ]
+        consulta = (
+            select(
+                Vaga.id.label("vaga_id"),
+                Vaga.titulo.label("titulo_vaga"),
+                OcorrenciaVaga.inicio,
+                OcorrenciaVaga.fim,
+            )
+            .select_from(Candidatura)
+            .join(Vaga, Vaga.id == Candidatura.vaga_id)
+            .join(OcorrenciaVaga, OcorrenciaVaga.vaga_id == Vaga.id)
+            .where(
+                Candidatura.voluntario_id == voluntario_id,
+                Candidatura.status.in_(STATUS_ATIVOS),
+                or_(*sobreposicoes),
+            )
+            .order_by(OcorrenciaVaga.inicio, Vaga.id, OcorrenciaVaga.id)
+            .with_for_update(read=True)
+        )
+        return self.session.execute(consulta).mappings().all()
+
+    def buscar_do_voluntario(
+        self,
+        candidatura_id: int,
+        voluntario_id: int,
+    ) -> Candidatura | None:
+        return self.session.scalar(
+            select(Candidatura).where(
+                Candidatura.id == candidatura_id,
+                Candidatura.voluntario_id == voluntario_id,
+            )
+        )
 
     def listar_eventos(
         self,
