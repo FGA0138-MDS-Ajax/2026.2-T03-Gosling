@@ -43,6 +43,7 @@ function VagaDetails({ id }) {
   const [candidatando, setCandidatando] = useState(false)
   const [enviada, setEnviada] = useState(false)
   const [conflito, setConflito] = useState(null)
+  const [rascunho, setRascunho] = useState(null)
   const sharePending = useRef(false)
 
   useEffect(() => {
@@ -122,8 +123,8 @@ function VagaDetails({ id }) {
       {related.length > 0 && <section className={s.related}><h2>Você também pode gostar</h2><div>{related.map(v => <article key={v.id} className={s.relatedCard}>{v.fotos?.[0] && <img src={v.fotos[0]} alt="" />}<div><small>{v.organizacao.nome}</small><h3><Link to={`/vagas/${v.id}`}>{v.titulo}</Link></h3>{v.ocorrencias[0] && <p><Icon group="detalhe" name="imgIcon19" />{formatarOcorrencia(v.ocorrencias[0])}</p>}<p><Icon group="detalhe" name="imgIcon20" />{v.local}</p><span className={s.relatedCause}>{v.causa.nome}</span></div></article>)}</div></section>}
       <Footer /><div className={s.mobileCta}><span><strong>{vaga.numero_vagas} vagas ofertadas</strong><small>{modalities[vaga.modalidade]} · {Number(vaga.carga_horaria).toLocaleString('pt-BR')} h</small></span>{application(true)}</div>
       {gallery && <Modal title="Fotos da atividade" onClose={() => setGallery(false)}><div className={s.photoViewer}><img src={fotos[photo]} alt={`Foto ${photo+1} da atividade ${vaga.titulo}`} /><p>{photo + 1} / {fotos.length}</p><div><button disabled={photo === 0} onClick={() => setPhoto(photo-1)}>Anterior</button><button disabled={photo === fotos.length-1} onClick={() => setPhoto(photo+1)}>Próxima</button></div></div></Modal>}
-      {candidatando && <CandidaturaModal vaga={vaga} ocorrencias={ocorrencias} onClose={() => setCandidatando(false)} onEnviada={() => setEnviada(true)} onConflito={dados => { setCandidatando(false); setConflito(dados) }} />}
-      {conflito && <ConflitoAgendaModal conflito={conflito} onClose={() => setConflito(null)} />}
+      {candidatando && <CandidaturaModal vaga={vaga} ocorrencias={ocorrencias} arquivosIniciais={rascunho} onClose={() => setCandidatando(false)} onEnviada={() => { setEnviada(true); setRascunho(null) }} onConflito={(dados, arquivos) => { setCandidatando(false); setRascunho(arquivos); setConflito(dados) }} />}
+      {conflito && <ConflitoAgendaModal conflito={conflito} vaga={vaga} origem={location.pathname} onClose={() => setConflito(null)} onTentarNovamente={() => { setConflito(null); setCandidatando(true) }} />}
       {report && <Modal title="Denunciar esta vaga" onClose={() => setReport(false)}><p>O envio de denúncias pela plataforma ainda não está disponível. Procure a administração e informe o endereço desta vaga.</p><button type="button" onClick={share}>Copiar link da vaga</button></Modal>}
     </>}
   </div>

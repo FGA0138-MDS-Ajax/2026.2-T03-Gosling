@@ -15,7 +15,7 @@
 .resumo dt { font-size: 12px; color: var(--muted); }
 .resumo dd { margin: 2px 0 0; font-weight: 600; }
 .acoes { display: flex; flex-wrap: wrap; gap: 12px; }
-.principal { border: 0; border-radius: 999px; background: var(--action); color: white; min-height: 48px; padding: 12px 22px; font: inherit; font-weight: 600; cursor: pointer; }
+.principal { text-decoration: none; display: inline-flex; align-items: center; border: 0; border-radius: 999px; background: var(--action); color: white; min-height: 48px; padding: 12px 22px; font: inherit; font-weight: 600; cursor: pointer; }
 .principal:hover { background: var(--action-hover); }
 .principal:disabled { background: #e8e8ed; color: var(--muted); cursor: default; }
 .secundario { border: 1px solid var(--border); border-radius: 999px; background: white; color: var(--ink); min-height: 48px; padding: 12px 22px; font: inherit; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; cursor: pointer; }

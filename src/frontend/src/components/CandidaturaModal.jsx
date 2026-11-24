@@ -13,9 +13,9 @@ const capitalizar = (texto) => texto.charAt(0).toUpperCase() + texto.slice(1)
 
 // Fluxo de candidatura (RF16, issue #45). Só mostra a confirmação depois do HTTP 201;
 // um conflito de agenda (409) é repassado à página por onConflito.
-export default function CandidaturaModal({ vaga, ocorrencias, onClose, onEnviada, onConflito }) {
+export default function CandidaturaModal({ vaga, ocorrencias, arquivosIniciais, onClose, onEnviada, onConflito }) {
   const documentosExigidos = vaga.documentos_exigidos ?? []
-  const [arquivos, setArquivos] = useState({})
+  const [arquivos, setArquivos] = useState(() => arquivosIniciais ?? {})
   const [erros, setErros] = useState({})
   const [mensagem, setMensagem] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -55,7 +55,7 @@ export default function CandidaturaModal({ vaga, ocorrencias, onClose, onEnviada
     } catch (falha) {
       const erro = interpretarErroCandidatura(falha)
       if (erro.tipo === 'conflito') {
-        onConflito(erro)
+        onConflito(erro, arquivos)
         return
       }
       if (erro.tipo === 'campos') {
@@ -164,6 +164,7 @@ export default function CandidaturaModal({ vaga, ocorrencias, onClose, onEnviada
                           aria-invalid={Boolean(erros[indice])}
                           aria-describedby={erros[indice] ? `${id}-erro` : undefined}
                         />
+                        {arquivos[indice] && <small className={s.dica}>Selecionado: {arquivos[indice].name}</small>}
                         {erros[indice] && <span id={`${id}-erro`} className={s.erro}>{erros[indice]}</span>}
                       </li>
                     )
