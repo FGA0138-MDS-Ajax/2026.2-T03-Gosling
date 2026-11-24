@@ -4,6 +4,7 @@ import Modal from './ui/Modal'
 import { baixarComprovante, enviarCandidatura } from '../services/candidaturasService'
 import { ACCEPT_DOCUMENTOS, interpretarErroCandidatura, validarArquivo } from '../utils/candidatura'
 import { horarioDoEncontro } from '../utils/ocorrencias'
+import { avisarCandidaturasAlteradas } from '../utils/calendario'
 import s from './CandidaturaModal.module.css'
 
 const dataLonga = new Intl.DateTimeFormat('pt-BR', {
@@ -51,6 +52,7 @@ export default function CandidaturaModal({ vaga, ocorrencias, arquivosIniciais, 
     try {
       const resultado = await enviarCandidatura(vaga.id, documentos)
       setCandidatura(resultado)
+      avisarCandidaturasAlteradas()
       onEnviada?.(resultado)
     } catch (falha) {
       const erro = interpretarErroCandidatura(falha)

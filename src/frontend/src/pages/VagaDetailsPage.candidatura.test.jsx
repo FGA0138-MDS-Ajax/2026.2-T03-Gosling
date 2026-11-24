@@ -215,3 +215,22 @@ describe('carregamento, erros, confirmação após 201 e conflito 409', () => {
     expect(dialog.getByLabelText('Termo de adesão')).toHaveAttribute('aria-invalid', 'true')
   })
 })
+
+describe('aviso para a agenda (#49)', () => {
+  it('avisa a agenda só depois da confirmação, e não em caso de conflito', async () => {
+    const aviso = vi.fn()
+    window.addEventListener('volunja:candidaturas-alteradas', aviso)
+    candidaturas.enviarCandidatura.mockRejectedValueOnce({ response: { status: 409, data: { detail: 'Conflito.' } } })
+    const { user, dialog } = await abrirCandidatura()
+    await anexarTudo(user, dialog)
+    await user.click(dialog.getByRole('button', { name: 'Confirmar candidatura' }))
+    await screen.findByRole('dialog', { name: 'Conflito de horário' })
+    expect(aviso).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Revisar e tentar de novo' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar candidatura' }))
+    await screen.findByRole('dialog', { name: 'Candidatura enviada' })
+    expect(aviso).toHaveBeenCalledTimes(1)
+    window.removeEventListener('volunja:candidaturas-alteradas', aviso)
+  })
+})

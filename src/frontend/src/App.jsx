@@ -15,6 +15,7 @@ import AdminPage from './pages/AdminPage'
 import ProfileChoicePage from './pages/ProfileChoicePage'
 import VagaDetailsPage from './pages/VagaDetailsPage'
 import { NoticePage } from './components/ui/Layout'
+import AgendaPage from './pages/AgendaPage'
 
 export default function App() {
   return (
@@ -32,7 +33,7 @@ export default function App() {
       <Route element={<ProtectedRoute perfil="VOLUNTARIO" />}>
         <Route path="/voluntario" element={<ProfilePage />} />
         <Route path="/voluntario/perfil" element={<VolunteerProfilePage />} />
-        <Route path="/voluntario/agenda" element={<NoticePage title="Minha agenda" />} />
+        <Route path="/voluntario/agenda" element={<AgendaPage />} />
         <Route path="/voluntario/candidaturas" element={<NoticePage title="Minhas candidaturas" />} />
         <Route path="/voluntario/notificacoes" element={<NoticePage title="Notificações" />} />
       </Route>
