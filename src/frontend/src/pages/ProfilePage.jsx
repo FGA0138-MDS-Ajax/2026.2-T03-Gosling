@@ -115,9 +115,12 @@ function AreaOrganizacao({ usuario, logout }) {
           <button type="button" className={s.ghost} onClick={() => logout()}>Sair</button>
         </div>
       </section>
-      <section className={s.card} aria-labelledby="painel-em-breve">
-        <h2 id="painel-em-breve">Painel da organização</h2>
-        <p className={s.muted}>O acompanhamento de vagas, candidaturas e triagem fica neste espaço. Por enquanto, suas vagas publicadas aparecem em Explorar vagas.</p>
+      <section className={s.card} aria-labelledby="painel-organizacao">
+        <h2 id="painel-organizacao">Painel da organização</h2>
+        <p className={s.muted}>Acompanhe as vagas publicadas e o número de candidaturas.</p>
+        <div className={s.cardActions}>
+          <Link className={s.secondary} to="/organizacao/vagas">Minhas vagas</Link>
+        </div>
       </section>
     </div>
   </>

@@ -3,6 +3,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import OrganizationProfilePage from './pages/OrganizationProfilePage'
+import OrganizationVagasPage from './pages/OrganizationVagasPage'
 import ProfilePage from './pages/ProfilePage'
 import OrganizationSignupPage from './pages/OrganizationSignupPage'
 import ProjetoSocialLoginPage from './pages/ProjetoSocialLoginPage'
@@ -15,6 +16,7 @@ import AdminPage from './pages/AdminPage'
 import ProfileChoicePage from './pages/ProfileChoicePage'
 import VagaDetailsPage from './pages/VagaDetailsPage'
 import { NoticePage } from './components/ui/Layout'
+import AgendaPage from './pages/AgendaPage'
 
 export default function App() {
   return (
@@ -32,13 +34,14 @@ export default function App() {
       <Route element={<ProtectedRoute perfil="VOLUNTARIO" />}>
         <Route path="/voluntario" element={<ProfilePage />} />
         <Route path="/voluntario/perfil" element={<VolunteerProfilePage />} />
-        <Route path="/voluntario/agenda" element={<NoticePage title="Minha agenda" />} />
+        <Route path="/voluntario/agenda" element={<AgendaPage />} />
         <Route path="/voluntario/candidaturas" element={<NoticePage title="Minhas candidaturas" />} />
         <Route path="/voluntario/notificacoes" element={<NoticePage title="Notificações" />} />
       </Route>
       <Route element={<ProtectedRoute perfil="ORGANIZACAO" />}>
         <Route path="/organizacao" element={<ProfilePage />} />
         <Route path="/organizacao/perfil" element={<OrganizationProfilePage />} />
+        <Route path="/organizacao/vagas" element={<OrganizationVagasPage />} />
       </Route>
       <Route element={<ProtectedRoute perfil="ADMINISTRADOR" loginPath="/admin/login" />}>
         <Route path="/admin" element={<AdminPage />} />
