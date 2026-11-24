@@ -1,6 +1,5 @@
 import { randomInt, randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test as base } from '@playwright/test'
 
