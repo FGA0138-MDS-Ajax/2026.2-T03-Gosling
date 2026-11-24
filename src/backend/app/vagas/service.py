@@ -92,7 +92,7 @@ class VagaService:
                 estado_vaga=vaga["estado_vaga"],
                 cidade=vaga.get("cidade"),
                 estado_uf=vaga.get("estado_uf"),
-                data_criacao=vaga["data_criacao"],
+                data_criacao=vaga.get("data_criacao"),
                 total_candidaturas=vaga.get("total_candidaturas"),
             )
             for vaga in vagas
