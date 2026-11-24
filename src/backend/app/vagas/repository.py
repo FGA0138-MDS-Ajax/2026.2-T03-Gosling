@@ -11,6 +11,12 @@ from app.vagas.enums import StatusVaga
 from app.vagas.models import Vaga
 
 
+ 
+_CAMPO_PARA_COLUNA = {
+    "estado_vaga": "status",
+}
+
+
 class VagaRepository:
     def __init__(self, session: Session):
         self.session = session
@@ -100,13 +106,24 @@ class VagaRepository:
         self.session.rollback()
 
     def buscar_por_id(self, vaga_id: str) -> Optional[Dict[str, Any]]:
-        """Busca uma vaga pelo id."""
+        """Busca uma vaga pelo id.
+
+        Retorna o dicionário com as colunas reais da tabela, **mais** o
+        alias ``estado_vaga`` (espelhando ``status``), para que a camada
+        de serviço/router possa devolver o payload no contrato público
+        sem precisar reescrever o nome do campo.
+        """
         resultado = self.session.execute(
             text("SELECT * FROM vagas WHERE id = :id"),
             {"id": vaga_id},
         )
         linha = resultado.mappings().first()
-        return dict(linha) if linha else None
+        if not linha:
+            return None
+        vaga = dict(linha)
+        if "status" in vaga and "estado_vaga" not in vaga:
+            vaga["estado_vaga"] = vaga["status"]
+        return vaga
 
     def tem_candidaturas_ativas(self, vaga_id: str) -> bool:
         """Verifica se a vaga possui candidaturas em status PENDENTE ou ACEITA."""
@@ -119,21 +136,58 @@ class VagaRepository:
         ).scalar_one()
         return total > 0
 
-    def atualizar_vaga(self, vaga_id: str, dados_atualizacao: Dict[str, Any]) -> bool:
-        """Atualiza dinamicamente apenas os campos informados."""
+    def atualizar_vaga(
+        self, vaga_id: str, dados_atualizacao: Dict[str, Any]
+    ) -> bool:
+        """Atualiza dinamicamente apenas os campos informados.
+
+        - ``estado_vaga`` é mapeado para a coluna ``status``.
+        - ``ocorrencias`` é tratada à parte (delete+insert) porque não é
+          coluna escalar de ``vagas``.
+        - Campos desconhecidos vindos do schema (que já usa
+          ``extra="forbid"``) chegam aqui somente se forem válidos; ainda
+          assim, o guard ``isidentifier`` evita injeção via nome de coluna.
+        """
         if not dados_atualizacao:
             return False
 
-        for chave in dados_atualizacao:
-            if not chave.isidentifier():
-                raise ValueError(f"Nome de campo inválido: {chave!r}")
+        ocorrencias = dados_atualizacao.pop("ocorrencias", None)
 
-        campos_set = ", ".join(f"{chave} = :{chave}" for chave in dados_atualizacao)
-        parametros = {**dados_atualizacao, "vaga_id": vaga_id}
+        campos_set: list[str] = []
+        parametros: Dict[str, Any] = {"vaga_id": vaga_id}
+        for chave, valor in dados_atualizacao.items():
+            coluna = _CAMPO_PARA_COLUNA.get(chave, chave)
+            if not coluna.isidentifier():
+                raise ValueError(f"Nome de campo inválido: {coluna!r}")
+            campos_set.append(f"{coluna} = :{coluna}")
+            parametros[coluna] = valor
 
-        resultado = self.session.execute(
-            text(f"UPDATE vagas SET {campos_set} WHERE id = :vaga_id"),
-            parametros,
-        )
+        if campos_set:
+            self.session.execute(
+                text(
+                    f"UPDATE vagas SET {', '.join(campos_set)} "
+                    "WHERE id = :vaga_id"
+                ),
+                parametros,
+            )
+
+        if ocorrencias is not None:
+            self.session.execute(
+                text("DELETE FROM ocorrencias_vaga WHERE vaga_id = :vaga_id"),
+                {"vaga_id": vaga_id},
+            )
+            for item in ocorrencias:
+                self.session.execute(
+                    text(
+                        "INSERT INTO ocorrencias_vaga (vaga_id, inicio, fim) "
+                        "VALUES (:vaga_id, :inicio, :fim)"
+                    ),
+                    {
+                        "vaga_id": vaga_id,
+                        "inicio": item["inicio"],
+                        "fim": item["fim"],
+                    },
+                )
+
         self.session.commit()
-        return resultado.rowcount > 0
+        return True
