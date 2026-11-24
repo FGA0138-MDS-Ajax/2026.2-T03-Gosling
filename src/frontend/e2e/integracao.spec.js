@@ -338,4 +338,13 @@ test('publicação mostra erros por campo e salva local longo, carga decimal e e
   } finally {
     await publico.close()
   }
+
+  await page.goto('/organizacao')
+  await page.getByRole('link', { name: 'Minhas vagas' }).click()
+  const linha = page.getByRole('row', { name: titulo, exact: true })
+  await expect(linha).toContainText('Aberta')
+  await expect(linha).toContainText(local)
+  await expect(linha.getByText('0', { exact: true })).toBeVisible()
+  await linha.locator('summary').click()
+  await expect(linha.getByText('Leitura compartilhada com a comunidade.')).toBeVisible()
 })
