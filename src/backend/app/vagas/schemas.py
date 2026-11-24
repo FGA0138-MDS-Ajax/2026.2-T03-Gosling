@@ -140,7 +140,6 @@ class VagaResumoResponse(BaseModel):
         description="Contagem de inscritos; null enquanto indisponível",
     )
 
-
 class PaginatedResponseVagas(BaseModel):
    
     itens: List[VagaResumoResponse]
