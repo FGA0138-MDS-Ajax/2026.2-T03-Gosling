@@ -103,6 +103,45 @@ Ao atualizar o sistema, `docker compose up --build -d --wait` aplica a migraçã
 
 As fotos enviadas antes da publicação podem ser reutilizadas em uma nova tentativa. A API verifica a mídia a cada hora e remove uploads sem vínculo com mais de 24 horas, inclusive quando o formulário foi abandonado ou o navegador foi fechado. Fotos de vagas em qualquer estado, avatares e modelos vinculados são preservados. Se um upload já tiver sido removido, a publicação retorna 422 e solicita selecionar as imagens novamente. A limpeza usa o mesmo volume persistente do Compose e uma trava compartilhada com a publicação no processo da API; a implantação atual executa um único worker.
 
+## Calendário do voluntário
+
+`GET /api/v1/voluntarios/me/calendario?inicio=2026-11-16&fim=2026-11-23`
+exige JWT de voluntário. O titular vem exclusivamente da sessão; parâmetros como
+`voluntario_id` e `usuario_id` são recusados.
+
+`inicio` e `fim` são datas no formato `AAAA-MM-DD`, delimitando dias de
+`America/Sao_Paulo`, com início inclusivo e fim exclusivo. Parâmetros ausentes,
+datas inválidas, horários no lugar de datas ou `inicio >= fim` retornam 422.
+A resposta é uma lista cronológica de encontros que cruzam o intervalo:
+
+```json
+[
+  {
+    "candidatura_id": 1,
+    "vaga_id": 10,
+    "titulo_vaga": "Oficina de leitura",
+    "organizacao": { "id": 2, "nome": "ONG Exemplo" },
+    "status": "PENDENTE",
+    "inicio": "2026-11-16T12:00:00Z",
+    "fim": "2026-11-16T15:00:00Z"
+  }
+]
+```
+
+Os horários retornam em UTC; a interface os apresenta em Brasília. Encontros
+iniciados no dia anterior ou encerrados no dia seguinte mantêm seus horários
+completos. Somente candidaturas `PENDENTE` e `ACEITA` ocupam a agenda;
+`RECUSADA` e `CANCELADA` liberam o horário. Encerrar as inscrições de uma vaga
+não remove os compromissos ativos. Sem eventos, a API retorna `[]`, com
+`Cache-Control: no-store`; contatos reservados não fazem parte da resposta.
+
+A migração `0006_candidaturas` cria a relação compartilhada entre voluntários
+e vagas, com status, datas de criação/atualização, índice por voluntário/status
+e unicidade por voluntário/vaga. O calendário é uma consulta dessas candidaturas
+e das ocorrências existentes, sem outra tabela de agenda. A API de registro
+de candidaturas da #46 deve reutilizar esse modelo; esta entrega corresponde
+à consulta da #50. A migração depende de `0005_layout_voluntario_vaga` da #97.
+
 ## Contrato de autenticação
 
 O backend usa a porta 8000: abra <http://localhost:8000/docs> para consultar e testar as rotas no Swagger. O ReDoc está em <http://localhost:8000/redoc> e o esquema OpenAPI em <http://localhost:8000/openapi.json>. O frontend usa uma porta separada, definida em `WEB_PORT`.
