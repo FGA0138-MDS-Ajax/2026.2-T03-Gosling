@@ -259,7 +259,8 @@ def test_protege_ocorrencias_e_preserva_compromisso_ao_encerrar(
         vaga_id=int(vaga_id), voluntario_id=contas["voluntario"].id, status=estado
     )
     db.add(candidatura)
-    db.flush()
+    # Preserva a precondição quando a edição rejeitada reverte seu savepoint.
+    db.commit()
     url = f"{URL_VAGAS}/{vaga_id}/gestao"
     original = client.get(url, headers=headers).json()
     assert original["horarios_bloqueados"] is True
