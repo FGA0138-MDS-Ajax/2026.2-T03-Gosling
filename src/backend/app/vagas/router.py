@@ -1,6 +1,15 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Path,
+    Query,
+    Request,
+    Response,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -14,6 +23,7 @@ from app.vagas.schemas import (
     AtualizarVagaRequest,
     CadastroVagaRequest,
     ListaVagasResponse,
+    VagaInstitucional,
     VagaPublica,
 )
 from app.vagas.service import (
@@ -73,6 +83,23 @@ async def enviar_foto(
     return {"url": await salvar_imagem(request)}
 
 
+@router.get("/{vaga_id}/gestao", response_model=VagaInstitucional)
+def detalhar_para_edicao(
+    vaga_id: str,
+    response: Response,
+    usuario: Annotated[UsuarioPublico, Depends(require_perfil(Perfil.ORGANIZACAO))],
+    service: Annotated[VagaService, Depends(get_vaga_service)],
+):
+    try:
+        resultado = service.detalhar_para_edicao(vaga_id, str(usuario.id))
+    except VagaNaoEncontradaException as e:
+        raise HTTPException(404, detail=str(e)) from e
+    except AcessoNegadoVagaException as e:
+        raise HTTPException(403, detail=str(e)) from e
+    response.headers["Cache-Control"] = "no-store"
+    return resultado
+
+
 @router.put(
     "/{vaga_id}",
     status_code=status.HTTP_200_OK,
@@ -91,14 +118,8 @@ def atualizar_vaga(
             dados=dados,
         )
     except VagaNaoEncontradaException as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except AcessoNegadoVagaException as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except AlteracaoHorarioNaoPermitidaException as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

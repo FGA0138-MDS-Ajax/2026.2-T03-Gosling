@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Literal, Optional
 
 from pydantic import (
     AwareDatetime,
@@ -8,6 +8,7 @@ from pydantic import (
     ConfigDict,
     Field,
     HttpUrl,
+    computed_field,
     field_validator,
     model_validator,
 )
@@ -158,27 +159,35 @@ class ListaVagasResponse(BaseModel):
 class AtualizarVagaRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    titulo: Optional[str] = Field(None, min_length=3, max_length=150)
-    descricao: Optional[str] = Field(None, min_length=10)
-    cidade: Optional[str] = None
-    estado_uf: Optional[str] = Field(None, min_length=2, max_length=2)
-    data_inicio: Optional[datetime] = None
-    data_fim: Optional[datetime] = None
-    ocorrencias: Optional[list[OcorrenciaRequest]] = Field(
-        None, min_length=1, max_length=100
-    )
-    estado_vaga: Optional[StatusVaga] = Field(
-        None, description="Estado da vaga: ABERTA, ENCERRADA ou RASCUNHO"
-    )
+    titulo: str | None = None
+    descricao: str | None = None
+    atividades: str | None = None
+    causa: str | None = None
+    modalidade: Modalidade | None = None
+    local: str | None = None
+    periodo: Periodo | None = None
+    carga_horaria: Decimal | None = None
+    numero_vagas: int | None = Field(default=None, strict=True)
+    ocorrencias: list[OcorrenciaRequest] | None = None
+    fotos: list[str] | None = None
+    documentos_exigidos: list[DocumentoExigido] | None = None
+    estado_vaga: Literal["ENCERRADA"] | None = None
 
     @model_validator(mode="after")
-    def validar_ocorrencias(self):
-        if self.ocorrencias:
-            self.ocorrencias.sort(key=lambda item: item.inicio)
-            for anterior, atual in zip(self.ocorrencias, self.ocorrencias[1:]):
-                if atual.inicio < anterior.fim:
-                    raise ValueError("Os encontros da vaga têm horários sobrepostos.")
+    def rejeitar_campos_nulos(self):
+        if any(getattr(self, campo) is None for campo in self.model_fields_set):
+            raise ValueError("Campos enviados para edição não podem ser nulos.")
         return self
+
+
+class VagaInstitucional(VagaPublica):
+    horarios_bloqueados: bool
+
+    @computed_field
+    @property
+    def estado_vaga(self) -> StatusVaga:
+        return self.status
+
 
 class VagaResumoResponse(BaseModel):
     id: str

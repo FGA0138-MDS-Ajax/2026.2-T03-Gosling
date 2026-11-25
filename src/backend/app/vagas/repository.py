@@ -1,20 +1,17 @@
 import unicodedata
-from typing import Any, Dict, Optional
+from typing import Any
 
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, lazyload
+from sqlalchemy.orm.attributes import set_committed_value
 
+from app.candidaturas.enums import STATUS_ATIVOS
 from app.candidaturas.models import Candidatura
 from app.usuarios.catalogos import Causa
 from app.usuarios.models import Organizacao
 from app.vagas.enums import StatusVaga
-from app.vagas.models import Vaga
-
-
-_CAMPO_PARA_COLUNA = {
-    "estado_vaga": "status",
-}
+from app.vagas.models import OcorrenciaVaga, Vaga
 
 
 class VagaRepository:
@@ -124,89 +121,40 @@ class VagaRepository:
     def desfazer(self) -> None:
         self.session.rollback()
 
-    def buscar_por_id(self, vaga_id: str) -> Optional[Dict[str, Any]]:
-        """Busca uma vaga pelo id.
-
-        Retorna o dicionário com as colunas reais da tabela, **mais** o
-        alias ``estado_vaga`` (espelhando ``status``), para que a camada
-        de serviço/router possa devolver o payload no contrato público
-        sem precisar reescrever o nome do campo.
-        """
-        resultado = self.session.execute(
-            text("SELECT * FROM vagas WHERE id = :id"),
-            {"id": vaga_id},
-        )
-        linha = resultado.mappings().first()
-        if not linha:
-            return None
-        vaga = dict(linha)
-        if "status" in vaga and "estado_vaga" not in vaga:
-            vaga["estado_vaga"] = vaga["status"]
-        return vaga
-
-    def tem_candidaturas_ativas(self, vaga_id: str) -> bool:
-        """Verifica se a vaga possui candidaturas em status PENDENTE ou ACEITA."""
-        total = self.session.execute(
-            text(
-                "SELECT COUNT(*) FROM candidaturas "
-                "WHERE vaga_id = :vaga_id AND status IN ('PENDENTE', 'ACEITA')"
-            ),
-            {"vaga_id": vaga_id},
-        ).scalar_one()
-        return total > 0
-
-    def atualizar_vaga(
-        self, vaga_id: str, dados_atualizacao: Dict[str, Any]
-    ) -> bool:
-        """Atualiza dinamicamente apenas os campos informados.
-
-        - ``estado_vaga`` é mapeado para a coluna ``status``.
-        - ``ocorrencias`` é tratada à parte (delete+insert) porque não é
-          coluna escalar de ``vagas``.
-        - Campos desconhecidos vindos do schema (que já usa
-          ``extra="forbid"``) chegam aqui somente se forem válidos; ainda
-          assim, o guard ``isidentifier`` evita injeção via nome de coluna.
-        """
-        if not dados_atualizacao:
-            return False
-
-        ocorrencias = dados_atualizacao.pop("ocorrencias", None)
-
-        campos_set: list[str] = []
-        parametros: Dict[str, Any] = {"vaga_id": vaga_id}
-        for chave, valor in dados_atualizacao.items():
-            coluna = _CAMPO_PARA_COLUNA.get(chave, chave)
-            if not coluna.isidentifier():
-                raise ValueError(f"Nome de campo inválido: {coluna!r}")
-            campos_set.append(f"{coluna} = :{coluna}")
-            parametros[coluna] = valor
-
-        if campos_set:
-            self.session.execute(
-                text(
-                    f"UPDATE vagas SET {', '.join(campos_set)} "
-                    "WHERE id = :vaga_id"
-                ),
-                parametros,
-            )
-
-        if ocorrencias is not None:
-            self.session.execute(
-                text("DELETE FROM ocorrencias_vaga WHERE vaga_id = :vaga_id"),
-                {"vaga_id": vaga_id},
-            )
-            for item in ocorrencias:
-                self.session.execute(
-                    text(
-                        "INSERT INTO ocorrencias_vaga (vaga_id, inicio, fim) "
-                        "VALUES (:vaga_id, :inicio, :fim)"
-                    ),
-                    {
-                        "vaga_id": vaga_id,
-                        "inicio": item["inicio"],
-                        "fim": item["fim"],
-                    },
+    def buscar_por_id(self, vaga_id: int, *, bloquear: bool = False) -> Vaga | None:
+        consulta = select(Vaga).where(Vaga.id == vaga_id)
+        if bloquear:
+            consulta = (
+                consulta.options(
+                    lazyload(Vaga.organizacao),
+                    lazyload(Vaga.causa),
+                    lazyload(Vaga.ocorrencias),
                 )
+                .with_for_update()
+                .execution_options(populate_existing=True)
+            )
+        return self.session.scalar(consulta)
 
-        self.session.commit()
-        return True
+    def carregar_ocorrencias_para_edicao(self, vaga: Vaga) -> None:
+        consulta = (
+            select(OcorrenciaVaga)
+            .where(OcorrenciaVaga.vaga_id == vaga.id)
+            .order_by(OcorrenciaVaga.inicio)
+            .with_for_update()
+        )
+        set_committed_value(vaga, "ocorrencias", list(self.session.scalars(consulta)))
+
+    def tem_candidaturas_ativas(self, vaga_id: int, *, bloquear: bool = False) -> bool:
+        consulta = (
+            select(Candidatura.id)
+            .where(
+                Candidatura.vaga_id == vaga_id, Candidatura.status.in_(STATUS_ATIVOS)
+            )
+            .limit(1)
+        )
+        if bloquear:
+            consulta = consulta.with_for_update()
+        return self.session.scalar(consulta) is not None
+
+    def descarregar(self) -> None:
+        self.session.flush()

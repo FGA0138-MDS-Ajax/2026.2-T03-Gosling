@@ -51,6 +51,17 @@ export function criarEncontro() {
   }
 }
 
+export function encontroDaOcorrencia({ id, inicio, fim }) {
+  function campos(instant) {
+    const { year, month, day, hour, minute } = partes(instant)
+    const dois = valor => String(valor).padStart(2, '0')
+    return [`${year}-${dois(month)}-${dois(day)}`, `${dois(hour)}:${dois(minute)}`]
+  }
+  const [dataInicio, horaInicio] = campos(inicio)
+  const [dataFim, horaFim] = campos(fim)
+  return { id: id ?? crypto.randomUUID(), dataInicio, horaInicio, dataFim, horaFim }
+}
+
 export function prepararOcorrencias(encontros) {
   if (encontros.length === 0) throw new Error('Adicione pelo menos um encontro.')
   const ocorrencias = encontros.map((item, indice) => {

@@ -1,7 +1,8 @@
 import math
-from typing import Any, Dict
 
 from fastapi import HTTPException
+from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 
 from app.core.midia import bloqueio_midia, pasta_midia
 from app.usuarios.enums import TipoOrganizacao
@@ -13,6 +14,7 @@ from app.vagas.schemas import (
     CadastroVagaRequest,
     ListaVagasResponse,
     PaginatedResponseVagas,
+    VagaInstitucional,
     VagaPublica,
     VagaResumoResponse,
 )
@@ -52,13 +54,7 @@ class VagaService:
         organizacao = self.validar_publicador(usuario_id)
 
         with bloqueio_midia:
-            for foto in dados.fotos:
-                if foto.startswith("/api/v1/midia/") and not (
-                    pasta_midia() / foto.rsplit("/", 1)[1]
-                ).is_file():
-                    raise HTTPException(
-                        422, "Uma das fotos expirou. Selecione as imagens novamente."
-                    )
+            self.validar_fotos(dados.fotos)
             try:
                 causa = self.repository.obter_ou_criar_causa(dados.causa)
                 vaga = Vaga(
@@ -127,36 +123,109 @@ class VagaService:
             total_paginas=math.ceil(total_itens / tamanho_pagina),
         )
 
-    def atualizar_vaga(
-        self, vaga_id: str, organizacao_id: str, dados: AtualizarVagaRequest
-    ) -> Dict[str, Any]:
-        """Regra de negócio para alteração de vaga (Issue #32)."""
-        vaga = self.repository.buscar_por_id(vaga_id)
-        if not vaga:
-            raise VagaNaoEncontradaException("Vaga não encontrada.")
-
-        if str(vaga["organizacao_id"]) != str(organizacao_id):
-            raise AcessoNegadoVagaException(
-                "Acesso negado: Você não tem permissão para alterar esta vaga."
-            )
-
-        payload = dados.model_dump(exclude_unset=True)
-        if not payload:
-            return vaga
-
-        alterou_inicio = (
-            "data_inicio" in payload
-            and payload["data_inicio"] != vaga.get("data_inicio")
-        )
-        alterou_fim = (
-            "data_fim" in payload and payload["data_fim"] != vaga.get("data_fim")
-        )
-        if alterou_inicio or alterou_fim:
-            if self.repository.tem_candidaturas_ativas(vaga_id):
-                raise AlteracaoHorarioNaoPermitidaException(
-                    "Não é permitido alterar os horários da vaga pois existem "
-                    "candidaturas pendentes ou aceitas vinculadas a ela."
+    @staticmethod
+    def validar_fotos(fotos: list[str]) -> None:
+        for foto in fotos:
+            if (
+                foto.startswith("/api/v1/midia/")
+                and not (pasta_midia() / foto.rsplit("/", 1)[1]).is_file()
+            ):
+                raise HTTPException(
+                    422, "Uma das fotos expirou. Selecione as imagens novamente."
                 )
 
-        self.repository.atualizar_vaga(vaga_id, payload)
-        return self.repository.buscar_por_id(vaga_id)
+    def obter_vaga_da_organizacao(
+        self, vaga_id: str, organizacao_id: str, *, bloquear: bool = False
+    ) -> Vaga:
+        if not vaga_id.isascii() or not vaga_id.isdecimal() or len(vaga_id) > 10:
+            raise VagaNaoEncontradaException("Vaga não encontrada.")
+        vaga = self.repository.buscar_por_id(int(vaga_id), bloquear=bloquear)
+        if vaga is None:
+            raise VagaNaoEncontradaException("Vaga não encontrada.")
+        if str(vaga.organizacao_id) != organizacao_id:
+            raise AcessoNegadoVagaException(
+                "Você não tem permissão para acessar a vaga."
+            )
+        return vaga
+
+    def detalhar_para_edicao(
+        self, vaga_id: str, organizacao_id: str
+    ) -> VagaInstitucional:
+        vaga = self.obter_vaga_da_organizacao(vaga_id, organizacao_id)
+        return self.vaga_institucional(
+            vaga, self.repository.tem_candidaturas_ativas(vaga.id)
+        )
+
+    @staticmethod
+    def vaga_institucional(vaga: Vaga, horarios_bloqueados: bool) -> VagaInstitucional:
+        publica = VagaPublica.model_validate(vaga)
+        return VagaInstitucional(
+            **publica.model_dump(), horarios_bloqueados=horarios_bloqueados
+        )
+
+    def atualizar_vaga(
+        self, vaga_id: str, organizacao_id: str, dados: AtualizarVagaRequest
+    ) -> VagaInstitucional:
+        with bloqueio_midia:
+            try:
+                # A criação de candidaturas deve adquirir este mesmo bloqueio
+                # antes de consultar o estado e os encontros da vaga.
+                vaga = self.obter_vaga_da_organizacao(
+                    vaga_id, organizacao_id, bloquear=True
+                )
+                self.repository.carregar_ocorrencias_para_edicao(vaga)
+                ativa = self.repository.tem_candidaturas_ativas(vaga.id, bloquear=True)
+                campos = dados.model_dump(exclude_unset=True)
+                encerrar = campos.pop("estado_vaga", None)
+                if campos:
+                    self.editar_campos(vaga, campos, ativa)
+                if encerrar and vaga.status == StatusVaga.SUSPENSA:
+                    raise HTTPException(
+                        409, "Uma vaga suspensa não pode ser encerrada."
+                    )
+                if encerrar:
+                    vaga.status = StatusVaga.ENCERRADA
+                self.repository.descarregar()
+                resposta = self.vaga_institucional(vaga, ativa)
+                self.repository.confirmar()
+                return resposta
+            except Exception:
+                self.repository.desfazer()
+                raise
+
+    def editar_campos(self, vaga: Vaga, campos: dict, ativa: bool) -> None:
+        publica = VagaPublica.model_validate(vaga)
+        atual = publica.model_dump(include=set(CadastroVagaRequest.model_fields))
+        atual["causa"] = publica.causa.nome
+        atual["ocorrencias"] = [
+            {"inicio": item.inicio, "fim": item.fim} for item in vaga.ocorrencias
+        ]
+        try:
+            validado = CadastroVagaRequest.model_validate({**atual, **campos})
+        except ValidationError as exc:
+            raise RequestValidationError(
+                [{**erro, "loc": ("body", *erro["loc"])} for erro in exc.errors()]
+            ) from exc
+
+        antes = [(item.inicio, item.fim) for item in vaga.ocorrencias]
+        depois = [(item.inicio, item.fim) for item in validado.ocorrencias]
+        if antes != depois:
+            if ativa:
+                raise AlteracaoHorarioNaoPermitidaException(
+                    "Os horários não podem mudar enquanto houver "
+                    "candidaturas pendentes ou aceitas."
+                )
+            existentes = {(item.inicio, item.fim): item for item in vaga.ocorrencias}
+            vaga.ocorrencias = [
+                existentes.get((inicio, fim)) or OcorrenciaVaga(inicio=inicio, fim=fim)
+                for inicio, fim in depois
+            ]
+
+        if "fotos" in campos:
+            self.validar_fotos(validado.fotos)
+        if "causa" in campos and validado.causa != vaga.causa.nome:
+            vaga.causa = self.repository.obter_ou_criar_causa(validado.causa)
+        for campo, valor in validado.model_dump(
+            include=set(campos) - {"causa", "ocorrencias"}
+        ).items():
+            setattr(vaga, campo, valor)

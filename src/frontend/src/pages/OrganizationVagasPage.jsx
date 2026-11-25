@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import GerenciarVagaDialog from '../components/GerenciarVagaDialog'
 import { useAuth } from '../hooks/useAuth'
 import { listOrganizationVagas } from '../services/organizationService'
 import layout from './Vagas.module.css'
@@ -13,7 +14,7 @@ const STATUS = {
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo' })
 
-function VagaResumo({ vaga }) {
+function VagaResumo({ vaga, gerenciar }) {
   const status = vaga.status ?? vaga.estado_vaga
   const local = vaga.local || [vaga.cidade, vaga.estado_uf].filter(Boolean).join(' / ')
   const criadaEm = vaga.data_criacao ? new Date(vaga.data_criacao) : null
@@ -47,6 +48,12 @@ function VagaResumo({ vaga }) {
           {vaga.total_candidaturas === 1 ? 'candidatura' : 'candidaturas'}
         </span>
       </td>
+      <td role="cell" className={styles.acoes}>
+        <button type="button" onClick={() => gerenciar(vaga, false)} aria-label={`Editar ${vaga.titulo}`}>Editar</button>
+        {status === 'ABERTA' && (
+          <button type="button" onClick={() => gerenciar(vaga, true)} aria-label={`Encerrar ${vaga.titulo}`}>Encerrar</button>
+        )}
+      </td>
     </tr>
   )
 }
@@ -60,6 +67,19 @@ function PainelVagas({ podePublicar }) {
   const [pagina, setPagina] = useState(1)
   const [tentativa, setTentativa] = useState(0)
   const [resultado, setResultado] = useState(null)
+  const [selecao, setSelecao] = useState(null)
+  const [mensagem, setMensagem] = useState('')
+
+  function gerenciar(vaga, encerrar) {
+    setMensagem('')
+    setSelecao({ vaga, encerrar })
+  }
+
+  function confirmado() {
+    setMensagem(selecao.encerrar ? 'Vaga encerrada.' : 'Alterações salvas.')
+    setSelecao(null)
+    setTentativa(atual => atual + 1)
+  }
   const carregando = resultado?.pagina !== pagina || resultado?.tentativa !== tentativa
   const erro = !carregando && resultado?.erro
   const dados = resultado?.dados
@@ -98,6 +118,7 @@ function PainelVagas({ podePublicar }) {
             </Link>
           )}
         </div>
+        {mensagem && <p className={styles.feedback} role="status">{mensagem}</p>}
         {carregando ? (
           <p className={styles.feedback} role="status">Carregando suas vagas…</p>
         ) : erro ? (
@@ -123,10 +144,11 @@ function PainelVagas({ podePublicar }) {
                 <th role="columnheader" scope="col">Situação</th>
                 <th role="columnheader" scope="col">Criada em</th>
                 <th role="columnheader" scope="col">Candidaturas</th>
+                <th role="columnheader" scope="col">Ações</th>
               </tr>
             </thead>
             <tbody role="rowgroup">
-              {dados.itens.map((vaga) => <VagaResumo key={vaga.id} vaga={vaga} />)}
+              {dados.itens.map((vaga) => <VagaResumo key={vaga.id} vaga={vaga} gerenciar={gerenciar} />)}
             </tbody>
           </table>
         )}
@@ -148,6 +170,9 @@ function PainelVagas({ podePublicar }) {
           </nav>
         )}
       </main>
+      {selecao && (
+        <GerenciarVagaDialog {...selecao} fechar={() => setSelecao(null)} concluido={confirmado} />
+      )}
     </div>
   )
 }
