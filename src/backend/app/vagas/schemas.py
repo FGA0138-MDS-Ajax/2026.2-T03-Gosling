@@ -8,6 +8,7 @@ from pydantic import (
     ConfigDict,
     Field,
     HttpUrl,
+    computed_field,
     field_validator,
     model_validator,
 )
@@ -140,7 +141,13 @@ class VagaPublica(BaseModel):
     ocorrencias: list[OcorrenciaPublica]
     fotos: list[str] = Field(default_factory=list)
     documentos_exigidos: list[DocumentoExigido] = Field(default_factory=list)
-    candidaturas_disponiveis: bool = False
+    @computed_field
+    @property
+    def candidaturas_disponiveis(self) -> bool:
+        agora = datetime.now(UTC)
+        return self.status == StatusVaga.ABERTA and any(
+            encontro.fim > agora for encontro in self.ocorrencias
+        )
 
     @field_validator("fotos", "documentos_exigidos", mode="before")
     @classmethod

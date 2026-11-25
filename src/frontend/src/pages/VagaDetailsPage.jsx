@@ -4,6 +4,8 @@ import { Footer, Header, Icon } from '../components/ui/Layout'
 import { designAssets } from '../utils/designAssets'
 import { initials } from '../utils/initials'
 import Modal from '../components/ui/Modal'
+import CandidaturaModal from '../components/CandidaturaModal'
+import ConflitoAgendaModal from '../components/ConflitoAgendaModal'
 import { useAuth } from '../hooks/useAuth'
 import { detalharVaga, listarVagas } from '../services/vagasService'
 import { readSavedVagas, toggleSavedVaga } from '../services/savedVagas'
@@ -38,6 +40,9 @@ function VagaDetails({ id }) {
   const [gallery, setGallery] = useState(false)
   const [photo, setPhoto] = useState(0)
   const [report, setReport] = useState(false)
+  const [candidatando, setCandidatando] = useState(false)
+  const [enviada, setEnviada] = useState(false)
+  const [conflito, setConflito] = useState(null)
   const sharePending = useRef(false)
 
   useEffect(() => {
@@ -74,6 +79,11 @@ function VagaDetails({ id }) {
     if (!next) return <button className={s.apply} type="button" disabled>Encontros encerrados</button>
     if (sessionLoading || restoreError) return <p role="status">{sessionLoading ? 'Validando sessão…' : 'Valide sua sessão para continuar.'}</p>
     if (!usuario) return <Link className={s.apply} to="/login" state={{ from: location.pathname }}>Quero me candidatar</Link>
+    if (usuario.perfil === 'VOLUNTARIO' && enviada) return <>
+      <button className={s.apply} type="button" disabled>Candidatura enviada</button>
+      <button className={s.secondary} type="button" onClick={() => setCandidatando(true)}>Ver comprovante</button>
+    </>
+    if (usuario.perfil === 'VOLUNTARIO' && vaga.candidaturas_disponiveis) return <button className={s.apply} type="button" onClick={() => setCandidatando(true)}>Quero me candidatar</button>
     return <><button className={s.apply} type="button" disabled aria-describedby={mobile ? 'application-status-mobile' : 'application-status'}>{usuario.perfil === 'VOLUNTARIO' ? 'Candidaturas em breve' : 'Exclusivo para voluntários'}</button>
       <p id={mobile ? 'application-status-mobile' : 'application-status'} className={s.applicationStatus}>{usuario.perfil === 'VOLUNTARIO' ? 'O envio de candidaturas ainda não está disponível.' : 'Entre com uma conta de voluntário para se candidatar.'}</p></>
   }
@@ -115,6 +125,18 @@ function VagaDetails({ id }) {
       {related.length > 0 && <section className={s.related}><h2>Você também pode gostar</h2><div>{related.map(v => <article key={v.id} className={s.relatedCard}>{v.fotos?.[0] && <img src={v.fotos[0]} alt="" />}<div><small>{v.organizacao.nome}</small><h3><Link to={`/vagas/${v.id}`}>{v.titulo}</Link></h3>{v.ocorrencias[0] && <p><Icon group="detalhe" name="imgIcon19" />{formatarOcorrencia(v.ocorrencias[0])}</p>}<p><Icon group="detalhe" name="imgIcon20" />{v.local}</p><span className={s.relatedCause}>{v.causa.nome}</span></div></article>)}</div></section>}
       <Footer /><div className={s.mobileCta}><span><strong>{vaga.numero_vagas} vagas ofertadas</strong><small>{modalities[vaga.modalidade]} · {Number(vaga.carga_horaria).toLocaleString('pt-BR')} h</small></span>{application(true)}</div>
       {gallery && <Modal title="Fotos da atividade" onClose={() => setGallery(false)}><div className={s.photoViewer}><img src={fotos[photo]} alt={`Foto ${photo+1} da atividade ${vaga.titulo}`} /><p>{photo + 1} / {fotos.length}</p><div><button disabled={photo === 0} onClick={() => setPhoto(photo-1)}>Anterior</button><button disabled={photo === fotos.length-1} onClick={() => setPhoto(photo+1)}>Próxima</button></div></div></Modal>}
+      {usuario?.perfil === 'VOLUNTARIO' && (
+        <CandidaturaModal
+          key={usuario.id}
+          aberto={candidatando}
+          vaga={vaga}
+          ocorrencias={ocorrencias}
+          onClose={() => setCandidatando(false)}
+          onEnviada={() => setEnviada(true)}
+          onConflito={dados => { setCandidatando(false); setConflito(dados) }}
+        />
+      )}
+      {conflito && <ConflitoAgendaModal conflito={conflito} vaga={vaga} origem={location.pathname} onClose={() => setConflito(null)} onTentarNovamente={() => { setConflito(null); setCandidatando(true) }} />}
       {report && <Modal title="Denunciar esta vaga" onClose={() => setReport(false)}><p>O envio de denúncias pela plataforma ainda não está disponível. Procure a administração e informe o endereço desta vaga.</p><button type="button" onClick={share}>Copiar link da vaga</button></Modal>}
     </>}
   </div>

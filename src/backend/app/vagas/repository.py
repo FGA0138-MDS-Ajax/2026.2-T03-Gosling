@@ -5,6 +5,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.candidaturas.enums import STATUS_ATIVOS
 from app.candidaturas.models import Candidatura
 from app.usuarios.catalogos import Causa
 from app.usuarios.models import Organizacao
@@ -124,7 +125,9 @@ class VagaRepository:
     def desfazer(self) -> None:
         self.session.rollback()
 
-    def buscar_por_id(self, vaga_id: str) -> Optional[Dict[str, Any]]:
+    def buscar_por_id(
+        self, vaga_id: str, *, bloquear: bool = False
+    ) -> Optional[Dict[str, Any]]:
         """Busca uma vaga pelo id.
 
         Retorna o dicionário com as colunas reais da tabela, **mais** o
@@ -132,10 +135,10 @@ class VagaRepository:
         de serviço/router possa devolver o payload no contrato público
         sem precisar reescrever o nome do campo.
         """
-        resultado = self.session.execute(
-            text("SELECT * FROM vagas WHERE id = :id"),
-            {"id": vaga_id},
-        )
+        consulta = "SELECT * FROM vagas WHERE id = :id"
+        if bloquear and self.session.get_bind().dialect.name != "sqlite":
+            consulta += " FOR UPDATE"
+        resultado = self.session.execute(text(consulta), {"id": vaga_id})
         linha = resultado.mappings().first()
         if not linha:
             return None
@@ -146,14 +149,16 @@ class VagaRepository:
 
     def tem_candidaturas_ativas(self, vaga_id: str) -> bool:
         """Verifica se a vaga possui candidaturas em status PENDENTE ou ACEITA."""
-        total = self.session.execute(
-            text(
-                "SELECT COUNT(*) FROM candidaturas "
-                "WHERE vaga_id = :vaga_id AND status IN ('PENDENTE', 'ACEITA')"
-            ),
-            {"vaga_id": vaga_id},
-        ).scalar_one()
-        return total > 0
+        consulta = (
+            select(Candidatura.id)
+            .where(
+                Candidatura.vaga_id == vaga_id,
+                Candidatura.status.in_(STATUS_ATIVOS),
+            )
+            .limit(1)
+            .with_for_update(read=True)
+        )
+        return self.session.scalar(consulta) is not None
 
     def atualizar_vaga(
         self, vaga_id: str, dados_atualizacao: Dict[str, Any]
