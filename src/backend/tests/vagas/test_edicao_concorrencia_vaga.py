@@ -4,6 +4,9 @@ import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 
+from app.candidaturas.enums import StatusCandidatura
+from app.candidaturas.models import Candidatura
+
 URL_VAGAS = "/api/v1/vagas"
 URL_ORGANIZACOES = "/api/v1/organizacoes"
 METODO_EDICAO = "PUT"
@@ -29,9 +32,7 @@ def _cnpj_unico() -> str:
 
 
 def autenticar(client: TestClient, email: str, senha: str = SENHA) -> dict:
-    resposta = client.post(
-        "/api/v1/auth/login", json={"email": email, "senha": senha}
-    )
+    resposta = client.post("/api/v1/auth/login", json={"email": email, "senha": senha})
     assert resposta.status_code == status.HTTP_200_OK, resposta.text
     return {"Authorization": f"Bearer {resposta.json()['access_token']}"}
 
@@ -80,9 +81,7 @@ def payload_vaga(titulo: str = "Vaga de teste") -> dict:
 
 
 def criar_vaga(client: TestClient, headers: dict, titulo: str) -> str:
-    resposta = client.post(
-        URL_VAGAS, json=payload_vaga(titulo), headers=headers
-    )
+    resposta = client.post(URL_VAGAS, json=payload_vaga(titulo), headers=headers)
     assert resposta.status_code in (200, 201), resposta.text
     return resposta.json()["id"]
 
@@ -192,9 +191,7 @@ def test_edicao_com_ocorrencia_de_fim_anterior_ao_inicio_retorna_422(
 def test_edicao_com_ocorrencia_sem_fuso_horario_retorna_422(client, vaga_da_ong):
     vaga_id, headers = vaga_da_ong
     corpo = {
-        "ocorrencias": [
-            {"inicio": "2027-03-10T08:00:00", "fim": "2027-03-10T12:00:00"}
-        ]
+        "ocorrencias": [{"inicio": "2027-03-10T08:00:00", "fim": "2027-03-10T12:00:00"}]
     }
 
     resposta = editar(client, vaga_id, corpo, headers)
@@ -220,3 +217,70 @@ def test_organizacao_terceira_nao_encerra_vaga_alheia(client, vaga_da_ong):
     )
 
     assert resposta.status_code == status.HTTP_403_FORBIDDEN, resposta.text
+
+
+def test_edicao_completa_carrega_e_persiste_campos_da_vaga(client, vaga_da_ong):
+    vaga_id, headers = vaga_da_ong
+    url = f"{URL_VAGAS}/{vaga_id}/gestao"
+    original = client.get(url, headers=headers)
+    assert original.status_code == 200, original.text
+    assert original.json()["horarios_bloqueados"] is False
+
+    alteracoes = {
+        **payload_vaga("Nova atividade"),
+        "causa": "Cultura",
+        "local": "Centro cultural",
+        "fotos": ["https://example.com/encontro.webp"],
+        "documentos_exigidos": [{"nome": "Termo de participação", "modelo_url": None}],
+    }
+    alteracoes["ocorrencias"][0]["inicio"] = "2027-03-02T10:00:00-03:00"
+    alteracoes["ocorrencias"][0]["fim"] = "2027-03-02T11:00:00-03:00"
+    resposta = editar(client, vaga_id, alteracoes, headers)
+    assert resposta.status_code == 200, resposta.text
+    salvo = client.get(url, headers=headers).json()
+    assert salvo["causa"]["nome"] == "Cultura"
+    assert salvo["local"] == alteracoes["local"]
+    assert salvo["documentos_exigidos"] == alteracoes["documentos_exigidos"]
+    assert salvo["fotos"] == alteracoes["fotos"]
+    assert [item["inicio"] for item in salvo["ocorrencias"]] == ["2027-03-02T13:00:00Z"]
+    assert (
+        client.get(url, headers=criar_organizacao_terceira(client)).status_code == 403
+    )
+
+
+@pytest.mark.parametrize(
+    "estado", [StatusCandidatura.PENDENTE, StatusCandidatura.ACEITA]
+)
+def test_protege_ocorrencias_e_preserva_compromisso_ao_encerrar(
+    client, db, contas, vaga_da_ong, estado
+):
+    vaga_id, headers = vaga_da_ong
+    candidatura = Candidatura(
+        vaga_id=int(vaga_id), voluntario_id=contas["voluntario"].id, status=estado
+    )
+    db.add(candidatura)
+    # Preserva a precondição quando a edição rejeitada reverte seu savepoint.
+    db.commit()
+    url = f"{URL_VAGAS}/{vaga_id}/gestao"
+    original = client.get(url, headers=headers).json()
+    assert original["horarios_bloqueados"] is True
+    resposta = editar(
+        client,
+        vaga_id,
+        {
+            "titulo": "Mudança junto com horário",
+            "ocorrencias": [
+                {"inicio": "2027-03-02T10:00Z", "fim": "2027-03-02T11:00Z"}
+            ],
+        },
+        headers,
+    )
+    assert resposta.status_code == 400, resposta.text
+    assert client.get(url, headers=headers).json() == original
+
+    encerrada = editar(client, vaga_id, {CAMPO_ESTADO: VALOR_ENCERRADA}, headers)
+    assert encerrada.status_code == 200, encerrada.text
+    assert encerrada.json()["ocorrencias"] == original["ocorrencias"]
+    db.refresh(candidatura)
+    assert candidatura.status == estado
+    assert client.get(f"{URL_VAGAS}/{vaga_id}").status_code == 404

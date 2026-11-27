@@ -6,6 +6,7 @@ import App from '../App'
 import { useAuth } from '../hooks/useAuth'
 import { getProfile } from '../services/authService'
 import http from '../services/http'
+import { VAGAS_TESTE } from '../test/fixtures/vagas'
 
 vi.mock('../hooks/useAuth', () => ({ useAuth: vi.fn() }))
 vi.mock('../services/authService', () => ({ getProfile: vi.fn() }))
@@ -92,5 +93,54 @@ describe('painel de vagas da organização', () => {
     abrir('/organizacao/vagas', { ...ong, perfil: 'VOLUNTARIO' })
     expect(await screen.findByRole('heading', { name: 'Área de Voluntário' })).toBeVisible()
     expect(listar).not.toHaveBeenCalledWith('/organizacoes/me/vagas', expect.anything())
+  })
+
+  it('reutiliza o formulário de publicação com a vaga preenchida e protege os encontros', async () => {
+    const user = userEvent.setup()
+    const completa = { ...VAGAS_TESTE[0], ...vagas[0], horarios_bloqueados: true }
+    vi.spyOn(http, 'get').mockImplementation(async url => (
+      url === '/vagas/1/gestao' ? { data: completa } : resposta(vagas)
+    ))
+    const atualizar = vi.spyOn(http, 'put').mockImplementation(async (_, payload) => {
+      vagas[0].titulo = payload.titulo
+      return { data: { ...completa, ...payload } }
+    })
+    const original = vagas[0].titulo
+    try {
+      abrir()
+      await user.click(await screen.findByRole('button', { name: `Editar ${original}` }))
+      const titulo = await screen.findByLabelText('Título da vaga')
+      expect(titulo).toHaveValue(original)
+      expect(screen.getByLabelText('Atividades do voluntário')).toHaveValue(completa.atividades)
+      expect(screen.getByLabelText('Data de início do encontro 1')).toBeDisabled()
+      await user.clear(titulo)
+      await user.type(titulo, 'Vaga atualizada')
+      await user.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+      expect(await screen.findByRole('row', { name: 'Vaga atualizada' })).toBeVisible()
+      expect(atualizar).toHaveBeenCalledExactlyOnceWith('/vagas/1', expect.objectContaining({
+        titulo: 'Vaga atualizada', causa: completa.causa.nome, fotos: [],
+      }))
+      expect(atualizar.mock.calls[0][1]).not.toHaveProperty('ocorrencias')
+    } finally {
+      vagas[0].titulo = original
+    }
+  })
+
+  it('só encerra a vaga após confirmação e consulta a situação atualizada', async () => {
+    const user = userEvent.setup()
+    const listar = vi.spyOn(http, 'get').mockResolvedValue(resposta(vagas))
+    const atualizar = vi.spyOn(http, 'put').mockImplementation(async () => {
+      listar.mockResolvedValue(resposta([{ ...vagas[0], status: 'ENCERRADA' }]))
+      return { data: { status: 'ENCERRADA' } }
+    })
+    abrir()
+    await user.click(await screen.findByRole('button', { name: /Encerrar Oficina/ }))
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(atualizar).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: /Encerrar Oficina/ }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar encerramento' }))
+    const linha = await screen.findByRole('row', { name: 'Oficina de leitura' })
+    expect(within(linha).getByText('Encerrada')).toBeVisible()
+    expect(atualizar).toHaveBeenCalledExactlyOnceWith('/vagas/1', { estado_vaga: 'ENCERRADA' })
   })
 })

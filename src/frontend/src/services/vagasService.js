@@ -25,3 +25,13 @@ export async function enviarFotoVaga(file) {
   const { data } = await http.post('/vagas/fotos', file, { headers: { 'Content-Type': file.type } })
   return data.url
 }
+
+export async function detalharVagaGestao(id, signal) {
+  const { data } = await http.get(`/vagas/${id}/gestao`, { signal })
+  return data
+}
+
+export async function atualizarVaga(id, payload) {
+  const { data } = await http.put(`/vagas/${id}`, payload)
+  return data
+}

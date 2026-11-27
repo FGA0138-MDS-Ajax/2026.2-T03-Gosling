@@ -1,12 +1,22 @@
 import s from '../pages/Vagas.module.css'
 
-export default function VagaMediaFields({ fotos, setFotos, documentos, setDocumentos, error }) {
+export default function VagaMediaFields({ fotos, setFotos, fotosAtuais = [], removerFoto, documentos, setDocumentos, error }) {
   function change(id, field, value) { setDocumentos(items => items.map(item => item.id === id ? { ...item, [field]: value } : item)) }
   return <section className={s.mediaFields} aria-labelledby="vaga-midia-title">
     <h3 id="vaga-midia-title">Fotos e documentos (opcional)</h3>
     <div className={s.formField}><label htmlFor="vaga-fotos">Fotos da atividade</label>
       <input id="vaga-fotos" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={e => setFotos([...e.target.files])} aria-describedby="vaga-fotos-hint" />
       <small id="vaga-fotos-hint">Até 10 imagens JPG, PNG ou WebP, de até 5 MB cada. As fotos serão públicas.</small>
+      {fotosAtuais.length > 0 && (
+        <ul aria-label="Fotos atuais">
+          {fotosAtuais.map((url, i) => (
+            <li key={`${i}-${url}`}>
+              <a href={url} target="_blank" rel="noreferrer">Foto {i + 1}</a>{' '}
+              <button type="button" onClick={() => removerFoto(i)}>Remover foto {i + 1}</button>
+            </li>
+          ))}
+        </ul>
+      )}
       {fotos.length > 0 && <ul>{fotos.map((file,i) => <li key={i}>{file.name}</li>)}</ul>}
     </div>
     {documentos.map((doc, i) => <div key={doc.id} className={s.documentFields}>

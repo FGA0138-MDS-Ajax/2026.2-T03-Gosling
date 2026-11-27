@@ -98,8 +98,8 @@
   text-transform: uppercase;
 }
 
-.tabela thead th:first-child { width: 48%; }
-.tabela thead th:nth-child(2) { width: 18%; }
+.tabela thead th:first-child { width: 32%; }
+.tabela thead th:last-child { width: 170px; }
 .titulo { font-size: 15px; font-weight: 650; }
 .detalhes summary {
   cursor: pointer;
@@ -140,6 +140,17 @@
 .feedback { margin: 0; padding: 20px 24px; border-top: 1px solid #f0f0f2; }
 .paginacao { margin: 0; padding: 16px; border-top: 1px solid #f0f0f2; }
 
+.acoes button {
+  min-height: 44px;
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--action);
+  cursor: pointer;
+  font: inherit;
+}
+.acoes button:hover { text-decoration: underline; }
+
 @media (max-width: 680px) {
   .painel { width: calc(100% - 32px); margin-block: 24px; border-radius: 16px; }
   .heading { padding: 12px; }
@@ -166,6 +177,7 @@
   .titulo { grid-column: 1; grid-row: 1; }
   .situacao { grid-column: 1; grid-row: 2; }
   .data { grid-column: 1; grid-row: 3; }
+  .acoes { grid-column: 1 / -1; grid-row: 4; }
   .data[data-ausente='true'] { display: none; }
   .tabela .candidaturas {
     display: grid;
