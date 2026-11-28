@@ -20,6 +20,26 @@ function rejectWith(status, beforeReject) {
 }
 
 describe('cliente HTTP compartilhado', () => {
+  it('recusa uma operação preparada para outra sessão antes de enviar', async () => {
+    writeSession('conta-nova', 2000000000)
+    const adapter = vi.fn()
+    http.defaults.adapter = adapter
+    await expect(http.put('/voluntarios/me/vagas-salvas/1', undefined, {
+      expectedAuthToken: 'conta-antiga',
+    })).rejects.toThrow('A sessão mudou antes do envio.')
+    expect(adapter).not.toHaveBeenCalled()
+    expect(readSession()?.access_token).toBe('conta-nova')
+  })
+
+  it('recusa operação pendente após logout', async () => {
+    const adapter = vi.fn()
+    http.defaults.adapter = adapter
+    await expect(http.delete('/voluntarios/me/vagas-salvas/1', {
+      expectedAuthToken: 'conta-antiga',
+    })).rejects.toThrow('A sessão mudou antes do envio.')
+    expect(adapter).not.toHaveBeenCalled()
+  })
+
   it('envia o token nos recursos protegidos', async () => {
     writeSession('token-atual', 2000000000)
     http.defaults.adapter = async (config) => {

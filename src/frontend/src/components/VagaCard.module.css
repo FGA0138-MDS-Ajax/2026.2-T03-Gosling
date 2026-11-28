@@ -28,6 +28,8 @@
 .teal { background: #e3f4f1; color: #0f766e; }
 .save { position: absolute; z-index: 2; top: 12px; right: 12px; width: 36px; height: 36px; border: 0; border-radius: 50%; display: grid; place-items: center; background: #ffffffc7; backdrop-filter: blur(20px) saturate(180%); }
 .save:hover { background: white; }
+.save:disabled { cursor: wait; opacity: .65; }
+.feedback { margin: 0; font-size: 13px; line-height: 1.4; color: #424245; }
 .save[aria-pressed=true] { background: white; }
 .count { font-size: 12px; font-weight: 500; color: #6e6e73; white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .card, .card:hover { transition: none; transform: none; } }

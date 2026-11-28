@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
-import { readSavedVagas, toggleSavedVaga } from '../services/savedVagas'
+import { useSavedVagas } from '../hooks/useSavedVagas'
 import { designAssets } from '../utils/designAssets'
 import { initials } from '../utils/initials'
 import { proximoEncontro, resumoEncontro } from '../utils/ocorrencias'
@@ -10,20 +9,27 @@ import { Icon } from './ui/Layout'
 import s from './VagaCard.module.css'
 
 export default function VagaCard({ vaga, heading: Heading = 'h3', agora }) {
-  const { usuario } = useAuth()
+  const saved = useSavedVagas()
   const [montagem] = useState(() => Date.now())
-  const [salva, setSalva] = useState(() => readSavedVagas(usuario?.id).includes(vaga.id))
+  const salva = saved.ids.includes(vaga.id)
+  const [feedback, setFeedback] = useState(null)
   const foto = vaga.fotos?.[0]
   const proximo = proximoEncontro(vaga.ocorrencias, agora ?? montagem)
   const titleId = `vaga-${vaga.id}`
-  function alternar() {
-    try { setSalva(toggleSavedVaga(vaga.id, usuario?.id)) } catch { setSalva((atual) => atual) }
+  async function alternar() {
+    try {
+      const result = await saved.toggle(vaga.id)
+      setFeedback({ key: saved.key, message: result ? (saved.visitor ? 'Vaga salva neste navegador.' : 'Vaga salva na sua conta.') : 'Vaga removida das salvas.', error: false })
+    } catch (failure) { setFeedback({ key: saved.key, message: failure.message, error: true }) }
   }
   return <article className={s.card} aria-labelledby={titleId}>
     <div className={s.media}>
       {foto ? <img src={foto} alt="" loading="lazy" /> : <div className={s.placeholder}><img src={designAssets.login.imgImageVolunJa} alt="" width="48" height="38" /></div>}
       <span className={s.chip}>{MODALIDADES[vaga.modalidade] || vaga.modalidade}</span>
-      <button type="button" className={s.save} aria-pressed={salva} aria-label={`${salva ? 'Remover dos salvos' : 'Salvar'}: ${vaga.titulo}`} onClick={alternar}>
+      <button type="button" className={s.save} aria-pressed={saved.ready ? salva : undefined} aria-busy={saved.pending.includes(vaga.id) || saved.loading}
+        disabled={!saved.allowed || saved.pending.includes(vaga.id) || (saved.loading && !saved.ready)}
+        title={!saved.allowed ? 'Vagas salvas são exclusivas de voluntários e visitantes.' : !saved.ready ? 'Clique para consultar ou tentar novamente.' : saved.visitor ? 'Salvo somente neste navegador. Entre para vincular à sua conta.' : 'Vagas salvas na sua conta'}
+        aria-label={`${salva ? 'Remover dos salvos' : 'Salvar'}: ${vaga.titulo}`} onClick={alternar}>
         <img src={salva ? designAssets.home['heart-on'] : designAssets.home.heart} alt="" width="17" height="17" />
       </button>
     </div>
@@ -35,6 +41,7 @@ export default function VagaCard({ vaga, heading: Heading = 'h3', agora }) {
       <p className={s.meta}><Icon group="detalhe" name="imgIcon19" />{proximo ? <time dateTime={proximo.inicio}>{resumoEncontro(proximo)}</time> : 'Encontros encerrados'}</p>
       <p className={s.meta}><Icon group="detalhe" name="imgIcon20" /><span className={s.ellipsis}>{vaga.local}</span></p>
       <div className={s.foot}><span className={`${s.tag} ${s[tomDaCausa(vaga.causa.nome)]}`}>{vaga.causa.nome}</span><span className={s.count}>{vaga.numero_vagas} {vaga.numero_vagas === 1 ? 'vaga' : 'vagas'}</span></div>
+      {feedback?.key === saved.key && <p className={s.feedback} role={feedback.error ? 'alert' : 'status'}>{feedback.message}</p>}
     </div>
   </article>
 }
